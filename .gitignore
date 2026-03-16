@@ -1,4 +1,4 @@
 data/
-.piston_env
+.compiler_env
 node_modules
 .vscode/

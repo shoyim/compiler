@@ -268,7 +268,7 @@ router.get('/packages', async (req, res) => {
     let packages = await package.get_package_list();
     packages = packages.map(pkg => ({
         language: pkg.language,
-        language_version: pkg.version.raw,
+        language_version: pkg.version?.raw ?? "unknown",        
         installed: pkg.installed,
     }));
     return res.status(200).send(packages);
