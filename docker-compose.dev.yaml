@@ -1,0 +1,21 @@
+version: '3.2'
+
+services:
+  api:
+    build: api
+    container_name: compiler_api
+    privileged: true
+    restart: always
+    ports:
+      - 2000:2000
+    volumes:
+      - ./data/compiler/packages:/compiler/packages
+    environment:
+      - COMPILER_REPO_URL=http://repo:8000/index
+
+  repo:
+    build: repo
+    container_name: compiler_repo
+    command: ['--no-build']
+    volumes:
+      - .:/compiler

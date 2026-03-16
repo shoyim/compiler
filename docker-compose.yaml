@@ -1,0 +1,15 @@
+name: compiler
+
+services:
+  compiler_api:
+    build: 
+      context: ./api
+    container_name: compiler_api
+    restart: always
+    privileged: true
+    ports:
+      - "2000:2000"
+    volumes:
+      - ./data/compiler/packages:/compiler/packages
+    tmpfs:
+      - /tmp:exec
