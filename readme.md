@@ -1,9 +1,5 @@
 # Compiler API 
 
----
-
-## 🛠 O'rnatish va Ishga tushirish
-
 ### 1. Talablar
 Tizimingizda quyidagilar o'rnatilgan bo'lishi kerak:
 * [Docker](https://www.docker.com/products/docker-desktop)
@@ -11,7 +7,7 @@ Tizimingizda quyidagilar o'rnatilgan bo'lishi kerak:
 
 ### 2. Loyihani yuklab olish
 ```bash
-git clone [https://github.com/shoyim/compiler.git](https://github.com/shoyim/compiler.git)
+git clone https://github.com/shoyim/compiler.git
 cd compiler
 ```
 
