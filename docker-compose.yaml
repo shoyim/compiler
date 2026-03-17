@@ -13,3 +13,6 @@ services:
       - ./data/compiler/packages:/compiler/packages
     tmpfs:
       - /tmp:exec
+    environment:
+      - MAX_RUN_TIMEOUT=10000
+      
