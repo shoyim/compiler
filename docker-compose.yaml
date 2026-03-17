@@ -14,5 +14,6 @@ services:
     tmpfs:
       - /tmp:exec
     environment:
-      - MAX_RUN_TIMEOUT=10000
-      
+      - COMPILER_RUN_TIMEOUT=10000
+      - COMPILER_RUN_CPU_TIME=10000
+      - COMPILER_COMPILE_TIMEOUT=20000
