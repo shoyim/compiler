@@ -30,7 +30,7 @@ const options = {
     run_cpu_time: { default: 10000, parser: parseInt, validators: [(x, raw) => !isNaN(x)] },
     compile_memory_limit: { default: -1, parser: parseInt, validators: [(x, raw) => !isNaN(x)] },
     run_memory_limit: { default: -1, parser: parseInt, validators: [(x, raw) => !isNaN(x)] },
-    repo_url: { default: 'https://github.com/engineer-man/piston/releases/download/pkgs/index', validators: [] },
+    repo_url: { default: 'https://github.com/shoyim/compiler/releases/download/pkgs/index', validators: [] },
     max_concurrent_jobs: { default: 64, parser: parseInt, validators: [x => x > 0] },
     limit_overrides: { default: {}, parser: parse_overrides, validators: [x => !!x, validate_overrides] },
 };
