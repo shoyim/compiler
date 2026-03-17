@@ -7,7 +7,6 @@ PORT = 8000
 
 Handler = http.server.SimpleHTTPRequestHandler
 
-
 def signal_handler(sig, frame):
     sys.exit(0)
 
