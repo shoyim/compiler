@@ -20,13 +20,13 @@ Loyiha avtomatik ravishda `./data/compiler` papkasini ma'lumotlar ombori sifatid
 Konteynerni qurish va fon rejimida ishga tushirish:
 
 ```bash
-docker compose up -d --build
+docker-compose up -d --build
 ```
 
 
 3. Konteynerdan chiqing (`exit`) va servisni yangilang:
 ```bash
-docker compose restart compiler_api
+docker-compose restart compiler_api
 ```
 
 

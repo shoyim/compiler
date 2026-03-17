@@ -1,4 +1,4 @@
-name: compiler
+version: "3.8"
 
 services:
   compiler_api:
