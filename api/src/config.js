@@ -20,7 +20,7 @@ const options = {
     runner_gid_min: { default: 1001, parser: parseInt, validators: [(x, raw) => !isNaN(x)] },
     runner_gid_max: { default: 1500, parser: parseInt, validators: [(x, raw) => !isNaN(x)] },
     disable_networking: { default: true, parser: x => x === 'true', validators: [x => typeof x === 'boolean'] },
-    output_max_size: { default: 1024, parser: parseInt, validators: [(x, raw) => !isNaN(x)] },
+    output_max_size: { default: 10485760, parser: parseInt, validators: [(x, raw) => !isNaN(x)] },
     max_process_count: { default: 64, parser: parseInt, validators: [(x, raw) => !isNaN(x)] },
     max_open_files: { default: 2048, parser: parseInt, validators: [(x, raw) => !isNaN(x)] },
     max_file_size: { default: 10000000, parser: parseInt, validators: [(x, raw) => !isNaN(x)] },
