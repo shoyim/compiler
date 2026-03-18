@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         update-alternatives --install /usr/bin/python python /usr/bin/python3 1 && \
         rm -rf /var/lib/apt/lists/*
 
-COPY entrypoint.sh mkindex.sh serve.py /
+COPY . /
 
 RUN chmod +x /entrypoint.sh /mkindex.sh
 
