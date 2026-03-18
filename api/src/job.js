@@ -169,7 +169,7 @@ class Job {
         let code = null;
         let signal = null;
         let message = null;
-        let status = null;
+        let status = 'OK';
         let cpu_time_stat = null;
         let wall_time_stat = null;
 

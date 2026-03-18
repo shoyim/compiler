@@ -5,6 +5,7 @@ const runtime = require('../runtime');
 const { Job } = require('../job');
 const package = require('../package');
 const globals = require('../globals');
+const { stat } = require('fs');
 const logger = require('logplease').create('api/v2');
 
 function format_time(ms) {
@@ -35,8 +36,10 @@ function format_stage(stage) {
         message: stage.message,
         status: stage.status,
         time: format_time(stage.real_time ?? stage.wall_time),
+        cpu_time: stage.cpu_time,
         memory: format_memory(stage.memory),
         output_size: format_output_size(stage.output),
+        
     };
 }
 
