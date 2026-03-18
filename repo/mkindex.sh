@@ -1,29 +1,42 @@
 #!/bin/bash
 
+# GitHub Release havolasi
 BASEURL="https://github.com/shoyim/compiler/releases/download/pkgs/"
-i=0
 
-echo -n "name,version,sha256,url" > index
+# Index faylini sarlavha bilan yaratish
+echo "name,version,sha256,url" > index
 
-find ../packages -type f -name "*.pkg.tar.gz" | while read -r pkg; do
-    VER_NAME=$(basename $(dirname "$pkg"))
-    DIR_NAME=$(basename $(dirname $(dirname "$pkg")))
-    
-    NEW_PKGFILE="${DIR_NAME}-${VER_NAME}.pkg.tar.gz"
-    
-    cp "$pkg" "./$NEW_PKGFILE"
-
-    PKGCHECKSUM=$(sha256sum "./$NEW_PKGFILE" | awk '{print $1}')
-
-    echo -e "\n$DIR_NAME,$VER_NAME,$PKGCHECKSUM,$BASEURL$NEW_PKGFILE" >> index
-    echo "Adding package $DIR_NAME-$VER_NAME"
-    
-    ((i=i+1))
+# Paketlarni qidirish (Hozirgi papkadan bir pog'ona yuqoridagi packages papkasi)
+# find buyrug'ini tushunarliroq qilamiz
+for pkg in ../packages/*/*/pkg.tar.gz; do
+    # Agar fayl mavjud bo'lsa
+    if [ -f "$pkg" ]; then
+        # Yo'ldan ma'lumotlarni ajratish
+        # ../packages/python/3.12.0/pkg.tar.gz -> python va 3.12.0
+        VERSION=$(basename $(dirname "$pkg"))
+        LANG=$(basename $(dirname $(dirname "$pkg")))
+        
+        NEW_NAME="${LANG}-${VERSION}.pkg.tar.gz"
+        
+        # Faylni nusxalash va nomini o'zgartirish
+        cp "$pkg" "./$NEW_NAME"
+        
+        # Xesh hisoblash
+        HASH=$(sha256sum "$NEW_NAME" | cut -d' ' -f1)
+        
+        # Indexga yozish
+        echo "${LANG},${VERSION},${HASH},${BASEURL}${NEW_NAME}" >> index
+        echo "Qo'shildi: $NEW_NAME"
+    fi
 done
 
-if [ ! -s index ] || [ $(cat index | wc -l) -le 1 ]; then
+# Tekshirish: Indexda sarlavhadan tashqari yana qator bormi?
+LINE_COUNT=$(wc -l < index)
+if [ "$LINE_COUNT" -le 1 ]; then
     echo "Error: No packages found!"
+    # Debug uchun papkalarni ko'rsatish
+    ls -R ..
     exit 1
 fi
 
-echo "Done: $i packages."
+echo "Tugadi. Jami $((LINE_COUNT-1)) paket."
