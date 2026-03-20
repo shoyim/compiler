@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 # Put instructions to build your package in here
+# update
 PREFIX=$(realpath $(dirname $0))
 
 mkdir -p build
