@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'packages/**'
+  workflow_dispatch:
 
 jobs:
   build-pkg:
@@ -44,7 +45,7 @@ jobs:
         with:
           tag_name: pkgs
           files: packages/*.pkg.tar.gz
-          overwrite: true
+          overwrite_files: true
           fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -80,12 +81,17 @@ jobs:
               echo "$PKGNAME,$PKGVERSION,$PKGCHECKSUM,$BASEURL$PKGFILE" >> ../index
             fi
           done
+          
+          if [ ! -s ../index ]; then
+            echo "Hech qanday paket topilmadi, vaqtincha index yaratilmoqda"
+            echo "dummy,0.0.0,000,#" > ../index
+          fi
 
       - name: Upload Index to Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: pkgs
           files: index
-          overwrite: true
+          overwrite_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
