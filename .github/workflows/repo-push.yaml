@@ -1,4 +1,4 @@
-name: Publish Repo and Release Packages
+name: Publish Repo image
 
 on:
   push:
@@ -6,48 +6,26 @@ on:
       - main
     paths:
       - 'repo/**'
-      - 'packages/**'
-  workflow_dispatch:
 
 jobs:
-  build-and-release:
+  push_to_registry:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      packages: write
-
     steps:
       - name: Check out repo
         uses: actions/checkout@v4
 
-      - name: Prepare Index and Packages
-        run: |
-          cd repo
-          chmod +x mkindex.sh
-          ./mkindex.sh
-
-      - name: Login to GitHub Container Registry
+      - name: Login to ghcr.io
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Docker image
+      - name: Build and push repo
         uses: docker/build-push-action@v5
         with:
           context: repo
           file: repo/Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository }}/repo-builder:latest
-
-      - name: Upload Packages to Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: pkgs
-          files: |
-            repo/index
-            repo/*.pkg.tar.gz
-          body: "Auto-generated packages and index"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          tags: |
+            ghcr.io/${{ github.repository }}/repo-builder:latest
