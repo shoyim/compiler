@@ -10,18 +10,24 @@ on:
 jobs:
   build-pkg:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-          registry: ghcr.io
 
       - name: Get list of changed files
+        id: files
         uses: lots0logs/gh-action-get-changed-files@2.1.4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -34,17 +40,20 @@ jobs:
           docker run -v "${{ github.workspace }}:/piston" repo-builder --no-server $PACKAGES
 
       - name: Upload Packages to Release
-        uses: svenstaro/upload-release-action@v2
+        uses: softprops/action-gh-release@v2
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: packages/*.pkg.tar.gz
-          tag: pkgs
+          tag_name: pkgs
+          files: packages/*.pkg.tar.gz
           overwrite: true
-          file_glob: true
+          fail_on_unmatched_files: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   create-index:
     runs-on: ubuntu-latest
     needs: build-pkg
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -53,9 +62,13 @@ jobs:
         run: |
           mkdir -p assets
           cd assets
-          curl -s https://api.github.com/repos/${{ github.repository }}/releases/tags/pkgs | jq '.assets[].browser_download_url' -r | xargs -L 1 curl -sLO || true
+          curl -s https://api.github.com/repos/${{ github.repository }}/releases/tags/pkgs | \
+          jq -r '.assets[] | select(.name != "index") | .browser_download_url' | \
+          xargs -I {} curl -sLO {} || true
+          
           echo -n "" > ../index
           BASEURL="https://github.com/${{ github.repository }}/releases/download/pkgs/"
+          
           for pkg in *.pkg.tar.gz; do
             if [ -f "$pkg" ]; then
               PKGFILE=$(basename "$pkg")
@@ -67,10 +80,11 @@ jobs:
             fi
           done
 
-      - name: Upload index
-        uses: svenstaro/upload-release-action@v2
+      - name: Upload Index to Release
+        uses: softprops/action-gh-release@v2
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: index
-          tag: pkgs
+          tag_name: pkgs
+          files: index
           overwrite: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
