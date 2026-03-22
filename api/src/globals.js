@@ -78,7 +78,7 @@ module.exports = {
     },
     version: require('../package.json').version,
     platform,
-    pkg_installed_file: '.ppman-installed', //Used as indication for if a package was installed
+    pkg_installed_file: '.ppman-installed', 
     clean_directories: ['/dev/shm', '/run/lock', '/tmp', '/var/tmp'],
     SIGNALS,
 };
