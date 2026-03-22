@@ -276,7 +276,7 @@ curl http://localhost:2000/api/v2/runtimes
 
 Loyiha bilan birga Postman kolleksiyasi ham berilgan. Uni import qilib, barcha endpointlarni qulay tarzda sinab ko'rishingiz mumkin.
 
-Fayl: `Compiler_Api_postman_collection.json`
+Fayl: <a href='./Compiler Api.postman_collection.json'>`Compiler_Api_postman_collection.json`</a>
 
 ---
 
