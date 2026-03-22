@@ -18,8 +18,8 @@ const options = {
         validators: [],
     },
     data_directory: {
-        desc: 'Absolute path to store all piston related data at',
-        default: '/piston',
+        desc: 'Absolute path to store all compiler related data at',
+        default: '/compiler',
         validators: [
             x => fss.exists_sync(x) || `Directory ${x} does not exist`,
         ],
@@ -217,7 +217,7 @@ logger.info(`Loading Configuration from environment`);
 let config = {};
 
 for (const option_name in options) {
-    const env_key = 'PISTON_' + option_name.to_upper_case();
+    const env_key = 'COMPILER' + option_name.to_upper_case();
     const option = options[option_name];
     const parser = option.parser || (x => x);
     const env_val = process.env[env_key];
