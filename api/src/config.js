@@ -21,21 +21,17 @@ const options = {
     runner_gid_max: { default: 1500, parser: parseInt, validators: [(x, raw) => !isNaN(x)] },
     disable_networking: { default: true, parser: x => x === 'true', validators: [x => typeof x === 'boolean'] },
     
-    // Natija hajmini 50 MB ga oshirdik (OL xatosini oldini olish uchun)
     output_max_size: { default: 52428800, parser: parseInt, validators: [(x, raw) => !isNaN(x)] },
     
     max_process_count: { default: 64, parser: parseInt, validators: [(x, raw) => !isNaN(x)] },
     max_open_files: { default: 2048, parser: parseInt, validators: [(x, raw) => !isNaN(x)] },
     max_file_size: { default: 10000000, parser: parseInt, validators: [(x, raw) => !isNaN(x)] },
     
-    // Vaqt limitlarini 2 daqiqaga oshirdik (TO xatosini oldini olish uchun)
     compile_timeout: { default: 120000, parser: parseInt, validators: [(x, raw) => !isNaN(x)] },
     run_timeout: { default: 120000, parser: parseInt, validators: [(x, raw) => !isNaN(x)] },
     compile_cpu_time: { default: 120000, parser: parseInt, validators: [(x, raw) => !isNaN(x)] },
     run_cpu_time: { default: 120000, parser: parseInt, validators: [(x, raw) => !isNaN(x)] },
     
-    // RAM limitini 2 GB ga oshirdik (137 xatosini kamaytirish uchun)
-    // Diqqat: Bu serveringizdagi RAM miqdoridan oshib ketmasligi kerak!
     compile_memory_limit: { default: 2147483648, parser: parseInt, validators: [(x, raw) => !isNaN(x)] },
     run_memory_limit: { default: 2147483648, parser: parseInt, validators: [(x, raw) => !isNaN(x)] },
     

@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   compiler_api:
     build: 
@@ -13,9 +11,4 @@ services:
       - ./data/compiler/packages:/compiler/packages
     tmpfs:
       - /tmp:exec
-    environment:
-      - COMPILER_RUN_TIMEOUT=10000
-      - COMPILER_RUN_CPU_TIME=10000
-      - COMPILER_COMPILE_TIMEOUT=20000
-      - COMPILER_MAX_OUTPUT_SIZE=10485760
 
