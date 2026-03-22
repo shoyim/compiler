@@ -285,7 +285,3 @@ Fayl: `Compiler_Api_postman_collection.json`
 Ushbu loyiha [MIT litsenziyasi](LICENSE) ostida tarqatiladi.
 
 ---
-
-<div align="center">
-  <sub>❤️ O'zbek dasturchilari uchun ishlab chiqildi</sub>
-</div>
