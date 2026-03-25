@@ -12,12 +12,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     liblapack-dev libpcre3-dev libarpack2-dev libfftw3-dev libglpk-dev \
     libqhull-dev libqrupdate-dev libsuitesparse-dev libsundials-dev \
     libbz2-dev liblzma-dev libpcre2-dev gperf bison flex g++ gawk zip && \
-    ln -sf /bin/bash /bin/sh && \
     update-alternatives --install /usr/bin/python python /usr/bin/python3 1 && \
     rm -rf /var/lib/apt/lists/*
 
-COPY . /
-RUN chmod +x /entrypoint.sh /mkindex.sh
+WORKDIR /app
+COPY . .
+RUN chmod +x entrypoint.sh mkindex.sh
+RUN mkdir -p packages
 
-ENTRYPOINT ["bash", "/entrypoint.sh"]
+EXPOSE 2000
+
+ENTRYPOINT ["bash", "/app/entrypoint.sh"]
 CMD ["--no-build"]
