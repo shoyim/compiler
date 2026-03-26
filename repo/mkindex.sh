@@ -1,38 +1,41 @@
 #!/bin/bash
 
+# GitHub Release havolasi
 BASEURL="https://github.com/shoyim/compiler/releases/download/pkgs/"
 
+# Index faylini sarlavha bilan yaratish
 echo "name,version,sha256,url" > index
 
-# Docker ichida barcha build bo'lgan paketlar /app/packages ichida bo'ladi
-# Shuning uchun yo'lni /app/packages/* deb ko'rsatamiz
-for pkg in /app/packages/*.pkg.tar.gz; do
+# Paketlarni qidirish (Hozirgi papkadan bir pog'ona yuqoridagi packages papkasi)
+# find buyrug'ini tushunarliroq qilamiz
+for pkg in ../packages/*/*/pkg.tar.gz; do
+    # Agar fayl mavjud bo'lsa
     if [ -f "$pkg" ]; then
-        # Fayl nomidan ma'lumotni ajratish (masalan: python-3.12.0.pkg.tar.gz)
-        FILENAME=$(basename "$pkg")
+        # Yo'ldan ma'lumotlarni ajratish
+        # ../packages/python/3.12.0/pkg.tar.gz -> python va 3.12.0
+        VERSION=$(basename $(dirname "$pkg"))
+        LANG=$(basename $(dirname $(dirname "$pkg")))
         
-        # Nom va versiyani ajratish (bash-5.1.0 -> bash va 5.1.0)
-        # Bu yerda fayl nomi "nom-versiya.pkg.tar.gz" formatida deb hisoblanadi
-        NAME_VER=${FILENAME%.pkg.tar.gz}
-        LANG=${NAME_VER%-*}
-        VERSION=${NAME_VER##*-}
+        NEW_NAME="${LANG}-${VERSION}.pkg.tar.gz"
         
-        # Faylni joriy papkaga (repo papkasiga) nusxalash
-        cp "$pkg" "./$FILENAME"
+        # Faylni nusxalash va nomini o'zgartirish
+        cp "$pkg" "./$NEW_NAME"
         
         # Xesh hisoblash
-        HASH=$(sha256sum "$FILENAME" | cut -d' ' -f1)
+        HASH=$(sha256sum "$NEW_NAME" | cut -d' ' -f1)
         
         # Indexga yozish
-        echo "${LANG},${VERSION},${HASH},${BASEURL}${FILENAME}" >> index
-        echo "Qo'shildi: $FILENAME"
+        echo "${LANG},${VERSION},${HASH},${BASEURL}${NEW_NAME}" >> index
+        echo "Qo'shildi: $NEW_NAME"
     fi
 done
 
+# Tekshirish: Indexda sarlavhadan tashqari yana qator bormi?
 LINE_COUNT=$(wc -l < index)
 if [ "$LINE_COUNT" -le 1 ]; then
-    echo "Error: No packages found in /app/packages/ !"
-    ls -R /app/packages
+    echo "Error: No packages found!"
+    # Debug uchun papkalarni ko'rsatish
+    ls -R ..
     exit 1
 fi
 
