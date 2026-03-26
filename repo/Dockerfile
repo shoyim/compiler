@@ -17,9 +17,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 COPY . .
-
-RUN mkdir -p /app/packages
-RUN chmod +x /app/entrypoint.sh /app/mkindex.sh
+RUN chmod +x entrypoint.sh mkindex.sh
+RUN mkdir -p packages
 
 EXPOSE 2000
 
