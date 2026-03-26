@@ -1,42 +1,23 @@
-#!/bin/bash
+BASEURL=http://repo:8000/
 
-# GitHub Release havolasi
-BASEURL="https://github.com/shoyim/compiler/releases/download/pkgs/"
+i=0
 
-# Index faylini sarlavha bilan yaratish
-echo "name,version,sha256,url" > index
+echo "" > index
 
-# Paketlarni qidirish (Hozirgi papkadan bir pog'ona yuqoridagi packages papkasi)
-# find buyrug'ini tushunarliroq qilamiz
-for pkg in ../packages/*/*/pkg.tar.gz; do
-    # Agar fayl mavjud bo'lsa
-    if [ -f "$pkg" ]; then
-        # Yo'ldan ma'lumotlarni ajratish
-        # ../packages/python/3.12.0/pkg.tar.gz -> python va 3.12.0
-        VERSION=$(basename $(dirname "$pkg"))
-        LANG=$(basename $(dirname $(dirname "$pkg")))
-        
-        NEW_NAME="${LANG}-${VERSION}.pkg.tar.gz"
-        
-        # Faylni nusxalash va nomini o'zgartirish
-        cp "$pkg" "./$NEW_NAME"
-        
-        # Xesh hisoblash
-        HASH=$(sha256sum "$NEW_NAME" | cut -d' ' -f1)
-        
-        # Indexga yozish
-        echo "${LANG},${VERSION},${HASH},${BASEURL}${NEW_NAME}" >> index
-        echo "Qo'shildi: $NEW_NAME"
-    fi
+for pkg in $(find ../packages -type f -name "*.pkg.tar.gz")
+do
+    
+    cp $pkg .
+
+    PKGFILE=$(basename $pkg)
+    PKGFILENAME=$(echo $PKGFILE | sed 's/\.pkg\.tar\.gz//g')
+
+    PKGNAME=$(echo $PKGFILENAME | grep -oP '^\K.+(?=-)')
+    PKGVERSION=$(echo $PKGFILENAME | grep -oP '^.+-\K.+')
+    PKGCHECKSUM=$(sha256sum $PKGFILE | awk '{print $1}')
+
+    echo "$PKGNAME,$PKGVERSION,$PKGCHECKSUM,$BASEURL$PKGFILE" >> index
+    echo "Adding package $PKGNAME-$PKGVERSION"
+    
+    ((i=i+1))
 done
-
-# Tekshirish: Indexda sarlavhadan tashqari yana qator bormi?
-LINE_COUNT=$(wc -l < index)
-if [ "$LINE_COUNT" -le 1 ]; then
-    echo "Error: No packages found!"
-    # Debug uchun papkalarni ko'rsatish
-    ls -R ..
-    exit 1
-fi
-
-echo "Tugadi. Jami $((LINE_COUNT-1)) paket."
