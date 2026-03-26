@@ -18,14 +18,7 @@ RUN sed -i s/deb.debian.org/archive.debian.org/g /etc/apt/sources.list && \
     update-alternatives --install /usr/bin/python python /usr/bin/python3 1 && \
     rm -rf /var/lib/apt/lists/*
 
-WORKDIR /compiler
+ADD entrypoint.sh mkindex.sh serve.py /
 
-COPY entrypoint.sh mkindex.sh serve.py ./
-
-RUN chmod +x entrypoint.sh mkindex.sh && \
-    mkdir -p /compiler/packages
-
-EXPOSE 2000
-
-ENTRYPOINT ["bash", "/compiler/entrypoint.sh"]
+ENTRYPOINT ["bash","/entrypoint.sh"]
 CMD ["--no-build"]
