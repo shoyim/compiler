@@ -3,6 +3,7 @@
 case "${PISTON_LANGUAGE}" in
     csharp)
         rename 's/$/\.cs/' "$@" # Add .cs extension
+        # update compile file
         csc -out:out *.cs
         ;;
     basic)
