@@ -56,7 +56,7 @@ const options = {
     },
     output_max_size: {
         desc: 'Max size of each stdio buffer',
-        default: 33554432,
+        default: 524288000, // 512 MB
         parser: parse_int,
         validators: [(x, raw) => !is_nan(x) || `${raw} is not a number`],
     },
@@ -74,7 +74,7 @@ const options = {
     },
     max_file_size: {
         desc: 'Max file size in bytes for a file',
-        default: 33554432, //32MB
+        default: 524288000, // 512MB
         parser: parse_int,
         validators: [(x, raw) => !is_nan(x) || `${raw} is not a number`],
     },
