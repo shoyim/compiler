@@ -11,6 +11,12 @@ services:
       - ./data/compiler/packages:/compiler/packages
     tmpfs:
       - /tmp:exec
+      
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+
     environment:
       - COMPILER_RUN_TIMEOUT=10000
       - COMPILER_RUN_CPU_TIME=10000
