@@ -11,7 +11,7 @@ services:
       - ./data/compiler/packages:/compiler/packages
     tmpfs:
       - /tmp:exec
-      
+
     deploy:
       resources:
         limits:
@@ -20,6 +20,6 @@ services:
     environment:
       - COMPILER_RUN_TIMEOUT=10000
       - COMPILER_RUN_CPU_TIME=10000
-      - COMPILER_OUTPUT_MAX_SIZE=33554432
-      - COMPILER_MAX_FILE_SIZE=33554432
+      - COMPILER_OUTPUT_MAX_SIZE=536870912
+      - COMPILER_MAX_FILE_SIZE=536870912
 
