@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
 # Compile nim file(s)
+# 1.6.2
 nim --hints:off --out:out --nimcache:./ c "$@"
 chmod +x out
