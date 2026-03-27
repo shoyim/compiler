@@ -74,7 +74,7 @@ const options = {
     },
     max_file_size: {
         desc: 'Max file size in bytes for a file',
-        default: 33554432, //10MB
+        default: 33554432, //32MB
         parser: parse_int,
         validators: [(x, raw) => !is_nan(x) || `${raw} is not a number`],
     },
@@ -86,7 +86,7 @@ const options = {
     },
     run_timeout: {
         desc: 'Max time allowed for run stage in milliseconds',
-        default: 3000, // 3 seconds
+        default: 10000, // 10 seconds
         parser: parse_int,
         validators: [(x, raw) => !is_nan(x) || `${raw} is not a number`],
     },
@@ -98,7 +98,7 @@ const options = {
     },
     run_cpu_time: {
         desc: 'Max CPU time allowed for run stage in milliseconds',
-        default: 3000, // 3 seconds
+        default: 10000, // 10 seconds
         parser: parse_int,
         validators: [(x, raw) => !is_nan(x) || `${raw} is not a number`],
     },
