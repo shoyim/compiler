@@ -52,9 +52,6 @@ expressWs(app);
     logger.debug('Constructing Express App');
     logger.debug('Registering middleware');
 
-    app.use(body_parser.urlencoded({ extended: true, limit: '512mb' }));
-    app.use(body_parser.json({ limit: '512mb' }));
-
     app.use((err, req, res, next) => {
         return res.status(400).send({ stack: err.stack });
     });
