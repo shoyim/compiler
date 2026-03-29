@@ -1,29 +1,30 @@
 #!/usr/bin/env bash
 
-# Put instructions to compile source code, remove this file if the language does not require this stage
+LANG=$(echo "${COMPILER_LANGUAGE}" | tr '[:upper:]' '[:lower:]')
 
-
-case "${PISTON_LANGUAGE}" in
-    c)
-        rename 's/$/\.c/' "$@" # Add .c extension
+case "${LANG}" in
+    c|gcc)
+        rename 's/$/\.c/' "$@" 2>/dev/null || true
         gcc -std=c11 *.c -lm
         ;;
-    c++)
-        rename 's/$/\.cpp/' "$@" # Add .cpp extension
-        g++ -std=c++17 *.cpp
+    c++|cpp|g++)
+        rename 's/$/\.cpp/' "$@" 2>/dev/null || true
+        g++ -std=c++23 *.cpp -lm
         ;;
-    d)
-        rename 's/.code$/\.d/' "$@" # Add .d extension
+    d|gdc)
+        rename 's/.code$/\.d/' "$@" 2>/dev/null || true
         gdc *.d
         ;;
-    fortran)
-        rename 's/.code$/\.f90/' "$@" # Add .f90 extension
+    fortran|f90|gfortran)
+        rename 's/.code$/\.f90/' "$@" 2>/dev/null || true
         gfortran *.f90
         ;;
     *)
-        echo "How did you get here? (${PISTON_LANGUAGE})"
+        echo "How did you get here? (${COMPILER_LANGUAGE})"
         exit 1
         ;;
 esac
 
-chmod +x a.out
+if [ -f a.out ]; then
+    chmod +x a.out
+fi
