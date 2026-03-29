@@ -52,7 +52,13 @@ expressWs(app);
     logger.debug('Constructing Express App');
     logger.debug('Registering middleware');
 
+    app.use(express.json({ limit: '1024gb' })); 
+    app.use(express.urlencoded({ limit: '1024gb', extended: true }));
+
     app.use((err, req, res, next) => {
+        if (err.type === 'entity.too.large') {
+            return res.status(413).send({ message: 'Ma\'lumot hajmi juda katta!' });
+        }
         return res.status(400).send({ stack: err.stack });
     });
 
