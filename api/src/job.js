@@ -6,6 +6,8 @@ const config = require('./config');
 const fs = require('fs/promises');
 const globals = require('./globals');
 
+const logger = logplease.create('job');
+
 const job_states = {
     READY: Symbol('Ready to be primed'),
     PRIMED: Symbol('Primed and ready for execution'),
@@ -21,6 +23,96 @@ let job_queue = [];
 
 const get_next_box_id = () => ++box_id % MAX_BOX_ID;
 
+// ─── Box Pool ────────────────────────────────────────────────────────────────
+// Oldindan tayyor isolate boxlar saqlanadi.
+// BOX_POOL_SIZE ni config dan yoki default 10 dan oladi.
+const BOX_POOL_SIZE = config.box_pool_size ?? 10;
+const box_pool = [];
+let pool_initialized = false;
+
+async function _init_one_box() {
+    const id = get_next_box_id();
+    const metadata_file_path = `/tmp/${id}-metadata.txt`;
+    const stdout = await new Promise((res, rej) => {
+        cp.exec(`isolate --init --cg -b${id}`, (err, out, stderr) => {
+            if (err) rej(new Error(`isolate --init failed: ${err.message}\n${stderr}`));
+            else if (!out.trim()) rej(new Error('isolate --init returned empty stdout'));
+            else res(out);
+        });
+    });
+    return {
+        id,
+        metadata_file_path,
+        dir: `${stdout.trim()}/box`,
+        in_use: false,
+    };
+}
+
+/**
+ * Server start bo'lganda bir marta chaqiriladi.
+ * BOX_POOL_SIZE ta box parallel ravishda init qilinadi.
+ */
+async function init_box_pool() {
+    if (pool_initialized) return;
+    pool_initialized = true;
+    logger.info(`Initializing box pool (size=${BOX_POOL_SIZE})`);
+    const boxes = await Promise.all(
+        Array.from({ length: BOX_POOL_SIZE }, () => _init_one_box())
+    );
+    box_pool.push(...boxes);
+    logger.info('Box pool ready');
+}
+
+/** Pool dan bo'sh box oladi; yo'q bo'lsa yangi ochadi. */
+async function acquire_box() {
+    const free = box_pool.find(b => !b.in_use);
+    if (free) {
+        free.in_use = true;
+        return free;
+    }
+    // Pool tugagan — yangi box ochish
+    logger.warn('Box pool exhausted, opening a fresh box');
+    const box = await _init_one_box();
+    box.in_use = true;
+    box_pool.push(box);
+    return box;
+}
+
+/** Boxni tozalab poolga qaytaradi. */
+async function release_box(box) {
+    // Metadatani o'chirish
+    await fs.rm(box.metadata_file_path).catch(() => {});
+
+    // Boxni cleanup qilmasdan fayllarni o'chirib qayta ishlatish imkoni yo'q,
+    // shuning uchun cleanup + qayta init qilamiz (background da)
+    cp.exec(`isolate --cleanup --cg -b${box.id}`, async err => {
+        if (err) {
+            logger.error(`isolate --cleanup failed on box #${box.id}: ${err.message}`);
+            // Pooldan olib tashlash
+            const idx = box_pool.indexOf(box);
+            if (idx !== -1) box_pool.splice(idx, 1);
+            return;
+        }
+        // Qayta init
+        try {
+            const stdout = await new Promise((res, rej) => {
+                cp.exec(`isolate --init --cg -b${box.id}`, (e, out) =>
+                    e ? rej(e) : res(out)
+                );
+            });
+            box.dir = `${stdout.trim()}/box`;
+            box.metadata_file_path = `/tmp/${box.id}-metadata.txt`;
+            box.in_use = false;
+            logger.debug(`Box #${box.id} recycled back to pool`);
+        } catch (e) {
+            logger.error(`Failed to re-init box #${box.id}: ${e.message}`);
+            const idx = box_pool.indexOf(box);
+            if (idx !== -1) box_pool.splice(idx, 1);
+        }
+    });
+}
+
+// ─── Runtime Baselines ───────────────────────────────────────────────────────
 const runtime_baselines = new Map();
 
 async function measure_runtime_baseline(runtime) {
@@ -28,24 +120,17 @@ async function measure_runtime_baseline(runtime) {
         return runtime_baselines.get(runtime.language);
     }
 
-    const bid = get_next_box_id();
-    const baseline_meta = `/tmp/baseline-${runtime.language}-${bid}.txt`;
+    const box = await acquire_box();
+    const baseline_meta = `/tmp/baseline-${runtime.language}-${box.id}.txt`;
 
     try {
-        const box_dir = await new Promise((res, rej) => {
-            cp.exec(`isolate --init --cg -b${bid}`, (err, stdout) => {
-                if (err) rej(err);
-                else res(`${stdout.trim()}/box`);
-            });
-        });
-
-        const submission_dir = path.join(box_dir, 'submission');
+        const submission_dir = path.join(box.dir, 'submission');
         await fs.mkdir(submission_dir, { recursive: true });
         await fs.writeFile(path.join(submission_dir, 'empty.code'), '');
 
         await new Promise(res => {
             cp.exec(
-                `isolate --run --cg -b${bid} --meta=${baseline_meta} -s -- /bin/bash ${path.join(runtime.pkgdir, 'run')} empty.code 2>/dev/null`,
+                `isolate --run --cg -b${box.id} --meta=${baseline_meta} -s -- /bin/bash ${path.join(runtime.pkgdir, 'run')} empty.code 2>/dev/null`,
                 () => res()
             );
         });
@@ -58,27 +143,33 @@ async function measure_runtime_baseline(runtime) {
         } catch (_) {}
 
         runtime_baselines.set(runtime.language, baseline);
+        logger.debug(`Baseline for ${runtime.language}: ${baseline} bytes`);
         return baseline;
     } catch (_) {
         runtime_baselines.set(runtime.language, 0);
         return 0;
     } finally {
-        cp.exec(`isolate --cleanup --cg -b${bid}`, () => {});
+        await release_box(box);
         fs.rm(baseline_meta).catch(() => {});
     }
 }
 
+/**
+ * Server start da barcha runtimelar uchun baseline o'lchaydi.
+ * Bu birinchi job kelganda kutishni yo'q qiladi.
+ */
+async function warmup_baselines(runtimes) {
+    logger.info(`Warming up baselines for ${runtimes.length} runtime(s)`);
+    await Promise.all(runtimes.map(rt => measure_runtime_baseline(rt)));
+    logger.info('Baseline warmup complete');
+}
+
+// ─── Job ─────────────────────────────────────────────────────────────────────
 class Job {
-    #dirty_boxes;
-    constructor({
-        runtime,
-        files,
-        args,
-        stdin,
-        timeouts,
-        cpu_times,
-        memory_limits,
-    }) {
+    // Compile + run uchun ishlatiladigan boxlar (cleanup uchun saqlanadi)
+    #acquired_boxes;
+
+    constructor({ runtime, files, args, stdin, timeouts, cpu_times, memory_limits }) {
         this.uuid = uuidv4();
         this.logger = logplease.create(`job/${this.uuid}`);
         this.runtime = runtime;
@@ -98,66 +189,54 @@ class Job {
         this.cpu_times = cpu_times;
         this.memory_limits = memory_limits;
         this.state = job_states.READY;
-        this.#dirty_boxes = [];
+        this.#acquired_boxes = [];
     }
 
-    async #create_isolate_box() {
-        const box_id = get_next_box_id();
-        const metadata_file_path = `/tmp/${box_id}-metadata.txt`;
-        return new Promise((res, rej) => {
-            cp.exec(
-                `isolate --init --cg -b${box_id}`,
-                (error, stdout, stderr) => {
-                    if (error) {
-                        rej(`Failed to run isolate --init: ${error.message}\nstdout: ${stdout}\nstderr: ${stderr}`);
-                    }
-                    if (stdout === '') {
-                        rej('Received empty stdout from isolate --init');
-                    }
-                    const box = {
-                        id: box_id,
-                        metadata_file_path,
-                        dir: `${stdout.trim()}/box`,
-                    };
-                    this.#dirty_boxes.push(box);
-                    res(box);
-                }
-            );
-        });
+    /** Pool dan box oladi va dirty listga qo'shadi (cleanup uchun). */
+    async #get_box() {
+        const box = await acquire_box();
+        this.#acquired_boxes.push(box);
+        return box;
     }
 
     async prime() {
         if (remaining_job_spaces < 1) {
-            this.logger.info(`Awaiting job slot`);
-            await new Promise(resolve => {
-                job_queue.push(resolve);
-            });
+            this.logger.info('Awaiting job slot');
+            await new Promise(resolve => job_queue.push(resolve));
         }
-        this.logger.info(`Priming job`);
+        this.logger.info('Priming job');
         remaining_job_spaces--;
-        this.logger.debug('Running isolate --init');
-        const box = await this.#create_isolate_box();
 
-        this.logger.debug(`Creating submission files in Isolate box`);
+        const box = await this.#get_box();
+
+        // ✅ Barcha fayllarni parallel yozish
+        this.logger.debug('Writing submission files (parallel)');
         const submission_dir = path.join(box.dir, 'submission');
         await fs.mkdir(submission_dir);
-        for (const file of this.files) {
-            const file_path = path.join(submission_dir, file.name);
-            const rel = path.relative(submission_dir, file_path);
-            if (rel.startsWith('..'))
-                throw Error(`File path "${file.name}" tries to escape parent directory: ${rel}`);
-            const file_content = Buffer.from(file.content, file.encoding);
-            await fs.mkdir(path.dirname(file_path), { recursive: true, mode: 0o700 });
-            await fs.writeFile(file_path, file_content);
-        }
 
+        await Promise.all(
+            this.files.map(async file => {
+                const file_path = path.join(submission_dir, file.name);
+                const rel = path.relative(submission_dir, file_path);
+                if (rel.startsWith('..')) {
+                    throw new Error(
+                        `File path "${file.name}" tries to escape parent directory: ${rel}`
+                    );
+                }
+                const file_content = Buffer.from(file.content, file.encoding);
+                await fs.mkdir(path.dirname(file_path), { recursive: true, mode: 0o700 });
+                await fs.writeFile(file_path, file_content);
+            })
+        );
+
+        // Baseline allaqachon warmup da o'lchangan — bu yerda kutish yo'q
         if (!runtime_baselines.has(this.runtime.language)) {
-            this.logger.debug(`Measuring baseline for ${this.runtime.language}`);
+            this.logger.debug(`Baseline missing for ${this.runtime.language}, measuring now`);
             await measure_runtime_baseline(this.runtime);
         }
 
         this.state = job_states.PRIMED;
-        this.logger.debug('Primed job');
+        this.logger.debug('Job primed');
         return box;
     }
 
@@ -213,25 +292,19 @@ class Job {
             proc.stdin.end();
             proc.stdin.destroy();
         } else {
-            event_bus.on('stdin', data => {
-                proc.stdin.write(data);
-            });
-            event_bus.on('kill', signal => {
-                proc.kill(signal);
-            });
+            event_bus.on('stdin', data => proc.stdin.write(data));
+            event_bus.on('kill', sig => proc.kill(sig));
         }
 
-        proc.stderr.on('data', async data => {
+        proc.stderr.on('data', data => {
             if (event_bus !== null) {
                 event_bus.emit('stderr', data);
             } else if (stderr.length + data.length > this.runtime.output_max_size) {
                 message = 'stderr length exceeded';
                 status = 'EL';
                 this.logger.info(message);
-                try {
-                    process.kill(proc.pid, 'SIGABRT');
-                } catch (e) {
-                    this.logger.debug(`Got error while SIGABRTing process ${proc}:`, e);
+                try { process.kill(proc.pid, 'SIGABRT'); } catch (e) {
+                    this.logger.debug(`SIGABRT error: ${e}`);
                 }
             } else {
                 stderr += data;
@@ -239,17 +312,15 @@ class Job {
             }
         });
 
-        proc.stdout.on('data', async data => {
+        proc.stdout.on('data', data => {
             if (event_bus !== null) {
                 event_bus.emit('stdout', data);
             } else if (stdout.length + data.length > this.runtime.output_max_size) {
                 message = 'stdout length exceeded';
                 status = 'OL';
                 this.logger.info(message);
-                try {
-                    process.kill(proc.pid, 'SIGABRT');
-                } catch (e) {
-                    this.logger.debug(`Got error while SIGABRTing process ${proc}:`, e);
+                try { process.kill(proc.pid, 'SIGABRT'); } catch (e) {
+                    this.logger.debug(`SIGABRT error: ${e}`);
                 }
             } else {
                 stdout += data;
@@ -257,13 +328,9 @@ class Job {
             }
         });
 
-        const data = await new Promise((res, rej) => {
-            proc.on('exit', (_, signal) => {
-                res({ signal });
-            });
-            proc.on('error', err => {
-                rej({ error: err });
-            });
+        const exit_data = await new Promise((res, rej) => {
+            proc.on('exit', (_, sig) => res({ signal: sig }));
+            proc.on('error', err => rej({ error: err }));
         });
 
         const wall_end = process.hrtime.bigint();
@@ -271,47 +338,27 @@ class Job {
 
         try {
             const metadata_str = (await fs.readFile(box.metadata_file_path)).toString();
-            const metadata_lines = metadata_str.split('\n');
-            for (const line of metadata_lines) {
+            for (const line of metadata_str.split('\n')) {
                 if (!line) continue;
                 const sep = line.indexOf(':');
-                if (sep === -1) {
-                    throw new Error(`Failed to parse metadata file, received: ${line}`);
-                }
+                if (sep === -1) throw new Error(`Bad metadata line: ${line}`);
                 const key = line.slice(0, sep).trim();
                 const value = line.slice(sep + 1).trim();
                 switch (key) {
-                    case 'cg-mem':
-                        memory = parseInt(value) * 1000;
-                        break;
-                    case 'max-rss':
-                        memory = memory ?? parseInt(value) * 1024;
-                        break;
-                    case 'exitcode':
-                        code = parseInt(value);
-                        break;
-                    case 'exitsig':
-                        signal = globals.SIGNALS[parseInt(value)] ?? null;
-                        break;
-                    case 'message':
-                        message = message || value;
-                        break;
-                    case 'status':
-                        status = status || value;
-                        break;
-                    case 'time':
-                        cpu_time_stat = parseFloat(value) * 1000;
-                        break;
-                    case 'time-wall':
-                        wall_time_stat = parseFloat(value) * 1000;
-                        break;
-                    default:
-                        break;
+                    case 'cg-mem':      memory = parseInt(value) * 1000; break;
+                    case 'max-rss':     memory = memory ?? parseInt(value) * 1024; break;
+                    case 'exitcode':    code = parseInt(value); break;
+                    case 'exitsig':     signal = globals.SIGNALS[parseInt(value)] ?? null; break;
+                    case 'message':     message = message || value; break;
+                    case 'status':      status = status || value; break;
+                    case 'time':        cpu_time_stat = parseFloat(value) * 1000; break;
+                    case 'time-wall':   wall_time_stat = parseFloat(value) * 1000; break;
                 }
             }
         } catch (e) {
             throw new Error(
-                `Error reading metadata file: ${box.metadata_file_path}\nError: ${e.message}\nIsolate run stdout: ${stdout}\nIsolate run stderr: ${stderr}`
+                `Error reading metadata file: ${box.metadata_file_path}\n` +
+                `Error: ${e.message}\nstdout: ${stdout}\nstderr: ${stderr}`
             );
         }
 
@@ -319,7 +366,7 @@ class Job {
         const code_memory = memory !== null ? Math.max(0, memory - baseline) : null;
 
         return {
-            ...data,
+            ...exit_data,
             stdout,
             stderr,
             code,
@@ -343,26 +390,25 @@ class Job {
 
         const code_files =
             (this.runtime.language === 'file' && this.files) ||
-            this.files.filter(file => file.encoding == 'utf8');
+            this.files.filter(f => f.encoding === 'utf8');
 
         let compile;
         let compile_errored = false;
-        const { emit_event_bus_result, emit_event_bus_stage } =
-            event_bus === null
-                ? { emit_event_bus_result: () => {}, emit_event_bus_stage: () => {} }
-                : {
-                      emit_event_bus_result: (stage, result) => {
-                          const { error, code, signal } = result;
-                          event_bus.emit('exit', stage, { error, code, signal });
-                      },
-                      emit_event_bus_stage: stage => {
-                          event_bus.emit('stage', stage);
-                      },
-                  };
+
+        const emit_result = event_bus
+            ? (stage, result) => {
+                  const { error, code, signal } = result;
+                  event_bus.emit('exit', stage, { error, code, signal });
+              }
+            : () => {};
+
+        const emit_stage = event_bus
+            ? stage => event_bus.emit('stage', stage)
+            : () => {};
 
         if (this.runtime.compiled) {
             this.logger.debug('Compiling');
-            emit_event_bus_stage('compile');
+            emit_stage('compile');
             compile = await this.safe_call(
                 box,
                 'compile',
@@ -372,22 +418,29 @@ class Job {
                 this.memory_limits.compile,
                 event_bus
             );
-            emit_event_bus_result('compile', compile);
+            emit_result('compile', compile);
             compile_errored = compile.code !== 0;
+
             if (!compile_errored) {
-                const old_box_dir = box.dir;
-                box = await this.#create_isolate_box();
-                await fs.rename(
-                    path.join(old_box_dir, 'submission'),
-                    path.join(box.dir, 'submission')
-                );
+                // ✅ Yangi box ochib fayl ko'chirish o'rniga,
+                // compile + run uchun bitta boxdan foydalanamiz.
+                // Run skripti compile chiqdi fayllarni submission/ ichida topadi.
+                // (Agar runtime xavfsizlik sababli alohida box talab qilsa,
+                //  quyidagi blokni yoqing.)
+
+                // --- Ixtiyoriy: alohida run box kerak bo'lsa ---
+                // const old_submission = path.join(box.dir, 'submission');
+                // const run_box = await this.#get_box();
+                // await fs.rename(old_submission, path.join(run_box.dir, 'submission'));
+                // box = run_box;
+                // ------------------------------------------------
             }
         }
 
         let run;
         if (!compile_errored) {
             this.logger.debug('Running');
-            emit_event_bus_stage('run');
+            emit_stage('run');
             run = await this.safe_call(
                 box,
                 'run',
@@ -397,7 +450,7 @@ class Job {
                 this.memory_limits.run,
                 event_bus
             );
-            emit_event_bus_result('run', run);
+            emit_result('run', run);
         }
 
         this.state = job_states.EXECUTED;
@@ -411,33 +464,14 @@ class Job {
     }
 
     async cleanup() {
-        this.logger.info(`Cleaning up job`);
+        this.logger.info('Cleaning up job');
         remaining_job_spaces++;
         if (job_queue.length > 0) {
             job_queue.shift()();
         }
-        await Promise.all(
-            this.#dirty_boxes.map(async box => {
-                cp.exec(
-                    `isolate --cleanup --cg -b${box.id}`,
-                    (error, stdout, stderr) => {
-                        if (error) {
-                            this.logger.error(
-                                `Failed to run isolate --cleanup: ${error.message} on box #${box.id}\nstdout: ${stdout}\nstderr: ${stderr}`
-                            );
-                        }
-                    }
-                );
-                try {
-                    await fs.rm(box.metadata_file_path);
-                } catch (e) {
-                    this.logger.error(
-                        `Failed to remove the metadata directory of box #${box.id}. Error: ${e.message}`
-                    );
-                }
-            })
-        );
+        // Barcha boxlarni parallel ravishda poolga qaytarish
+        await Promise.all(this.#acquired_boxes.map(box => release_box(box)));
     }
 }
 
-module.exports = { Job };
+module.exports = { Job, init_box_pool, warmup_baselines };
