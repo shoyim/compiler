@@ -53,7 +53,11 @@ jobs:
 
             - name: Build Packages
               run: |
-                  PACKAGES=$(jq '.[]' -r ${HOME}/files*.json | awk -F/ '$1~/packages/ && $2 && $3{ print $2 "-" $3 }' | sort -u)
+                  PACKAGES=$(jq -r '.[] // empty' ${HOME}/files*.json 2>/dev/null | awk -F/ '$1~/packages/ && $2 && $3{ print $2 "-" $3 }' | sort -u)
+                  if [ -z "$PACKAGES" ]; then
+                    echo "No package changes detected, skipping build"
+                    exit 0
+                  fi
                   echo "Packages: $PACKAGES"
                   docker pull docker.pkg.github.com/shoyim/compiler/repo-builder:latest
                   docker build -t repo-builder repo
