@@ -2,4 +2,4 @@
 
 # Run the jar created during compile
 shift
-java -jar out.jar "$@"
+java -XX:TieredStopAtLevel=1 -XX:+UseSerialGC -jar out.jar "$@"

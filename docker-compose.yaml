@@ -22,6 +22,7 @@ services:
       # 4 CPU * 2: compiled jobs are CPU-bound during compile but I/O-wait during
       # isolate setup/cleanup, so 2× vCPU improves throughput without major slowdown
       - COMPILER_MAX_CONCURRENT_JOBS=8
+      - COMPILER_LOG_LEVEL=WARN
 
       # Timeouts (ms)
       - COMPILER_RUN_TIMEOUT=10000

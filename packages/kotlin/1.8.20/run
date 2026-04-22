@@ -2,4 +2,4 @@
 
 # Run jar file
 shift
-java -jar code.jar "$@"
+java -XX:TieredStopAtLevel=1 -XX:+UseSerialGC -jar code.jar "$@"
