@@ -21,10 +21,6 @@ services:
       # 4 dedicated vCPU: 2 × vCPU count
       - COMPILER_MAX_CONCURRENT_JOBS=8
 
-      # Har job uchun memory (8GB RAM bor, ko'proq bersa bo'ladi)
-      - COMPILER_RUN_MEMORY_LIMIT=536870912
-      - COMPILER_COMPILE_MEMORY_LIMIT=1073741824
-
       # Timeouts (ms)
       - COMPILER_RUN_TIMEOUT=10000
       - COMPILER_RUN_CPU_TIME=10000
