@@ -10,6 +10,8 @@ const fs = require('fs/promises');
 const fss = require('fs');
 const body_parser = require('body-parser');
 const runtime = require('./runtime');
+const db = require('./db');
+const { router: authRouter } = require('./auth');
 const logger = Logger.create('index');
 const app = express();
 expressWs(app);
@@ -17,6 +19,9 @@ expressWs(app);
 (async () => {
     logger.info('Setting loglevel to', config.log_level);
     Logger.setLogLevel(config.log_level);
+
+    logger.info('Connecting to database');
+    await db.connect();
 
     logger.debug('Ensuring data directories exist');
     Object.values(globals.data_directories).forEach(dir => {
@@ -65,10 +70,14 @@ expressWs(app);
     logger.debug('Registering Routes');
     const api_v2 = require('./api/v2');
     app.use('/api/v2', api_v2);
+    app.use('/auth', authRouter);
 
     const { version } = require('../package.json');
     app.get('/dashboard', (req, res) => {
         return res.sendFile(path.join(__dirname, 'dashboard.html'));
+    });
+    app.get('/login', (req, res) => {
+        return res.sendFile(path.join(__dirname, 'login.html'));
     });
     app.get('/', (req, res, next) => {
         return res.status(200).send({ message: `Compiler v${version}` });

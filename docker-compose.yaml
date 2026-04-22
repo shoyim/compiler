@@ -1,12 +1,32 @@
 version: '3.8'
 
 services:
+  compiler_db:
+    image: mysql:8.0
+    container_name: compiler_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: compiler_root_pass
+      MYSQL_DATABASE: compiler
+      MYSQL_USER: compiler
+      MYSQL_PASSWORD: compiler_pass
+    volumes:
+      - compiler_db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "compiler", "-pcompiler_pass"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   compiler_api:
     build:
       context: ./api
     container_name: compiler_api
     restart: always
     privileged: true
+    depends_on:
+      compiler_db:
+        condition: service_healthy
     ports:
       - "2000:2000"
     volumes:
@@ -37,3 +57,13 @@ services:
       # Process va file descriptor limitlar
       - COMPILER_MAX_PROCESS_COUNT=64
       - COMPILER_MAX_OPEN_FILES=2048
+
+      # MySQL
+      - DB_HOST=compiler_db
+      - DB_PORT=3306
+      - DB_NAME=compiler
+      - DB_USER=compiler
+      - DB_PASSWORD=compiler_pass
+
+volumes:
+  compiler_db_data:

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — Compiler Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+
+  <div class="w-full max-w-sm">
+    <!-- Logo -->
+    <div class="text-center mb-8">
+      <div class="w-16 h-16 bg-sky-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-sky-500/30">
+        <i class="fa-solid fa-code text-white text-2xl"></i>
+      </div>
+      <h1 class="text-2xl font-bold text-white">Compiler Dashboard</h1>
+      <p class="text-slate-400 text-sm mt-1">Kirish uchun ma'lumot kiriting</p>
+    </div>
+
+    <!-- Card -->
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-2xl">
+      <div id="error" class="hidden mb-4 flex items-center gap-2 bg-red-500/10 border border-red-500/20 text-red-400 text-sm px-3 py-2.5 rounded-lg">
+        <i class="fa-solid fa-circle-exclamation flex-shrink-0"></i>
+        <span id="errorMsg"></span>
+      </div>
+
+      <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-1.5">
+            <i class="fa-solid fa-user text-slate-400 mr-1.5 text-xs"></i>Foydalanuvchi nomi
+          </label>
+          <input id="username" type="text" autocomplete="username" required
+            class="w-full bg-slate-700 border border-slate-600 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent placeholder-slate-500"
+            placeholder="admin">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-1.5">
+            <i class="fa-solid fa-lock text-slate-400 mr-1.5 text-xs"></i>Parol
+          </label>
+          <div class="relative">
+            <input id="password" type="password" autocomplete="current-password" required
+              class="w-full bg-slate-700 border border-slate-600 text-white rounded-lg px-3 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent placeholder-slate-500"
+              placeholder="••••••••">
+            <button type="button" onclick="togglePwd()" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200">
+              <i id="eyeIcon" class="fa-solid fa-eye text-xs"></i>
+            </button>
+          </div>
+        </div>
+        <button type="submit" id="submitBtn"
+          class="w-full bg-sky-500 hover:bg-sky-400 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors flex items-center justify-center gap-2">
+          <i class="fa-solid fa-right-to-bracket"></i>
+          <span id="submitText">Kirish</span>
+        </button>
+      </form>
+    </div>
+
+    <p class="text-center text-slate-500 text-xs mt-6">
+      Default: <span class="text-slate-400 font-mono">admin</span> / <span class="text-slate-400 font-mono">admin123</span>
+    </p>
+  </div>
+
+<script>
+  // Already logged in?
+  if (localStorage.getItem('auth_token')) {
+    fetch('/auth/me', { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('auth_token') } })
+      .then(r => r.ok ? window.location.href = '/dashboard' : null)
+      .catch(() => {});
+  }
+
+  function togglePwd() {
+    const inp = document.getElementById('password');
+    const icon = document.getElementById('eyeIcon');
+    if (inp.type === 'password') {
+      inp.type = 'text';
+      icon.className = 'fa-solid fa-eye-slash text-xs';
+    } else {
+      inp.type = 'password';
+      icon.className = 'fa-solid fa-eye text-xs';
+    }
+  }
+
+  async function handleLogin(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    const txt = document.getElementById('submitText');
+    const err = document.getElementById('error');
+    err.classList.add('hidden');
+    btn.disabled = true;
+    txt.textContent = 'Kirilmoqda...';
+
+    try {
+      const res = await fetch('/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: document.getElementById('username').value,
+          password: document.getElementById('password').value,
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+
+      localStorage.setItem('auth_token', data.token);
+      localStorage.setItem('auth_user', data.username);
+      window.location.href = '/dashboard';
+    } catch(e) {
+      document.getElementById('errorMsg').textContent = e.message;
+      err.classList.remove('hidden');
+      btn.disabled = false;
+      txt.textContent = 'Kirish';
+    }
+  }
+</script>
+</body>
+</html>

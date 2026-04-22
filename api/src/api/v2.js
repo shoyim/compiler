@@ -7,6 +7,39 @@ const package = require('../package');
 const globals = require('../globals');
 const { stat } = require('fs');
 const logger = require('logplease').create('api/v2');
+const { requireAuth } = require('../auth');
+const { getPool } = require('../db');
+
+async function saveJob(uuid, username, result) {
+    try {
+        const c = result.compile;
+        const r = result.run;
+        await getPool().execute(
+            `INSERT INTO jobs
+             (id, username, language, version,
+              compile_exit, compile_time, compile_memory, compile_stdout, compile_stderr, compile_status,
+              run_exit, run_time, run_memory, run_stdout, run_stderr, run_status)
+             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+            [
+                uuid, username || null, result.language, result.version,
+                c?.code ?? null,
+                c != null ? Math.round(c.real_time ?? c.wall_time ?? 0) : null,
+                c?.memory ?? null,
+                (c?.stdout || '').slice(0, 16384),
+                (c?.stderr || '').slice(0, 16384),
+                c?.status ?? null,
+                r?.code ?? null,
+                r != null ? Math.round(r.real_time ?? r.wall_time ?? 0) : null,
+                r?.memory ?? null,
+                (r?.stdout || '').slice(0, 16384),
+                (r?.stderr || '').slice(0, 16384),
+                r?.status ?? null,
+            ]
+        );
+    } catch (e) {
+        logger.warn('saveJob failed:', e.message);
+    }
+}
 
 function format_time(ms) {
     if (ms === null || ms === undefined) return null;
@@ -140,7 +173,7 @@ router.use((req, res, next) => {
     next();
 });
 
-router.ws('/connect', async (ws, req) => {
+router.ws('/connect', requireAuth, async (ws, req) => {
     let job = null;
     let event_bus = new events.EventEmitter();
 
@@ -217,7 +250,7 @@ router.ws('/connect', async (ws, req) => {
     }, 1000);
 });
 
-router.post('/execute', async (req, res) => {
+router.post('/execute', requireAuth, async (req, res) => {
     let job;
     try {
         job = await get_job(req.body);
@@ -242,6 +275,7 @@ router.post('/execute', async (req, res) => {
             response.compile = format_stage(result.compile);
         }
 
+        saveJob(job.uuid, req.authUser, result);
         return res.status(200).send(response);
     } catch (error) {
         logger.error(`Error executing job: ${job.uuid}:\n${error}`);
@@ -254,6 +288,31 @@ router.post('/execute', async (req, res) => {
             return res.status(500).send();
         }
     }
+});
+
+router.get('/jobs', requireAuth, async (req, res) => {
+    const limit = Math.min(parseInt(req.query.limit || '100'), 500);
+    const offset = parseInt(req.query.offset || '0');
+    const lang = req.query.language || null;
+    const params = [];
+    let where = '';
+    if (lang) { where = 'WHERE language = ? '; params.push(lang); }
+    params.push(limit, offset);
+    const [rows] = await getPool().execute(
+        `SELECT id, username, language, version,
+                compile_exit, compile_time, compile_memory, compile_status,
+                run_exit, run_time, run_memory, run_status,
+                created_at
+         FROM jobs ${where}ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+        params
+    );
+    return res.json(rows);
+});
+
+router.get('/jobs/:id', requireAuth, async (req, res) => {
+    const [rows] = await getPool().execute('SELECT * FROM jobs WHERE id = ?', [req.params.id]);
+    if (!rows[0]) return res.status(404).json({ message: 'Job topilmadi' });
+    return res.json(rows[0]);
 });
 
 router.get('/runtimes', (req, res) => {
