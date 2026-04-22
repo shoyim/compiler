@@ -67,6 +67,9 @@ expressWs(app);
     app.use('/api/v2', api_v2);
 
     const { version } = require('../package.json');
+    app.get('/dashboard', (req, res) => {
+        return res.sendFile(path.join(__dirname, 'dashboard.html'));
+    });
     app.get('/', (req, res, next) => {
         return res.status(200).send({ message: `Compiler v${version}` });
     });

@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Compiler Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { brand: { 50:'#f0f9ff',500:'#0ea5e9',600:'#0284c7',700:'#0369a1' } }
+        }
+      }
+    }
+  </script>
+  <style>
+    .card-enter { animation: fadeIn .2s ease; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+    .spin { animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .toast { animation: slideIn .3s ease; }
+    @keyframes slideIn { from { transform:translateX(100%); opacity:0; } to { transform:none; opacity:1; } }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans text-gray-800">
+
+<!-- Toast Container -->
+<div id="toasts" class="fixed top-4 right-4 z-50 flex flex-col gap-2 w-80"></div>
+
+<!-- Header -->
+<header class="bg-white border-b border-gray-200 sticky top-0 z-40">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 bg-brand-600 rounded-lg flex items-center justify-center">
+        <i class="fa-solid fa-code text-white text-sm"></i>
+      </div>
+      <div>
+        <h1 class="text-lg font-bold text-gray-900 leading-none">Compiler Dashboard</h1>
+        <p class="text-xs text-gray-400 mt-0.5">Package Manager</p>
+      </div>
+    </div>
+    <button onclick="loadAll()" class="flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+      <i class="fa-solid fa-arrows-rotate text-gray-500 text-xs" id="refreshIcon"></i>
+      <span class="text-gray-600">Yangilash</span>
+    </button>
+  </div>
+</header>
+
+<!-- Stats Bar -->
+<div class="bg-white border-b border-gray-100">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex gap-6">
+    <div class="flex items-center gap-2">
+      <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+      <span class="text-sm text-gray-500">Jami:</span>
+      <span class="text-sm font-semibold text-gray-800" id="statTotal">—</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <div class="w-2 h-2 rounded-full bg-green-500"></div>
+      <span class="text-sm text-gray-500">O'rnatilgan:</span>
+      <span class="text-sm font-semibold text-green-700" id="statInstalled">—</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <div class="w-2 h-2 rounded-full bg-gray-400"></div>
+      <span class="text-sm text-gray-500">Mavjud:</span>
+      <span class="text-sm font-semibold text-gray-600" id="statAvailable">—</span>
+    </div>
+  </div>
+</div>
+
+<!-- Controls -->
+<div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row gap-3">
+  <!-- Search -->
+  <div class="relative flex-1">
+    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+    <input id="search" type="text" placeholder="Til qidirish..." oninput="render()"
+      class="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent">
+  </div>
+  <!-- Filter Tabs -->
+  <div class="flex bg-gray-100 rounded-lg p-1 gap-1">
+    <button onclick="setFilter('all')" id="tab-all"
+      class="tab-btn px-4 py-1.5 text-sm rounded-md font-medium transition-all bg-white text-gray-800 shadow-sm">
+      Hammasi
+    </button>
+    <button onclick="setFilter('installed')" id="tab-installed"
+      class="tab-btn px-4 py-1.5 text-sm rounded-md font-medium transition-all text-gray-500 hover:text-gray-700">
+      <i class="fa-solid fa-circle-check text-green-500 mr-1 text-xs"></i>O'rnatilgan
+    </button>
+    <button onclick="setFilter('available')" id="tab-available"
+      class="tab-btn px-4 py-1.5 text-sm rounded-md font-medium transition-all text-gray-500 hover:text-gray-700">
+      <i class="fa-solid fa-circle-plus text-gray-400 mr-1 text-xs"></i>Mavjud
+    </button>
+  </div>
+</div>
+
+<!-- Package Grid -->
+<main class="max-w-7xl mx-auto px-4 sm:px-6 pb-12">
+  <div id="grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"></div>
+  <div id="empty" class="hidden text-center py-20 text-gray-400">
+    <i class="fa-solid fa-box-open text-4xl mb-3"></i>
+    <p class="text-lg font-medium">Hech narsa topilmadi</p>
+    <p class="text-sm mt-1">Boshqa kalit so'z bilan qidiring</p>
+  </div>
+  <div id="loading" class="text-center py-20 text-gray-400">
+    <i class="fa-solid fa-circle-notch text-3xl spin text-brand-500 mb-3"></i>
+    <p class="text-sm">Yuklanmoqda...</p>
+  </div>
+</main>
+
+<script>
+const LANG_META = {
+  python:     { icon:'fa-brands fa-python',       color:'#3776AB', bg:'#EBF4FB' },
+  node:       { icon:'fa-brands fa-node-js',       color:'#339933', bg:'#EBF7EB' },
+  javascript: { icon:'fa-brands fa-js',            color:'#F7DF1E', bg:'#FEFDE7' },
+  typescript: { icon:'fa-brands fa-js',            color:'#3178C6', bg:'#EBF3FD' },
+  java:       { icon:'fa-brands fa-java',          color:'#ED8B00', bg:'#FEF3E6' },
+  kotlin:     { icon:'fa-solid fa-k',              color:'#7F52FF', bg:'#F3EEFF' },
+  scala:      { icon:'fa-solid fa-s',              color:'#DC322F', bg:'#FDEAEA' },
+  groovy:     { icon:'fa-solid fa-g',              color:'#4298B8', bg:'#EBF5FA' },
+  c:          { icon:'fa-solid fa-c',              color:'#A8B9CC', bg:'#F5F6F8' },
+  'c++':      { icon:'fa-solid fa-code',           color:'#00599C', bg:'#EBF2FA' },
+  cpp:        { icon:'fa-solid fa-code',           color:'#00599C', bg:'#EBF2FA' },
+  rust:       { icon:'fa-brands fa-rust',          color:'#CE422B', bg:'#FDECEA' },
+  go:         { icon:'fa-solid fa-circle',         color:'#00ACD7', bg:'#E6F7FC' },
+  ruby:       { icon:'fa-solid fa-gem',            color:'#CC342D', bg:'#FDECEA' },
+  php:        { icon:'fa-brands fa-php',           color:'#777BB4', bg:'#F2F2F9' },
+  swift:      { icon:'fa-brands fa-swift',         color:'#FA7343', bg:'#FEF0EA' },
+  bash:       { icon:'fa-solid fa-terminal',       color:'#4EAA25', bg:'#EBF7E8' },
+  dash:       { icon:'fa-solid fa-terminal',       color:'#555555', bg:'#F3F3F3' },
+  lua:        { icon:'fa-solid fa-moon',           color:'#000080', bg:'#E8E8F7' },
+  perl:       { icon:'fa-brands fa-perl',          color:'#39457E', bg:'#ECEEF7' },
+  haskell:    { icon:'fa-solid fa-lambda',         color:'#5E5086', bg:'#F0EEF8' },
+  erlang:     { icon:'fa-solid fa-e',              color:'#A90533', bg:'#FDEAEA' },
+  elixir:     { icon:'fa-solid fa-droplet',        color:'#6E4A7E', bg:'#F2EEF7' },
+  clojure:    { icon:'fa-solid fa-circle-half-stroke', color:'#5881D8', bg:'#EDF1FD' },
+  dart:       { icon:'fa-solid fa-d',              color:'#0175C2', bg:'#EBF4FD' },
+  r:          { icon:'fa-solid fa-r',              color:'#2166AC', bg:'#EBF2FA' },
+  rscript:    { icon:'fa-solid fa-chart-bar',      color:'#2166AC', bg:'#EBF2FA' },
+  julia:      { icon:'fa-solid fa-circle',         color:'#9558B2', bg:'#F3EEF8' },
+  ocaml:      { icon:'fa-solid fa-o',              color:'#EC6813', bg:'#FEF0E9' },
+  nim:        { icon:'fa-solid fa-n',              color:'#FFE953', bg:'#FFFDE7' },
+  zig:        { icon:'fa-solid fa-z',              color:'#F7A41D', bg:'#FEF6E8' },
+  pascal:     { icon:'fa-solid fa-p',              color:'#0055A0', bg:'#EBF2FA' },
+  fortran:    { icon:'fa-solid fa-f',              color:'#734F96', bg:'#F2EDF8' },
+  cobol:      { icon:'fa-solid fa-building',       color:'#003366', bg:'#EBF0F8' },
+  prolog:     { icon:'fa-solid fa-brain',          color:'#E01F26', bg:'#FDEAEA' },
+  sqlite3:    { icon:'fa-solid fa-database',       color:'#0078D4', bg:'#EBF4FD' },
+  brainfuck:  { icon:'fa-solid fa-circle-nodes',   color:'#FF6B6B', bg:'#FDECEA' },
+  default:    { icon:'fa-solid fa-code',           color:'#6B7280', bg:'#F3F4F6' },
+};
+
+function getMeta(lang) {
+  const key = lang.toLowerCase().replace(/[^a-z0-9+#]/g, '');
+  return LANG_META[key] || LANG_META[lang.toLowerCase()] || LANG_META.default;
+}
+
+let allPackages = [];
+let currentFilter = 'all';
+let pendingPkgs = new Set();
+
+function setFilter(f) {
+  currentFilter = f;
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.remove('bg-white','text-gray-800','shadow-sm');
+    b.classList.add('text-gray-500');
+  });
+  const active = document.getElementById('tab-'+f);
+  active.classList.add('bg-white','text-gray-800','shadow-sm');
+  active.classList.remove('text-gray-500');
+  render();
+}
+
+function render() {
+  const query = document.getElementById('search').value.toLowerCase().trim();
+  const filtered = allPackages.filter(p => {
+    const matchSearch = p.language.toLowerCase().includes(query) || p.language_version.includes(query);
+    const matchFilter =
+      currentFilter === 'all' ? true :
+      currentFilter === 'installed' ? p.installed :
+      !p.installed;
+    return matchSearch && matchFilter;
+  });
+
+  const grid = document.getElementById('grid');
+  const empty = document.getElementById('empty');
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+
+  grid.innerHTML = filtered.map(pkg => {
+    const meta = getMeta(pkg.language);
+    const isPending = pendingPkgs.has(pkg.language + pkg.language_version);
+    return `
+    <div class="card-enter bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all overflow-hidden group">
+      <!-- Card Top -->
+      <div class="p-4 flex items-start gap-3">
+        <div class="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 text-xl"
+          style="background:${meta.bg}; color:${meta.color}">
+          <i class="${meta.icon}"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2">
+            <h3 class="font-semibold text-gray-800 truncate capitalize">${pkg.language}</h3>
+            ${pkg.installed ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-green-50 text-green-700 border border-green-100">
+              <i class="fa-solid fa-check mr-0.5 text-[9px]"></i>Faol
+            </span>` : ''}
+          </div>
+          <p class="text-xs text-gray-400 mt-0.5 font-mono">v${pkg.language_version}</p>
+        </div>
+      </div>
+      <!-- Card Footer -->
+      <div class="px-4 pb-4">
+        ${pkg.installed
+          ? `<button onclick="uninstall('${pkg.language}','${pkg.language_version}')"
+              ${isPending ? 'disabled' : ''}
+              class="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+              ${isPending
+                ? `<i class="fa-solid fa-circle-notch spin text-xs"></i><span>O'chirilmoqda...</span>`
+                : `<i class="fa-solid fa-trash-can text-xs"></i><span>O'chirish</span>`}
+            </button>`
+          : `<button onclick="install('${pkg.language}','${pkg.language_version}')"
+              ${isPending ? 'disabled' : ''}
+              class="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-lg bg-brand-600 text-white hover:bg-brand-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+              ${isPending
+                ? `<i class="fa-solid fa-circle-notch spin text-xs"></i><span>O'rnatilmoqda...</span>`
+                : `<i class="fa-solid fa-download text-xs"></i><span>O'rnatish</span>`}
+            </button>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateStats() {
+  const total = allPackages.length;
+  const installed = allPackages.filter(p => p.installed).length;
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statInstalled').textContent = installed;
+  document.getElementById('statAvailable').textContent = total - installed;
+}
+
+async function loadAll() {
+  const icon = document.getElementById('refreshIcon');
+  icon.classList.add('spin');
+  try {
+    const res = await fetch('/api/v2/packages');
+    allPackages = await res.json();
+    updateStats();
+    document.getElementById('loading').classList.add('hidden');
+    render();
+  } catch(e) {
+    toast('Serverga ulanib bo\'lmadi', 'error');
+  } finally {
+    icon.classList.remove('spin');
+  }
+}
+
+async function install(lang, version) {
+  const key = lang + version;
+  pendingPkgs.add(key);
+  render();
+  try {
+    const res = await fetch('/api/v2/packages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ language: lang, version })
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.message || 'Xatolik');
+    }
+    toast(`${lang} v${version} muvaffaqiyatli o'rnatildi`, 'success');
+    await loadAll();
+  } catch(e) {
+    toast(e.message, 'error');
+    pendingPkgs.delete(key);
+    render();
+  }
+}
+
+async function uninstall(lang, version) {
+  const key = lang + version;
+  pendingPkgs.add(key);
+  render();
+  try {
+    const res = await fetch('/api/v2/packages', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ language: lang, version })
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.message || 'Xatolik');
+    }
+    toast(`${lang} v${version} o'chirildi`, 'info');
+    await loadAll();
+  } catch(e) {
+    toast(e.message, 'error');
+    pendingPkgs.delete(key);
+    render();
+  }
+}
+
+function toast(msg, type = 'info') {
+  const colors = {
+    success: 'bg-green-500',
+    error:   'bg-red-500',
+    info:    'bg-blue-500',
+  };
+  const icons = {
+    success: 'fa-circle-check',
+    error:   'fa-circle-xmark',
+    info:    'fa-circle-info',
+  };
+  const el = document.createElement('div');
+  el.className = `toast flex items-center gap-3 px-4 py-3 rounded-xl text-white text-sm shadow-lg ${colors[type]}`;
+  el.innerHTML = `<i class="fa-solid ${icons[type]} flex-shrink-0"></i><span>${msg}</span>`;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+loadAll();
+</script>
+</body>
+</html>
