@@ -25,7 +25,8 @@ const runtime_baselines = new Map();
 const baseline_promises = new Map();
 
 // Pre-warmed box pool — eliminates isolate --init latency from the critical path
-const BOX_POOL_SIZE = Math.min(config.max_concurrent_jobs, 8);
+// Compiled languages need 2 boxes per job (compile + run), so size = jobs * 2
+const BOX_POOL_SIZE = Math.min(config.max_concurrent_jobs * 2, 20);
 const box_pool = [];
 
 function spawn_box_into_pool() {
@@ -134,8 +135,11 @@ class Job {
         let box;
         if (box_pool.length > 0) {
             box = box_pool.shift();
-            // Refill pool in background so the next request also gets a warm box
-            setImmediate(spawn_box_into_pool);
+            // Aggressively refill: compiled jobs consume 2 boxes each, so spawn 2 back
+            setImmediate(() => {
+                spawn_box_into_pool();
+                if (box_pool.length < BOX_POOL_SIZE / 2) spawn_box_into_pool();
+            });
         } else {
             const bid = get_next_box_id();
             const stdout = await new Promise((res, rej) => {
@@ -195,10 +199,10 @@ class Job {
             })
         );
 
-        // Only block if baseline still not ready
+        // Never block on baseline — if not cached yet, use 0 now; background promise
+        // will populate the cache so subsequent requests get accurate memory deltas.
         if (!runtime_baselines.has(this.runtime.language)) {
-            this.logger.debug(`Measuring baseline for ${this.runtime.language}`);
-            await baseline_promise;
+            this.logger.debug(`Baseline for ${this.runtime.language} not yet ready, using 0`);
         }
 
         this.state = job_states.PRIMED;
