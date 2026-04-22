@@ -4,4 +4,4 @@
 
 rename 's/$/\.ts/' "$@" # Add .ts extension
 
-tsc *.ts
+tsc --skipLibCheck --noEmitOnError false *.ts
