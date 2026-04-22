@@ -17,14 +17,25 @@ const job_states = {
     EXECUTED: Symbol('Executed and ready for cleanup'),
 };
 
-const MAX_BOX_ID = 999;
 const ISOLATE_PATH = '/usr/local/bin/isolate';
-let box_id = 0;
 
 let remaining_job_spaces = config.max_concurrent_jobs;
 let job_queue = [];
 
-const get_next_box_id = () => ++box_id % MAX_BOX_ID;
+// Fixed ID pool: each ID is in exactly one state (free / in-use) at all times.
+// A simple counter wraps around and reuses IDs that are still live — that causes
+// EACCES when isolate --init re-initialises a box that hasn't been cleaned up yet.
+const TOTAL_BOX_IDS = Math.max(config.max_concurrent_jobs * 6, 64);
+const free_box_ids = Array.from({ length: TOTAL_BOX_IDS }, (_, i) => i + 1);
+
+function acquire_box_id() {
+    if (free_box_ids.length === 0) throw new Error('No free isolate box IDs available');
+    return free_box_ids.shift();
+}
+
+function release_box_id(id) {
+    free_box_ids.push(id);
+}
 
 const runtime_baselines = new Map();
 const baseline_promises = new Map();
@@ -35,7 +46,7 @@ const BOX_POOL_SIZE = Math.min(config.max_concurrent_jobs * 2, 20);
 const box_pool = [];
 
 function spawn_box_into_pool() {
-    const bid = get_next_box_id();
+    const bid = acquire_box_id();
     cp.exec(`isolate --init --cg -b${bid}`, (err, stdout) => {
         if (!err && stdout && stdout.trim()) {
             box_pool.push({
@@ -43,6 +54,9 @@ function spawn_box_into_pool() {
                 metadata_file_path: `/tmp/${bid}-metadata.txt`,
                 dir: `${stdout.trim()}/box`,
             });
+        } else {
+            // init failed — return the ID immediately so it can be reused
+            release_box_id(bid);
         }
     });
 }
@@ -59,7 +73,7 @@ async function measure_runtime_baseline(runtime) {
     }
 
     const promise = (async () => {
-        const bid = get_next_box_id();
+        const bid = acquire_box_id();
         const baseline_meta = `/tmp/baseline-${runtime.language}-${bid}.txt`;
         try {
             const box_dir = await new Promise((res, rej) => {
@@ -94,7 +108,7 @@ async function measure_runtime_baseline(runtime) {
             return 0;
         } finally {
             baseline_promises.delete(runtime.language);
-            cp.exec(`isolate --cleanup --cg -b${bid}`, () => {});
+            cp.exec(`isolate --cleanup --cg -b${bid}`, () => release_box_id(bid));
             fs.rm(baseline_meta).catch(() => {});
         }
     })();
@@ -146,14 +160,16 @@ class Job {
                 if (box_pool.length < BOX_POOL_SIZE / 2) spawn_box_into_pool();
             });
         } else {
-            const bid = get_next_box_id();
+            const bid = acquire_box_id();
             const stdout = await new Promise((res, rej) => {
                 cp.exec(
                     `isolate --init --cg -b${bid}`,
                     (error, out, stderr) => {
                         if (error) {
+                            release_box_id(bid);
                             rej(`Failed to run isolate --init: ${error.message}\nstdout: ${out}\nstderr: ${stderr}`);
                         } else if (!out) {
+                            release_box_id(bid);
                             rej('Received empty stdout from isolate --init');
                         } else {
                             res(out);
@@ -484,6 +500,9 @@ class Job {
                 cp.exec(
                     `isolate --cleanup --cg -b${box.id}`,
                     (error, stdout, stderr) => {
+                        // Return the ID to the free pool only after cleanup completes,
+                        // so the same ID is never re-initialised while still in use.
+                        release_box_id(box.id);
                         if (error) {
                             this.logger.error(
                                 `Failed to run isolate --cleanup: ${error.message} on box #${box.id}\nstdout: ${stdout}\nstderr: ${stderr}`
@@ -494,9 +513,11 @@ class Job {
                 try {
                     await fs.rm(box.metadata_file_path);
                 } catch (e) {
-                    this.logger.error(
-                        `Failed to remove the metadata directory of box #${box.id}. Error: ${e.message}`
-                    );
+                    if (e.code !== 'ENOENT') {
+                        this.logger.error(
+                            `Failed to remove the metadata file of box #${box.id}. Error: ${e.message}`
+                        );
+                    }
                 }
             })
         );
