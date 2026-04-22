@@ -12,18 +12,18 @@ services:
     volumes:
       - ./data/compiler/packages:/compiler/packages
     tmpfs:
-      - /tmp:exec,size=512m
+      - /tmp:exec,size=1g
     deploy:
       resources:
         limits:
-          memory: 2560M
+          memory: 6144M
     environment:
-      # 2 vCPU uchun optimal: 2 × vCPU count
-      - COMPILER_MAX_CONCURRENT_JOBS=4
+      # 4 dedicated vCPU: 2 × vCPU count
+      - COMPILER_MAX_CONCURRENT_JOBS=8
 
-      # Har job uchun memory limit (OOM'dan himoya)
-      - COMPILER_RUN_MEMORY_LIMIT=268435456
-      - COMPILER_COMPILE_MEMORY_LIMIT=536870912
+      # Har job uchun memory (8GB RAM bor, ko'proq bersa bo'ladi)
+      - COMPILER_RUN_MEMORY_LIMIT=536870912
+      - COMPILER_COMPILE_MEMORY_LIMIT=1073741824
 
       # Timeouts (ms)
       - COMPILER_RUN_TIMEOUT=10000
@@ -31,7 +31,7 @@ services:
       - COMPILER_COMPILE_TIMEOUT=15000
       - COMPILER_COMPILE_CPU_TIME=15000
 
-      # Output va fayl o'lchamlari (32MB yetarli)
+      # Output va fayl o'lchamlari
       - COMPILER_OUTPUT_MAX_SIZE=33554432
       - COMPILER_MAX_FILE_SIZE=10485760
 
