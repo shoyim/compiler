@@ -6,6 +6,11 @@ const config = require('./config');
 const fs = require('fs/promises');
 const globals = require('./globals');
 
+// Cache log level at startup so _shouldLog doesn't re-read process.env every call
+const LOG_LEVEL = (config.log_level || 'INFO').toUpperCase();
+const IS_DEBUG = LOG_LEVEL === 'DEBUG';
+logplease.setLogLevel(LOG_LEVEL);
+
 const job_states = {
     READY: Symbol('Ready to be primed'),
     PRIMED: Symbol('Primed and ready for execution'),
@@ -175,14 +180,12 @@ class Job {
         }
         this.logger.info(`Priming job`);
         remaining_job_spaces--;
-        this.logger.debug('Running isolate --init');
 
         // Start baseline measurement concurrently with box creation
         const baseline_promise = measure_runtime_baseline(this.runtime);
 
         const box = await this.#create_isolate_box();
 
-        this.logger.debug(`Creating submission files in Isolate box`);
         const submission_dir = path.join(box.dir, 'submission');
         await fs.mkdir(submission_dir);
 
@@ -199,14 +202,7 @@ class Job {
             })
         );
 
-        // Never block on baseline — if not cached yet, use 0 now; background promise
-        // will populate the cache so subsequent requests get accurate memory deltas.
-        if (!runtime_baselines.has(this.runtime.language)) {
-            this.logger.debug(`Baseline for ${this.runtime.language} not yet ready, using 0`);
-        }
-
         this.state = job_states.PRIMED;
-        this.logger.debug('Primed job');
         return box;
     }
 
@@ -283,7 +279,7 @@ class Job {
                 try {
                     process.kill(proc.pid, 'SIGABRT');
                 } catch (e) {
-                    this.logger.debug(`Got error while SIGABRTing process ${proc}:`, e);
+                    if (IS_DEBUG) this.logger.debug(`Got error while SIGABRTing process ${proc}:`, e);
                 }
             } else {
                 stderr_size += data.length;
@@ -302,7 +298,7 @@ class Job {
                 try {
                     process.kill(proc.pid, 'SIGABRT');
                 } catch (e) {
-                    this.logger.debug(`Got error while SIGABRTing process ${proc}:`, e);
+                    if (IS_DEBUG) this.logger.debug(`Got error while SIGABRTing process ${proc}:`, e);
                 }
             } else {
                 stdout_size += data.length;
@@ -419,7 +415,7 @@ class Job {
                   };
 
         if (this.runtime.compiled) {
-            this.logger.debug('Compiling');
+            if (IS_DEBUG) this.logger.debug('Compiling');
             emit_event_bus_stage('compile');
 
             // Create the run box concurrently with compilation to hide isolate --init latency
@@ -453,7 +449,7 @@ class Job {
 
         let run;
         if (!compile_errored) {
-            this.logger.debug('Running');
+            if (IS_DEBUG) this.logger.debug('Running');
             emit_event_bus_stage('run');
             run = await this.safe_call(
                 box,
