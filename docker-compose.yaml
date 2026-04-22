@@ -13,7 +13,7 @@ services:
       - ./data/compiler/packages:/compiler/packages
     tmpfs:
       - /tmp:exec,size=1g
-      - /var/local/lib/isolate:size=2g,mode=700
+      - /var/local/lib/isolate:size=2g,mode=755
     deploy:
       resources:
         limits:
