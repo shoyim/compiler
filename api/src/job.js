@@ -22,50 +22,79 @@ let job_queue = [];
 const get_next_box_id = () => ++box_id % MAX_BOX_ID;
 
 const runtime_baselines = new Map();
+const baseline_promises = new Map();
+
+// Pre-warmed box pool — eliminates isolate --init latency from the critical path
+const BOX_POOL_SIZE = Math.min(config.max_concurrent_jobs, 8);
+const box_pool = [];
+
+function spawn_box_into_pool() {
+    const bid = get_next_box_id();
+    cp.exec(`isolate --init --cg -b${bid}`, (err, stdout) => {
+        if (!err && stdout && stdout.trim()) {
+            box_pool.push({
+                id: bid,
+                metadata_file_path: `/tmp/${bid}-metadata.txt`,
+                dir: `${stdout.trim()}/box`,
+            });
+        }
+    });
+}
+
+for (let i = 0; i < BOX_POOL_SIZE; i++) spawn_box_into_pool();
 
 async function measure_runtime_baseline(runtime) {
     if (runtime_baselines.has(runtime.language)) {
         return runtime_baselines.get(runtime.language);
     }
-
-    const bid = get_next_box_id();
-    const baseline_meta = `/tmp/baseline-${runtime.language}-${bid}.txt`;
-
-    try {
-        const box_dir = await new Promise((res, rej) => {
-            cp.exec(`isolate --init --cg -b${bid}`, (err, stdout) => {
-                if (err) rej(err);
-                else res(`${stdout.trim()}/box`);
-            });
-        });
-
-        const submission_dir = path.join(box_dir, 'submission');
-        await fs.mkdir(submission_dir, { recursive: true });
-        await fs.writeFile(path.join(submission_dir, 'empty.code'), '');
-
-        await new Promise(res => {
-            cp.exec(
-                `isolate --run --cg -b${bid} --meta=${baseline_meta} -s -- /bin/bash ${path.join(runtime.pkgdir, 'run')} empty.code 2>/dev/null`,
-                () => res()
-            );
-        });
-
-        let baseline = 0;
-        try {
-            const meta = (await fs.readFile(baseline_meta)).toString();
-            const match = meta.match(/max-rss:(\d+)/);
-            if (match) baseline = parseInt(match[1]) * 1024;
-        } catch (_) {}
-
-        runtime_baselines.set(runtime.language, baseline);
-        return baseline;
-    } catch (_) {
-        runtime_baselines.set(runtime.language, 0);
-        return 0;
-    } finally {
-        cp.exec(`isolate --cleanup --cg -b${bid}`, () => {});
-        fs.rm(baseline_meta).catch(() => {});
+    // Reuse in-flight promise to prevent duplicate measurements for same language
+    if (baseline_promises.has(runtime.language)) {
+        return baseline_promises.get(runtime.language);
     }
+
+    const promise = (async () => {
+        const bid = get_next_box_id();
+        const baseline_meta = `/tmp/baseline-${runtime.language}-${bid}.txt`;
+        try {
+            const box_dir = await new Promise((res, rej) => {
+                cp.exec(`isolate --init --cg -b${bid}`, (err, stdout) => {
+                    if (err) rej(err);
+                    else res(`${stdout.trim()}/box`);
+                });
+            });
+
+            const submission_dir = path.join(box_dir, 'submission');
+            await fs.mkdir(submission_dir, { recursive: true });
+            await fs.writeFile(path.join(submission_dir, 'empty.code'), '');
+
+            await new Promise(res => {
+                cp.exec(
+                    `isolate --run --cg -b${bid} --meta=${baseline_meta} -s -- /bin/bash ${path.join(runtime.pkgdir, 'run')} empty.code 2>/dev/null`,
+                    () => res()
+                );
+            });
+
+            let baseline = 0;
+            try {
+                const meta = (await fs.readFile(baseline_meta)).toString();
+                const match = meta.match(/max-rss:(\d+)/);
+                if (match) baseline = parseInt(match[1]) * 1024;
+            } catch (_) {}
+
+            runtime_baselines.set(runtime.language, baseline);
+            return baseline;
+        } catch (_) {
+            runtime_baselines.set(runtime.language, 0);
+            return 0;
+        } finally {
+            baseline_promises.delete(runtime.language);
+            cp.exec(`isolate --cleanup --cg -b${bid}`, () => {});
+            fs.rm(baseline_meta).catch(() => {});
+        }
+    })();
+
+    baseline_promises.set(runtime.language, promise);
+    return promise;
 }
 
 class Job {
@@ -102,28 +131,35 @@ class Job {
     }
 
     async #create_isolate_box() {
-        const box_id = get_next_box_id();
-        const metadata_file_path = `/tmp/${box_id}-metadata.txt`;
-        return new Promise((res, rej) => {
-            cp.exec(
-                `isolate --init --cg -b${box_id}`,
-                (error, stdout, stderr) => {
-                    if (error) {
-                        rej(`Failed to run isolate --init: ${error.message}\nstdout: ${stdout}\nstderr: ${stderr}`);
+        let box;
+        if (box_pool.length > 0) {
+            box = box_pool.shift();
+            // Refill pool in background so the next request also gets a warm box
+            setImmediate(spawn_box_into_pool);
+        } else {
+            const bid = get_next_box_id();
+            const stdout = await new Promise((res, rej) => {
+                cp.exec(
+                    `isolate --init --cg -b${bid}`,
+                    (error, out, stderr) => {
+                        if (error) {
+                            rej(`Failed to run isolate --init: ${error.message}\nstdout: ${out}\nstderr: ${stderr}`);
+                        } else if (!out) {
+                            rej('Received empty stdout from isolate --init');
+                        } else {
+                            res(out);
+                        }
                     }
-                    if (stdout === '') {
-                        rej('Received empty stdout from isolate --init');
-                    }
-                    const box = {
-                        id: box_id,
-                        metadata_file_path,
-                        dir: `${stdout.trim()}/box`,
-                    };
-                    this.#dirty_boxes.push(box);
-                    res(box);
-                }
-            );
-        });
+                );
+            });
+            box = {
+                id: bid,
+                metadata_file_path: `/tmp/${bid}-metadata.txt`,
+                dir: `${stdout.trim()}/box`,
+            };
+        }
+        this.#dirty_boxes.push(box);
+        return box;
     }
 
     async prime() {
@@ -136,24 +172,33 @@ class Job {
         this.logger.info(`Priming job`);
         remaining_job_spaces--;
         this.logger.debug('Running isolate --init');
+
+        // Start baseline measurement concurrently with box creation
+        const baseline_promise = measure_runtime_baseline(this.runtime);
+
         const box = await this.#create_isolate_box();
 
         this.logger.debug(`Creating submission files in Isolate box`);
         const submission_dir = path.join(box.dir, 'submission');
         await fs.mkdir(submission_dir);
-        for (const file of this.files) {
-            const file_path = path.join(submission_dir, file.name);
-            const rel = path.relative(submission_dir, file_path);
-            if (rel.startsWith('..'))
-                throw Error(`File path "${file.name}" tries to escape parent directory: ${rel}`);
-            const file_content = Buffer.from(file.content, file.encoding);
-            await fs.mkdir(path.dirname(file_path), { recursive: true, mode: 0o700 });
-            await fs.writeFile(file_path, file_content);
-        }
 
+        // Write all submission files in parallel
+        await Promise.all(
+            this.files.map(async file => {
+                const file_path = path.join(submission_dir, file.name);
+                const rel = path.relative(submission_dir, file_path);
+                if (rel.startsWith('..'))
+                    throw Error(`File path "${file.name}" tries to escape parent directory: ${rel}`);
+                const file_content = Buffer.from(file.content, file.encoding);
+                await fs.mkdir(path.dirname(file_path), { recursive: true, mode: 0o700 });
+                await fs.writeFile(file_path, file_content);
+            })
+        );
+
+        // Only block if baseline still not ready
         if (!runtime_baselines.has(this.runtime.language)) {
             this.logger.debug(`Measuring baseline for ${this.runtime.language}`);
-            await measure_runtime_baseline(this.runtime);
+            await baseline_promise;
         }
 
         this.state = job_states.PRIMED;
@@ -162,9 +207,12 @@ class Job {
     }
 
     async safe_call(box, file, args, timeout, cpu_time, memory_limit, event_bus = null) {
-        let stdout = '';
-        let stderr = '';
-        let output = '';
+        // Use Buffer chunks to avoid O(n²) string concatenation on large outputs
+        const stdout_chunks = [];
+        const stderr_chunks = [];
+        const output_chunks = [];
+        let stdout_size = 0;
+        let stderr_size = 0;
         let memory = null;
         let code = null;
         let signal = null;
@@ -221,10 +269,10 @@ class Job {
             });
         }
 
-        proc.stderr.on('data', async data => {
+        proc.stderr.on('data', data => {
             if (event_bus !== null) {
                 event_bus.emit('stderr', data);
-            } else if (stderr.length + data.length > this.runtime.output_max_size) {
+            } else if (stderr_size + data.length > this.runtime.output_max_size) {
                 message = 'stderr length exceeded';
                 status = 'EL';
                 this.logger.info(message);
@@ -234,15 +282,16 @@ class Job {
                     this.logger.debug(`Got error while SIGABRTing process ${proc}:`, e);
                 }
             } else {
-                stderr += data;
-                output += data;
+                stderr_size += data.length;
+                stderr_chunks.push(data);
+                output_chunks.push(data);
             }
         });
 
-        proc.stdout.on('data', async data => {
+        proc.stdout.on('data', data => {
             if (event_bus !== null) {
                 event_bus.emit('stdout', data);
-            } else if (stdout.length + data.length > this.runtime.output_max_size) {
+            } else if (stdout_size + data.length > this.runtime.output_max_size) {
                 message = 'stdout length exceeded';
                 status = 'OL';
                 this.logger.info(message);
@@ -252,8 +301,9 @@ class Job {
                     this.logger.debug(`Got error while SIGABRTing process ${proc}:`, e);
                 }
             } else {
-                stdout += data;
-                output += data;
+                stdout_size += data.length;
+                stdout_chunks.push(data);
+                output_chunks.push(data);
             }
         });
 
@@ -268,6 +318,10 @@ class Job {
 
         const wall_end = process.hrtime.bigint();
         const real_time = Math.round(Number(wall_end - wall_start) / 1_000_000);
+
+        const stdout = Buffer.concat(stdout_chunks).toString();
+        const stderr = Buffer.concat(stderr_chunks).toString();
+        const output = Buffer.concat(output_chunks).toString();
 
         try {
             const metadata_str = (await fs.readFile(box.metadata_file_path)).toString();
@@ -363,6 +417,10 @@ class Job {
         if (this.runtime.compiled) {
             this.logger.debug('Compiling');
             emit_event_bus_stage('compile');
+
+            // Create the run box concurrently with compilation to hide isolate --init latency
+            const next_box_promise = this.#create_isolate_box();
+
             compile = await this.safe_call(
                 box,
                 'compile',
@@ -374,13 +432,18 @@ class Job {
             );
             emit_event_bus_result('compile', compile);
             compile_errored = compile.code !== 0;
+
             if (!compile_errored) {
                 const old_box_dir = box.dir;
-                box = await this.#create_isolate_box();
+                box = await next_box_promise;
                 await fs.rename(
                     path.join(old_box_dir, 'submission'),
                     path.join(box.dir, 'submission')
                 );
+            } else {
+                // Compilation failed — settle the promise so Node doesn't warn about
+                // unhandled rejection; box (if created) is already in dirty_boxes
+                await next_box_promise.catch(() => {});
             }
         }
 
