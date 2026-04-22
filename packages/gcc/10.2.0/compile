@@ -5,11 +5,11 @@ LANG=$(echo "${COMPILER_LANGUAGE}" | tr '[:upper:]' '[:lower:]')
 case "${LANG}" in
     c|gcc)
         rename 's/$/\.c/' "$@" 2>/dev/null || true
-        gcc -std=c11 *.c -lm
+        gcc -pipe -O2 -std=c11 *.c -lm
         ;;
     c++|cpp|g++)
         rename 's/$/\.cpp/' "$@" 2>/dev/null || true
-        g++ -std=c++17 *.cpp -lm
+        g++ -pipe -O2 -std=c++17 *.cpp -lm
         ;;
     d|gdc)
         rename 's/.code$/\.d/' "$@" 2>/dev/null || true

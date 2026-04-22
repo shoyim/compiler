@@ -19,8 +19,9 @@ services:
         limits:
           memory: 6144M
     environment:
-      # HDD disk: concurrent jobs = vCPU soni (disk I/O bottleneck)
-      - COMPILER_MAX_CONCURRENT_JOBS=4
+      # 4 CPU * 2: compiled jobs are CPU-bound during compile but I/O-wait during
+      # isolate setup/cleanup, so 2× vCPU improves throughput without major slowdown
+      - COMPILER_MAX_CONCURRENT_JOBS=8
 
       # Timeouts (ms)
       - COMPILER_RUN_TIMEOUT=10000
