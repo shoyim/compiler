@@ -10,21 +10,11 @@ const fs = require('fs/promises');
 const fss = require('fs');
 const body_parser = require('body-parser');
 const runtime = require('./runtime');
-const cors = require('cors');
 const logger = Logger.create('index');
 const app = express();
 expressWs(app);
 
 (async () => {
-    app.use(cors({
-        origin: 'http://localhost:5173', 
-        methods: ['GET', 'POST', 'PUT', 'DELETE'],
-        allowedHeaders: ['Content-Type', 'Authorization'],
-        credentials: true 
-    }));
-    
-    app.use(express.json());
-
     logger.info('Setting loglevel to', config.log_level);
     Logger.setLogLevel(config.log_level);
 

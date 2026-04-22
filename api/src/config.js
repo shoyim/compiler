@@ -217,7 +217,7 @@ logger.info(`Loading Configuration from environment`);
 let config = {};
 
 for (const option_name in options) {
-    const env_key = 'COMPILER' + option_name.to_upper_case();
+    const env_key = 'COMPILER_' + option_name.to_upper_case();
     const option = options[option_name];
     const parser = option.parser || (x => x);
     const env_val = process.env[env_key];
