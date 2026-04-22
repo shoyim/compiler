@@ -12,13 +12,9 @@ RUN sed -i 's/deb.debian.org/archive.debian.org/g' /etc/apt/sources.list && \
     make -j$(nproc) install && \
     rm -rf /tmp/*
 
-FROM node:15.10.0-buster-slim
+FROM node:18-bullseye-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
-
-RUN sed -i 's/deb.debian.org/archive.debian.org/g' /etc/apt/sources.list && \
-    sed -i 's|security.debian.org/debian-security|archive.debian.org/debian-security|g' /etc/apt/sources.list && \
-    sed -i '/buster-updates/d' /etc/apt/sources.list
 
 RUN dpkg-reconfigure -p critical dash
 RUN apt-get update && \
