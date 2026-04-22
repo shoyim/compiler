@@ -1,20 +1,8 @@
 version: '3.8'
 
 services:
-  db:
-    image: mysql:8.0
-    container_name: compiler_db_server
-    restart: always
-    environment:
-      MYSQL_DATABASE: compiler_db
-      MYSQL_ROOT_PASSWORD: zver
-    ports:
-      - "3307:3306"
-    volumes:
-      - ./data/mysql:/var/lib/mysql
-
   compiler_api:
-    build: 
+    build:
       context: ./api
     container_name: compiler_api
     restart: always
@@ -29,14 +17,7 @@ services:
       resources:
         limits:
           memory: 1024M
-    depends_on:
-      - db
     environment:
-      - DB_HOST=db
-      - DB_USER=root
-      - DB_PORT=3306
-      - DB_PASSWORD=zver
-      - DB_NAME=compiler_db
       - COMPILER_RUN_TIMEOUT=10000
       - COMPILER_RUN_CPU_TIME=10000
       - COMPILER_OUTPUT_MAX_SIZE=536870912
