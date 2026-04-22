@@ -13,13 +13,14 @@ services:
       - ./data/compiler/packages:/compiler/packages
     tmpfs:
       - /tmp:exec,size=1g
+      - /var/local/lib/isolate:size=2g,mode=700
     deploy:
       resources:
         limits:
           memory: 6144M
     environment:
-      # 4 dedicated vCPU: 2 × vCPU count
-      - COMPILER_MAX_CONCURRENT_JOBS=8
+      # HDD disk: concurrent jobs = vCPU soni (disk I/O bottleneck)
+      - COMPILER_MAX_CONCURRENT_JOBS=4
 
       # Timeouts (ms)
       - COMPILER_RUN_TIMEOUT=10000
