@@ -61,7 +61,13 @@ function spawn_box_into_pool() {
     });
 }
 
-for (let i = 0; i < BOX_POOL_SIZE; i++) spawn_box_into_pool();
+// Stagger pool init: concurrent isolate --init calls can leave boxes in a broken
+// state due to cgroup resource contention. Spacing them 50ms apart prevents this.
+(function fill_pool_staggered(i) {
+    if (i >= BOX_POOL_SIZE) return;
+    spawn_box_into_pool();
+    setTimeout(() => fill_pool_staggered(i + 1), 50);
+})(0);
 
 async function measure_runtime_baseline(runtime) {
     if (runtime_baselines.has(runtime.language)) {

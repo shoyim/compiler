@@ -6,7 +6,8 @@
       "Bash(git push *)",
       "Bash(xargs -I{} sh -c 'echo \"=== {} ===\" && cat \"{}\"')",
       "Bash(node -e \" const logplease = require\\('./api/node_modules/logplease'\\); const l = logplease.create\\('test'\\); // Check if logplease is sync or async const src = require\\('fs'\\).readFileSync\\('./api/node_modules/logplease/src/index.js', 'utf8'\\); console.log\\(src.slice\\(0, 3000\\)\\); \")",
-      "Bash(docker exec compiler_api *)"
+      "Bash(docker exec compiler_api *)",
+      "Bash(curl -s http://localhost:2000/api/v2/runtimes)"
     ]
   }
 }
