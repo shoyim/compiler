@@ -259,6 +259,8 @@ class Job {
                 'HOME=/tmp',
                 ...this.runtime.env_vars.flatMap(v => ['-E', v]),
                 '-E',
+                `PISTON_LANGUAGE=${this.runtime.language}`,
+                '-E',
                 `COMPILER_LANGUAGE=${this.runtime.language}`,
                 `--dir=${this.runtime.pkgdir}`,
                 `--dir=/etc:noexec`,
