@@ -99,6 +99,22 @@ expressWs(app);
         return res.status(404).send({ message: 'Not Found' });
     });
 
+    async function cleanOldJobs() {
+        try {
+            const [result] = await db.getPool().execute(
+                'DELETE FROM jobs WHERE created_at < DATE_SUB(NOW(), INTERVAL 30 DAY)'
+            );
+            if (result.affectedRows > 0) {
+                logger.info(`Job cleanup: ${result.affectedRows} eski yozuv o'chirildi`);
+            }
+        } catch (e) {
+            logger.error('Job cleanup xatosi:', e.message);
+        }
+    }
+
+    await cleanOldJobs();
+    setInterval(cleanOldJobs, 24 * 60 * 60 * 1000);
+
     logger.debug('Calling app.listen');
     const [address, port] = config.bind_address.split(':');
     const server = app.listen(port, address, () => {
