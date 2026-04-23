@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tester — Compiler</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    .toast { animation: slideIn .25s ease; }
+    @keyframes slideIn { from { transform:translateX(110%); } to { transform:none; } }
+    .spin { animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    #codeArea {
+      font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      tab-size: 4;
+      resize: none;
+      outline: none;
+    }
+    #stdinArea {
+      font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
+      font-size: 12px;
+      resize: none;
+      outline: none;
+    }
+    .output-pre {
+      font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .run-btn-glow { box-shadow: 0 0 20px rgba(34,197,94,0.4); }
+    .tab-active { background: #1e293b; color: #e2e8f0; }
+    .tab-inactive { color: #64748b; }
+    .tab-inactive:hover { color: #94a3b8; }
+  </style>
+</head>
+<body class="bg-gray-950 min-h-screen font-sans text-gray-200">
+
+<div id="toasts" class="fixed top-4 right-4 z-50 flex flex-col gap-2 w-80 pointer-events-none"></div>
+
+<!-- Profile modal -->
+<div id="profileModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-base font-bold text-gray-800"><i class="fa-solid fa-lock text-gray-400 mr-2"></i>Parolni o'zgartirish</h2>
+      <button onclick="closeProfileModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="space-y-3">
+      <div><label class="block text-xs font-medium text-gray-600 mb-1">Joriy parol</label>
+        <input id="curPass" type="password" placeholder="••••••••" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500 text-gray-800"></div>
+      <div><label class="block text-xs font-medium text-gray-600 mb-1">Yangi parol</label>
+        <input id="newPass1" type="password" placeholder="••••••••" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500 text-gray-800"></div>
+      <div><label class="block text-xs font-medium text-gray-600 mb-1">Yangi parolni tasdiqlang</label>
+        <input id="newPass2" type="password" placeholder="••••••••" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500 text-gray-800"></div>
+      <button onclick="submitProfileChange()" class="w-full py-2.5 bg-sky-600 text-white text-sm font-medium rounded-lg hover:bg-sky-500 transition-colors">Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<!-- Header -->
+<header class="bg-gray-900 border-b border-gray-800 sticky top-0 z-40">
+  <div class="max-w-full px-4 py-2.5 flex items-center gap-3">
+    <div class="flex items-center gap-3 flex-shrink-0">
+      <div class="w-8 h-8 bg-sky-600 rounded-lg flex items-center justify-center">
+        <i class="fa-solid fa-code text-white text-xs"></i>
+      </div>
+      <span class="text-sm font-bold text-gray-100 hidden sm:block">Compiler</span>
+    </div>
+    <nav class="flex items-center gap-0.5 flex-shrink-0">
+      <a href="/dashboard" class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors">
+        <i class="fa-solid fa-gauge-high text-xs"></i><span class="hidden sm:inline">Dashboard</span>
+      </a>
+      <a href="/tester" class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-green-600 text-white">
+        <i class="fa-solid fa-play text-xs"></i><span>Tester</span>
+      </a>
+      <a href="/jobs" class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors">
+        <i class="fa-solid fa-list-check text-xs"></i><span class="hidden sm:inline">Joblar</span>
+      </a>
+      <a href="/tokens" class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors">
+        <i class="fa-solid fa-key text-xs"></i><span class="hidden sm:inline">Tokenlar</span>
+      </a>
+      <a href="/api-docs" class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors">
+        <i class="fa-solid fa-book text-xs"></i><span class="hidden md:inline">API Docs</span>
+      </a>
+    </nav>
+
+    <!-- Toolbar -->
+    <div class="flex items-center gap-2 ml-2 flex-1 min-w-0">
+      <select id="langSelect"
+        class="text-xs bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-sky-500 min-w-[120px]">
+        <option value="">Til yuklanmoqda...</option>
+      </select>
+      <select id="versionSelect"
+        class="text-xs bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-sky-500">
+        <option value="*">*</option>
+      </select>
+      <button id="runBtn" onclick="runCode()"
+        class="run-btn-glow flex items-center gap-2 px-4 py-1.5 bg-green-600 hover:bg-green-500 text-white text-xs font-bold rounded-lg transition-colors flex-shrink-0">
+        <i class="fa-solid fa-play text-xs" id="runIcon"></i>
+        <span id="runText">Ishga tushirish</span>
+      </button>
+      <div id="runStats" class="hidden flex items-center gap-2 text-xs text-gray-500 flex-shrink-0">
+        <span id="statTime" class="flex items-center gap-1"><i class="fa-solid fa-clock text-gray-600"></i>—</span>
+        <span id="statMem" class="flex items-center gap-1"><i class="fa-solid fa-microchip text-gray-600"></i>—</span>
+      </div>
+    </div>
+
+    <!-- Profile -->
+    <div class="relative flex-shrink-0" id="profileDropdown">
+      <button onclick="toggleProfileMenu()"
+        class="flex items-center gap-1.5 px-2 py-1.5 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 transition-colors">
+        <i class="fa-solid fa-circle-user text-sky-400 text-sm"></i>
+        <span id="headerUser" class="text-xs font-medium text-gray-300 hidden sm:inline">—</span>
+        <i class="fa-solid fa-chevron-down text-[9px] text-gray-500"></i>
+      </button>
+      <div id="profileMenu" class="hidden absolute right-0 mt-1 w-44 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl z-50 py-1 overflow-hidden">
+        <button onclick="openProfileModal(); closeProfileMenu()"
+          class="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-300 hover:bg-gray-700 transition-colors">
+          <i class="fa-solid fa-lock text-gray-500 w-4"></i>Parolni o'zgartirish
+        </button>
+        <div class="border-t border-gray-700 my-1"></div>
+        <button onclick="logout()" class="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-400 hover:bg-gray-700 transition-colors">
+          <i class="fa-solid fa-right-from-bracket w-4"></i>Chiqish
+        </button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Main layout -->
+<div class="flex flex-col lg:flex-row h-[calc(100vh-49px)]">
+
+  <!-- Left: Editor -->
+  <div class="flex flex-col lg:w-1/2 xl:w-3/5 border-r border-gray-800 min-h-0">
+
+    <!-- Editor tabs -->
+    <div class="flex items-center gap-1 px-3 py-1.5 bg-gray-900 border-b border-gray-800 flex-shrink-0">
+      <div class="flex items-center gap-1.5 px-3 py-1 rounded-md bg-gray-800 text-xs text-gray-300">
+        <i class="fa-solid fa-file-code text-gray-500 text-[10px]"></i>
+        <span id="fileNameLabel">main</span>
+      </div>
+      <div class="ml-auto flex items-center gap-1">
+        <button onclick="clearCode()" title="Tozalash" class="w-6 h-6 flex items-center justify-center text-gray-600 hover:text-gray-400 rounded transition-colors">
+          <i class="fa-solid fa-eraser text-[10px]"></i>
+        </button>
+        <button onclick="copyCode()" title="Kodni nusxalash" class="w-6 h-6 flex items-center justify-center text-gray-600 hover:text-gray-400 rounded transition-colors">
+          <i class="fa-solid fa-copy text-[10px]"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Code editor -->
+    <div class="flex flex-1 min-h-0 overflow-hidden">
+      <!-- Line numbers -->
+      <div id="lineNumbers" class="select-none flex-shrink-0 bg-gray-950 border-r border-gray-800 text-right px-3 py-4 text-gray-600 text-[11px] leading-[1.6] font-mono overflow-hidden">
+        1
+      </div>
+      <!-- Textarea -->
+      <textarea id="codeArea" spellcheck="false" autocomplete="off" autocorrect="off"
+        class="flex-1 bg-gray-950 text-gray-100 p-4 caret-green-400"
+        placeholder="// Kodingizni shu yerga yozing..."></textarea>
+    </div>
+
+    <!-- Stdin -->
+    <div class="border-t border-gray-800 flex-shrink-0">
+      <div class="flex items-center gap-2 px-3 py-1.5 bg-gray-900">
+        <span class="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">stdin</span>
+        <span class="text-[10px] text-gray-600">— dasturga beriladigan kirish ma'lumoti</span>
+      </div>
+      <textarea id="stdinArea" rows="3"
+        class="w-full bg-gray-950 text-gray-300 px-4 py-3 border-t border-gray-800"
+        placeholder="Kirish ma'lumotlari (stdin)..."></textarea>
+    </div>
+  </div>
+
+  <!-- Right: Output -->
+  <div class="flex flex-col lg:w-1/2 xl:w-2/5 min-h-0">
+
+    <!-- Output tabs -->
+    <div class="flex items-center gap-1 px-3 py-1.5 bg-gray-900 border-b border-gray-800 flex-shrink-0">
+      <button id="tab-output" onclick="switchOutputTab('output')" class="tab-active px-3 py-1 rounded-md text-xs font-medium transition-colors">
+        <i class="fa-solid fa-terminal text-[10px] mr-1"></i>Natija
+      </button>
+      <button id="tab-compile" onclick="switchOutputTab('compile')" class="tab-inactive px-3 py-1 rounded-md text-xs font-medium transition-colors hidden">
+        <i class="fa-solid fa-gears text-[10px] mr-1"></i>Compile
+      </button>
+      <div class="ml-auto">
+        <button onclick="clearOutput()" class="w-6 h-6 flex items-center justify-center text-gray-600 hover:text-gray-400 rounded transition-colors" title="Tozalash">
+          <i class="fa-solid fa-eraser text-[10px]"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Status bar -->
+    <div id="statusBar" class="hidden flex items-center gap-3 px-4 py-2 border-b border-gray-800 flex-shrink-0">
+      <div id="statusBadge"></div>
+      <div id="statusDetails" class="flex items-center gap-3 text-[10px] text-gray-500"></div>
+    </div>
+
+    <!-- Output content -->
+    <div class="flex-1 overflow-auto bg-gray-950">
+      <div id="outputPanel" class="p-4">
+        <div class="text-center py-16 text-gray-700">
+          <i class="fa-solid fa-terminal text-4xl mb-4 block opacity-30"></i>
+          <p class="text-sm">Kodni ishga tushiring</p>
+          <p class="text-xs mt-1 opacity-60">Ctrl+Enter yoki "Ishga tushirish" tugmasi</p>
+        </div>
+      </div>
+      <div id="compilePanel" class="p-4 hidden"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const authToken = localStorage.getItem('auth_token');
+if (!authToken) window.location.href = '/login';
+document.getElementById('headerUser').textContent = localStorage.getItem('auth_user') || '?';
+
+function authHeaders() {
+  return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken };
+}
+async function logout() {
+  await fetch('/auth/logout', { method: 'POST', headers: authHeaders() }).catch(() => {});
+  localStorage.clear(); window.location.href = '/login';
+}
+function toggleProfileMenu() { document.getElementById('profileMenu').classList.toggle('hidden'); }
+function closeProfileMenu()  { document.getElementById('profileMenu').classList.add('hidden'); }
+document.addEventListener('click', e => {
+  if (!document.getElementById('profileDropdown').contains(e.target)) closeProfileMenu();
+});
+function openProfileModal()  { document.getElementById('profileModal').classList.remove('hidden'); document.getElementById('curPass').focus(); }
+function closeProfileModal() {
+  document.getElementById('profileModal').classList.add('hidden');
+  ['curPass','newPass1','newPass2'].forEach(id => document.getElementById(id).value = '');
+}
+document.getElementById('profileModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('profileModal')) closeProfileModal();
+});
+async function submitProfileChange() {
+  const cur = document.getElementById('curPass').value;
+  const n1  = document.getElementById('newPass1').value;
+  const n2  = document.getElementById('newPass2').value;
+  if (!cur || !n1) { toast('Barcha maydonlarni to\'ldiring', 'error'); return; }
+  if (n1 !== n2)   { toast('Yangi parollar mos kelmadi', 'error'); return; }
+  try {
+    const res = await fetch('/auth/profile', { method: 'PUT', headers: authHeaders(), body: JSON.stringify({ current_password: cur, new_password: n1 }) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message);
+    toast(data.message, 'success');
+    closeProfileModal();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── Runtimes ──────────────────────────────────────────────────────────
+let runtimes = [];
+const EXAMPLES = {
+  python:     { ext:'py',   code:'def solve():\n    n = int(input())\n    print(n * n)\n\nsolve()\n', stdin:'7\n' },
+  javascript: { ext:'js',   code:'const lines = require("fs").readFileSync("/dev/stdin","utf8").trim().split("\\n");\nconst n = parseInt(lines[0]);\nconsole.log(n * n);\n', stdin:'7\n' },
+  java:       { ext:'java', code:'import java.util.Scanner;\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        System.out.println(n * n);\n    }\n}\n', stdin:'7\n' },
+  c:          { ext:'c',    code:'#include <stdio.h>\nint main() {\n    int n;\n    scanf("%d", &n);\n    printf("%d\\n", n * n);\n    return 0;\n}\n', stdin:'7\n' },
+  'c++':      { ext:'cpp',  code:'#include <iostream>\nusing namespace std;\nint main() {\n    int n;\n    cin >> n;\n    cout << n * n << endl;\n    return 0;\n}\n', stdin:'7\n' },
+  rust:       { ext:'rs',   code:'use std::io;\nfn main() {\n    let mut s = String::new();\n    io::stdin().read_line(&mut s).unwrap();\n    let n: i64 = s.trim().parse().unwrap();\n    println!("{}", n * n);\n}\n', stdin:'7\n' },
+  go:         { ext:'go',   code:'package main\nimport "fmt"\nfunc main() {\n    var n int\n    fmt.Scan(&n)\n    fmt.Println(n * n)\n}\n', stdin:'7\n' },
+  bash:       { ext:'sh',   code:'read n\necho $((n * n))\n', stdin:'7\n' },
+  default:    { ext:'txt',  code:'', stdin:'' },
+};
+
+async function loadRuntimes() {
+  try {
+    const res = await fetch('/api/v2/runtimes');
+    runtimes = await res.json();
+    const grouped = {};
+    runtimes.forEach(rt => {
+      if (!grouped[rt.language]) grouped[rt.language] = [];
+      grouped[rt.language].push(rt.version);
+    });
+    const langSel = document.getElementById('langSelect');
+    langSel.innerHTML = Object.keys(grouped).sort().map(lang =>
+      `<option value="${lang}">${lang}</option>`
+    ).join('');
+    updateVersions();
+  } catch(e) {
+    toast('Runtime\'larni yuklab bo\'lmadi', 'error');
+  }
+}
+
+function updateVersions() {
+  const lang = document.getElementById('langSelect').value;
+  const versions = runtimes.filter(rt => rt.language === lang).map(rt => rt.version);
+  const sel = document.getElementById('versionSelect');
+  sel.innerHTML = versions.map(v => `<option value="${v}">${v}</option>`).join('');
+  applyExample(lang);
+  updateFileName(lang);
+}
+
+function applyExample(lang) {
+  const area = document.getElementById('codeArea');
+  if (area.value.trim() === '' || area.dataset.lang !== lang) {
+    const ex = EXAMPLES[lang] || EXAMPLES.default;
+    area.value = ex.code;
+    if (!document.getElementById('stdinArea').value.trim()) {
+      document.getElementById('stdinArea').value = ex.stdin;
+    }
+    area.dataset.lang = lang;
+    updateLineNumbers();
+  }
+}
+
+function updateFileName(lang) {
+  const ex = EXAMPLES[lang] || EXAMPLES.default;
+  document.getElementById('fileNameLabel').textContent = 'main.' + ex.ext;
+}
+
+document.getElementById('langSelect').addEventListener('change', updateVersions);
+
+// ── Line numbers ─────────────────────────────────────────────────────
+const codeArea = document.getElementById('codeArea');
+const lineNumbers = document.getElementById('lineNumbers');
+
+function updateLineNumbers() {
+  const lines = codeArea.value.split('\n').length;
+  lineNumbers.innerHTML = Array.from({length: lines}, (_, i) => i + 1).join('<br>');
+}
+
+codeArea.addEventListener('input', updateLineNumbers);
+codeArea.addEventListener('scroll', () => { lineNumbers.scrollTop = codeArea.scrollTop; });
+
+codeArea.addEventListener('keydown', e => {
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const s = codeArea.selectionStart;
+    const val = codeArea.value;
+    codeArea.value = val.slice(0, s) + '    ' + val.slice(codeArea.selectionEnd);
+    codeArea.selectionStart = codeArea.selectionEnd = s + 4;
+    updateLineNumbers();
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    e.preventDefault();
+    runCode();
+  }
+});
+
+// ── Run ───────────────────────────────────────────────────────────────
+let running = false;
+
+async function runCode() {
+  if (running) return;
+  const code = codeArea.value.trim();
+  if (!code) { toast('Kod bo\'sh', 'error'); return; }
+
+  const lang    = document.getElementById('langSelect').value;
+  const version = document.getElementById('versionSelect').value;
+  const stdin   = document.getElementById('stdinArea').value;
+
+  if (!lang) { toast('Tilni tanlang', 'error'); return; }
+
+  running = true;
+  const runBtn  = document.getElementById('runBtn');
+  const runIcon = document.getElementById('runIcon');
+  const runText = document.getElementById('runText');
+  runBtn.disabled = true;
+  runBtn.classList.remove('run-btn-glow', 'bg-green-600', 'hover:bg-green-500');
+  runBtn.classList.add('bg-gray-700');
+  runIcon.className = 'fa-solid fa-circle-notch spin text-xs';
+  runText.textContent = 'Bajarilmoqda...';
+
+  document.getElementById('statusBar').classList.add('hidden');
+  document.getElementById('runStats').classList.add('hidden');
+  document.getElementById('outputPanel').innerHTML = `
+    <div class="flex items-center gap-2 text-gray-500 text-sm py-8 justify-center">
+      <i class="fa-solid fa-circle-notch spin text-green-500 text-lg"></i>
+      <span>Kod bajarilmoqda...</span>
+    </div>`;
+
+  const startTime = Date.now();
+
+  try {
+    const res = await fetch('/api/v2/execute', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({
+        language: lang,
+        version,
+        files: [{ name: document.getElementById('fileNameLabel').textContent, content: codeArea.value }],
+        stdin,
+      }),
+    });
+
+    const elapsed = Date.now() - startTime;
+
+    if (res.status === 401) { logout(); return; }
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({ message: 'Server xatosi' }));
+      showError(e.message);
+      return;
+    }
+
+    const data = await res.json();
+    renderOutput(data, elapsed);
+  } catch(e) {
+    showError('Serverga ulanib bo\'lmadi: ' + e.message);
+  } finally {
+    running = false;
+    runBtn.disabled = false;
+    runBtn.classList.add('run-btn-glow', 'bg-green-600', 'hover:bg-green-500');
+    runBtn.classList.remove('bg-gray-700');
+    runIcon.className = 'fa-solid fa-play text-xs';
+    runText.textContent = 'Ishga tushirish';
+  }
+}
+
+function renderOutput(data, clientMs) {
+  const run = data.run;
+  const compile = data.compile;
+
+  const hasCompile = compile && compile.code !== null && compile.code !== undefined;
+  document.getElementById('tab-compile').classList.toggle('hidden', !hasCompile);
+
+  const statusBar = document.getElementById('statusBar');
+  statusBar.classList.remove('hidden');
+
+  let statusBadgeHtml, statusColor;
+  if (run.status === 'timed_out') {
+    statusBadgeHtml = '<span class="flex items-center gap-1.5 text-xs font-bold text-yellow-400"><i class="fa-solid fa-clock"></i>Timeout</span>';
+    statusColor = 'border-yellow-500/30 bg-yellow-500/5';
+  } else if (run.status === 'memory_limit') {
+    statusBadgeHtml = '<span class="flex items-center gap-1.5 text-xs font-bold text-orange-400"><i class="fa-solid fa-microchip"></i>Memory Limit</span>';
+    statusColor = 'border-orange-500/30 bg-orange-500/5';
+  } else if (run.code === 0) {
+    statusBadgeHtml = '<span class="flex items-center gap-1.5 text-xs font-bold text-green-400"><i class="fa-solid fa-circle-check"></i>OK · exit 0</span>';
+    statusColor = 'border-green-500/30 bg-green-500/5';
+  } else {
+    statusBadgeHtml = `<span class="flex items-center gap-1.5 text-xs font-bold text-red-400"><i class="fa-solid fa-circle-xmark"></i>Xato · exit ${run.code}</span>`;
+    statusColor = 'border-red-500/30 bg-red-500/5';
+  }
+
+  document.getElementById('statusBadge').innerHTML = statusBadgeHtml;
+
+  const details = [];
+  if (run.time) details.push(`<span><i class="fa-solid fa-clock mr-1 text-gray-600"></i>${run.time}ms</span>`);
+  if (run.memory) details.push(`<span><i class="fa-solid fa-microchip mr-1 text-gray-600"></i>${run.memory}KB</span>`);
+  details.push(`<span><i class="fa-solid fa-stopwatch mr-1 text-gray-600"></i>~${clientMs}ms</span>`);
+  details.push(`<span class="text-gray-600">${data.language} ${data.version}</span>`);
+  document.getElementById('statusDetails').innerHTML = details.join('');
+
+  document.getElementById('runStats').classList.remove('hidden');
+  document.getElementById('statTime').innerHTML = `<i class="fa-solid fa-clock text-gray-600"></i>${run.time || '—'}ms`;
+  document.getElementById('statMem').innerHTML  = `<i class="fa-solid fa-microchip text-gray-600"></i>${run.memory || '—'}KB`;
+
+  const outHtml = buildOutputHtml(run, statusColor);
+  document.getElementById('outputPanel').innerHTML = outHtml;
+
+  if (hasCompile) {
+    document.getElementById('compilePanel').innerHTML = buildOutputHtml(compile, '');
+  }
+
+  switchOutputTab('output');
+}
+
+function buildOutputHtml(stage, borderColor) {
+  const hasStdout = stage.stdout && stage.stdout.length > 0;
+  const hasStderr = stage.stderr && stage.stderr.length > 0;
+
+  if (!hasStdout && !hasStderr) {
+    return '<p class="text-gray-600 text-xs italic py-4">Chiqish yo\'q</p>';
+  }
+
+  let html = '';
+  if (hasStdout) {
+    html += `<div class="mb-4">
+      <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-600 mb-2">stdout</p>
+      <pre class="output-pre text-gray-100 bg-gray-900 rounded-xl p-4 overflow-auto">${escHtml(stage.stdout)}</pre>
+    </div>`;
+  }
+  if (hasStderr) {
+    html += `<div>
+      <p class="text-[10px] font-semibold uppercase tracking-wider text-red-600 mb-2">stderr</p>
+      <pre class="output-pre text-red-300 bg-gray-900 rounded-xl p-4 overflow-auto">${escHtml(stage.stderr)}</pre>
+    </div>`;
+  }
+  return html;
+}
+
+function showError(msg) {
+  document.getElementById('statusBar').classList.add('hidden');
+  document.getElementById('outputPanel').innerHTML = `
+    <div class="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
+      <p class="text-xs font-bold text-red-400 mb-1"><i class="fa-solid fa-circle-xmark mr-1"></i>Xato</p>
+      <p class="text-xs text-red-300">${escHtml(msg)}</p>
+    </div>`;
+}
+
+function switchOutputTab(tab) {
+  const tabs = ['output', 'compile'];
+  tabs.forEach(t => {
+    document.getElementById('tab-' + t).className =
+      t === tab ? 'tab-active px-3 py-1 rounded-md text-xs font-medium transition-colors'
+                : 'tab-inactive px-3 py-1 rounded-md text-xs font-medium transition-colors';
+    document.getElementById(t + 'Panel').classList.toggle('hidden', t !== tab);
+  });
+}
+
+function escHtml(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function clearCode() {
+  codeArea.value = '';
+  codeArea.dataset.lang = '';
+  updateLineNumbers();
+}
+function clearOutput() {
+  document.getElementById('outputPanel').innerHTML = `
+    <div class="text-center py-16 text-gray-700">
+      <i class="fa-solid fa-terminal text-4xl mb-4 block opacity-30"></i>
+      <p class="text-sm">Kodni ishga tushiring</p>
+    </div>`;
+  document.getElementById('statusBar').classList.add('hidden');
+  document.getElementById('runStats').classList.add('hidden');
+  document.getElementById('compilePanel').innerHTML = '';
+  document.getElementById('tab-compile').classList.add('hidden');
+}
+function copyCode() {
+  navigator.clipboard.writeText(codeArea.value).then(() => toast('Kod nusxalandi', 'success'));
+}
+
+function toast(msg, type = 'info') {
+  const c = { success:'bg-green-500', error:'bg-red-500', info:'bg-sky-500' };
+  const i = { success:'fa-circle-check', error:'fa-circle-xmark', info:'fa-circle-info' };
+  const el = document.createElement('div');
+  el.className = `toast pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl text-white text-sm shadow-lg ${c[type]}`;
+  el.innerHTML = `<i class="fa-solid ${i[type]} flex-shrink-0"></i><span>${msg}</span>`;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(),300); }, 3500);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────
+loadRuntimes();
+updateLineNumbers();
+codeArea.focus();
+</script>
+</body>
+</html>

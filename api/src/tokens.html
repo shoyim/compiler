@@ -33,6 +33,9 @@
         <a href="/dashboard" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
           <i class="fa-solid fa-gauge-high text-xs"></i><span>Dashboard</span>
         </a>
+        <a href="/tester" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
+          <i class="fa-solid fa-play text-xs"></i><span class="hidden sm:inline">Tester</span>
+        </a>
         <a href="/jobs" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
           <i class="fa-solid fa-list-check text-xs"></i><span class="hidden sm:inline">Joblar</span>
         </a>
@@ -337,13 +340,24 @@ function copySpecificToken(t) {
 }
 
 async function deleteToken(t, isMe) {
-  if (!confirm(isMe ? 'Joriy sessiya tokeni o\'chirilsa, tizimdan chiqasiz. Davom etasizmi?' : 'Tokenni o\'chirishni tasdiqlaysizmi?')) return;
+  if (!confirm('Tokenni o\'chirishni tasdiqlaysizmi?')) return;
   try {
+    if (isMe) {
+      const newRes = await fetch('/auth/tokens', {
+        method: 'POST', headers: authHeaders(),
+        body: JSON.stringify({ label: 'Auto sessiya', expires_days: 30 })
+      });
+      if (!newRes.ok) {
+        toast('Yangi sessiya yaratib bo\'lmadi', 'error');
+        return;
+      }
+      const newData = await newRes.json();
+      localStorage.setItem('auth_token', newData.token);
+    }
     const res = await fetch(`/auth/tokens/${t}`, { method: 'DELETE', headers: authHeaders() });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message);
-    toast(data.message, 'info');
-    if (isMe) { localStorage.clear(); window.location.href = '/login'; return; }
+    toast('Token o\'chirildi', 'info');
     await loadTokens();
   } catch(e) { toast(e.message, 'error'); }
 }
