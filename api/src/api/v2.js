@@ -291,28 +291,38 @@ router.post('/execute', requireAuth, async (req, res) => {
 });
 
 router.get('/jobs', requireAuth, async (req, res) => {
-    const limit = Math.min(parseInt(req.query.limit || '100'), 500);
-    const offset = parseInt(req.query.offset || '0');
+    const limit = Math.min(Math.max(parseInt(req.query.limit) || 100, 1), 500);
+    const offset = Math.max(parseInt(req.query.offset) || 0, 0);
     const lang = req.query.language || null;
     const params = [];
     let where = '';
     if (lang) { where = 'WHERE language = ? '; params.push(lang); }
     params.push(limit, offset);
-    const [rows] = await getPool().execute(
-        `SELECT id, username, language, version,
-                compile_exit, compile_time, compile_memory, compile_status,
-                run_exit, run_time, run_memory, run_status,
-                created_at
-         FROM jobs ${where}ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-        params
-    );
-    return res.json(rows);
+    try {
+        const [rows] = await getPool().execute(
+            `SELECT id, username, language, version,
+                    compile_exit, compile_time, compile_memory, compile_status,
+                    run_exit, run_time, run_memory, run_status,
+                    created_at
+             FROM jobs ${where}ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+            params
+        );
+        return res.json(rows);
+    } catch (e) {
+        logger.error('GET /jobs error:', e.message);
+        return res.status(500).json({ message: 'Joblarni olishda xato: ' + e.message });
+    }
 });
 
 router.get('/jobs/:id', requireAuth, async (req, res) => {
-    const [rows] = await getPool().execute('SELECT * FROM jobs WHERE id = ?', [req.params.id]);
-    if (!rows[0]) return res.status(404).json({ message: 'Job topilmadi' });
-    return res.json(rows[0]);
+    try {
+        const [rows] = await getPool().execute('SELECT * FROM jobs WHERE id = ?', [req.params.id]);
+        if (!rows[0]) return res.status(404).json({ message: 'Job topilmadi' });
+        return res.json(rows[0]);
+    } catch (e) {
+        logger.error('GET /jobs/:id error:', e.message);
+        return res.status(500).json({ message: 'Job ma\'lumotini olishda xato: ' + e.message });
+    }
 });
 
 router.get('/runtimes', (req, res) => {
