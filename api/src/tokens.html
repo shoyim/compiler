@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Tokenlar — Compiler</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    .toast { animation: slideIn .25s ease; }
+    @keyframes slideIn { from { transform:translateX(110%); } to { transform:none; } }
+    .card-in { animation: fadeUp .2s ease; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+    .spin { animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans text-gray-800">
+
+<div id="toasts" class="fixed top-4 right-4 z-50 flex flex-col gap-2 w-80 pointer-events-none"></div>
+
+<!-- Header -->
+<header class="bg-white border-b border-gray-200 sticky top-0 z-40">
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 bg-sky-600 rounded-lg flex items-center justify-center flex-shrink-0">
+          <i class="fa-solid fa-code text-white text-sm"></i>
+        </div>
+        <span class="text-base font-bold text-gray-900 hidden sm:block">Compiler</span>
+      </div>
+      <nav class="flex items-center gap-1">
+        <a href="/dashboard" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
+          <i class="fa-solid fa-gauge-high text-xs"></i><span>Dashboard</span>
+        </a>
+        <a href="/jobs" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
+          <i class="fa-solid fa-list-check text-xs"></i><span class="hidden sm:inline">Joblar</span>
+        </a>
+        <a href="/tokens" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-sky-600 text-white">
+          <i class="fa-solid fa-key text-xs"></i><span>Tokenlar</span>
+        </a>
+        <a href="/api-docs" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
+          <i class="fa-solid fa-book text-xs"></i><span class="hidden sm:inline">API Docs</span>
+        </a>
+      </nav>
+    </div>
+    <div class="flex items-center gap-2">
+      <div class="relative" id="profileDropdown">
+        <button onclick="toggleProfileMenu()"
+          class="flex items-center gap-1.5 px-2.5 py-1.5 bg-sky-50 border border-sky-100 rounded-lg hover:bg-sky-100 transition-colors">
+          <i class="fa-solid fa-circle-user text-sky-500 text-sm"></i>
+          <span id="headerUser" class="text-xs font-medium text-sky-700">—</span>
+          <i class="fa-solid fa-chevron-down text-[9px] text-sky-400"></i>
+        </button>
+        <div id="profileMenu" class="hidden absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-xl shadow-lg z-50 py-1 overflow-hidden">
+          <button onclick="openProfileModal(); closeProfileMenu()"
+            class="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors">
+            <i class="fa-solid fa-lock text-gray-400 w-4"></i>
+            Parolni o'zgartirish
+          </button>
+          <div class="border-t border-gray-100 my-1"></div>
+          <button onclick="logout()"
+            class="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-500 hover:bg-red-50 transition-colors">
+            <i class="fa-solid fa-right-from-bracket w-4"></i>
+            Chiqish
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Profile modal -->
+<div id="profileModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-base font-bold text-gray-800"><i class="fa-solid fa-lock text-gray-400 mr-2"></i>Parolni o'zgartirish</h2>
+      <button onclick="closeProfileModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="space-y-3">
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Joriy parol</label>
+        <input id="curPass" type="password" placeholder="••••••••"
+          class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Yangi parol</label>
+        <input id="newPass1" type="password" placeholder="••••••••"
+          class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Yangi parolni tasdiqlang</label>
+        <input id="newPass2" type="password" placeholder="••••••••"
+          class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500">
+      </div>
+      <button onclick="submitProfileChange()"
+        class="w-full py-2.5 bg-sky-600 text-white text-sm font-medium rounded-lg hover:bg-sky-500 transition-colors">
+        Saqlash
+      </button>
+    </div>
+  </div>
+</div>
+
+<main class="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+
+  <!-- Page title -->
+  <div class="mb-6">
+    <h1 class="text-xl font-bold text-gray-900">API Tokenlar</h1>
+    <p class="text-sm text-gray-500 mt-1">API so'rovlar uchun token yarating va boshqaring</p>
+  </div>
+
+  <!-- Create token card -->
+  <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mb-6">
+    <h2 class="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
+      <i class="fa-solid fa-plus-circle text-sky-500"></i>
+      Yangi token yaratish
+    </h2>
+    <div class="grid sm:grid-cols-3 gap-3">
+      <div class="sm:col-span-2">
+        <label class="block text-xs font-medium text-gray-500 mb-1">Token nomi (ixtiyoriy)</label>
+        <input id="tokenLabel" type="text" placeholder="Masalan: Mening ilovam, Test muhit..."
+          class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Amal qilish muddati</label>
+        <select id="tokenExpiry"
+          class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white">
+          <option value="7">7 kun</option>
+          <option value="30" selected>30 kun</option>
+          <option value="90">90 kun</option>
+          <option value="180">180 kun</option>
+          <option value="365">365 kun</option>
+        </select>
+      </div>
+    </div>
+    <button onclick="createToken()"
+      class="mt-3 flex items-center gap-2 px-4 py-2.5 bg-sky-600 text-white text-sm font-medium rounded-lg hover:bg-sky-500 transition-colors">
+      <i class="fa-solid fa-plus"></i>
+      Token yaratish
+    </button>
+  </div>
+
+  <!-- Newly created token alert -->
+  <div id="newTokenAlert" class="hidden bg-green-50 border border-green-200 rounded-2xl p-5 mb-6">
+    <div class="flex items-start gap-3">
+      <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+        <i class="fa-solid fa-circle-check text-green-600"></i>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-semibold text-green-800 mb-1">Token muvaffaqiyatli yaratildi!</p>
+        <p class="text-xs text-green-600 mb-3">Bu token faqat bir marta ko'rsatiladi. Hoziroq nusxalab oling.</p>
+        <div class="flex items-center gap-2">
+          <code id="newTokenValue" class="flex-1 text-xs bg-white border border-green-200 rounded-lg px-3 py-2 font-mono text-green-800 break-all"></code>
+          <button onclick="copyNewToken()"
+            class="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-500 transition-colors">
+            <i class="fa-solid fa-copy"></i>
+            Nusxa
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tokens list -->
+  <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+      <h2 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+        <i class="fa-solid fa-key text-gray-400"></i>
+        Faol tokenlar
+      </h2>
+      <button onclick="loadTokens()"
+        class="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+        <i class="fa-solid fa-arrows-rotate text-xs" id="refreshIcon"></i>
+      </button>
+    </div>
+    <div id="tokensList" class="divide-y divide-gray-50">
+      <div class="py-12 text-center text-gray-400 text-sm">
+        <i class="fa-solid fa-circle-notch spin text-2xl mb-3 text-sky-400"></i>
+        <p>Yuklanmoqda...</p>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+const authToken = localStorage.getItem('auth_token');
+if (!authToken) window.location.href = '/login';
+document.getElementById('headerUser').textContent = localStorage.getItem('auth_user') || '?';
+
+function authHeaders() {
+  return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken };
+}
+
+async function logout() {
+  await fetch('/auth/logout', { method: 'POST', headers: authHeaders() }).catch(() => {});
+  localStorage.clear();
+  window.location.href = '/login';
+}
+
+function toggleProfileMenu() {
+  document.getElementById('profileMenu').classList.toggle('hidden');
+}
+function closeProfileMenu() {
+  document.getElementById('profileMenu').classList.add('hidden');
+}
+document.addEventListener('click', e => {
+  if (!document.getElementById('profileDropdown').contains(e.target)) closeProfileMenu();
+});
+
+function openProfileModal() {
+  document.getElementById('profileModal').classList.remove('hidden');
+  document.getElementById('curPass').focus();
+}
+function closeProfileModal() {
+  document.getElementById('profileModal').classList.add('hidden');
+  ['curPass','newPass1','newPass2'].forEach(id => document.getElementById(id).value = '');
+}
+document.getElementById('profileModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('profileModal')) closeProfileModal();
+});
+
+async function submitProfileChange() {
+  const cur = document.getElementById('curPass').value;
+  const n1  = document.getElementById('newPass1').value;
+  const n2  = document.getElementById('newPass2').value;
+  if (!cur || !n1) { toast('Barcha maydonlarni to\'ldiring', 'error'); return; }
+  if (n1 !== n2)   { toast('Yangi parollar mos kelmadi', 'error'); return; }
+  try {
+    const res = await fetch('/auth/profile', {
+      method: 'PUT', headers: authHeaders(),
+      body: JSON.stringify({ current_password: cur, new_password: n1 })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message);
+    toast(data.message, 'success');
+    closeProfileModal();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function createToken() {
+  const label = document.getElementById('tokenLabel').value.trim();
+  const expires_days = parseInt(document.getElementById('tokenExpiry').value);
+  try {
+    const res = await fetch('/auth/tokens', {
+      method: 'POST', headers: authHeaders(),
+      body: JSON.stringify({ label: label || undefined, expires_days })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message);
+
+    document.getElementById('newTokenValue').textContent = data.token;
+    document.getElementById('newTokenAlert').classList.remove('hidden');
+    document.getElementById('tokenLabel').value = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    await loadTokens();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function copyNewToken() {
+  const val = document.getElementById('newTokenValue').textContent;
+  navigator.clipboard.writeText(val).then(() => toast('Token nusxalandi', 'success'));
+}
+
+async function loadTokens() {
+  document.getElementById('refreshIcon').classList.add('spin');
+  try {
+    const res = await fetch('/auth/tokens', { headers: authHeaders() });
+    if (res.status === 401) { logout(); return; }
+    const tokens = await res.json();
+    renderTokens(tokens);
+  } catch(e) {
+    toast('Tokenlarni yuklab bo\'lmadi', 'error');
+  } finally {
+    document.getElementById('refreshIcon').classList.remove('spin');
+  }
+}
+
+function renderTokens(tokens) {
+  const me = authToken;
+  const el = document.getElementById('tokensList');
+
+  if (!tokens.length) {
+    el.innerHTML = `
+      <div class="py-12 text-center text-gray-400">
+        <i class="fa-solid fa-key text-3xl mb-3 opacity-30"></i>
+        <p class="text-sm">Hech qanday faol token yo'q</p>
+      </div>`;
+    return;
+  }
+
+  el.innerHTML = tokens.map(t => {
+    const isMe = t.token === me;
+    const short = t.token.slice(0, 12) + '...' + t.token.slice(-6);
+    const created = new Date(t.created_at).toLocaleString('uz');
+    const expires = new Date(t.expires_at).toLocaleDateString('uz');
+    const now = Date.now();
+    const expiresMs = new Date(t.expires_at).getTime();
+    const daysLeft = Math.max(0, Math.ceil((expiresMs - now) / 86400000));
+
+    return `
+    <div class="card-in flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors ${isMe ? 'bg-sky-50/50' : ''}">
+      <div class="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
+        <i class="fa-solid fa-key text-gray-400 text-sm"></i>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="text-sm font-medium text-gray-800">${t.label || '<span class="text-gray-400 italic text-xs">Nomsiz</span>'}</span>
+          ${isMe ? '<span class="text-[10px] text-sky-600 bg-sky-50 px-1.5 py-0.5 rounded-full border border-sky-100 font-medium">Joriy sessiya</span>' : ''}
+          <span class="text-[10px] px-1.5 py-0.5 rounded-full font-medium ${daysLeft <= 3 ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-green-50 text-green-600 border border-green-100'}">
+            ${daysLeft} kun qoldi
+          </span>
+        </div>
+        <div class="flex items-center gap-3 mt-1 flex-wrap">
+          <span class="text-xs font-mono text-gray-400">${short}</span>
+          <span class="text-[10px] text-gray-400"><i class="fa-solid fa-user mr-0.5"></i>${t.username}</span>
+          <span class="text-[10px] text-gray-400"><i class="fa-solid fa-clock mr-0.5"></i>${created}</span>
+          <span class="text-[10px] text-gray-400"><i class="fa-solid fa-hourglass-half mr-0.5"></i>${expires} gacha</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-1 flex-shrink-0">
+        <button onclick="copySpecificToken('${t.token}')" title="Nusxalash"
+          class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors">
+          <i class="fa-solid fa-copy text-xs"></i>
+        </button>
+        <button onclick="deleteToken('${t.token}', ${isMe})" title="O'chirish"
+          class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+          <i class="fa-solid fa-trash-can text-xs"></i>
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function copySpecificToken(t) {
+  navigator.clipboard.writeText(t).then(() => toast('Token nusxalandi', 'success'));
+}
+
+async function deleteToken(t, isMe) {
+  if (!confirm(isMe ? 'Joriy sessiya tokeni o\'chirilsa, tizimdan chiqasiz. Davom etasizmi?' : 'Tokenni o\'chirishni tasdiqlaysizmi?')) return;
+  try {
+    const res = await fetch(`/auth/tokens/${t}`, { method: 'DELETE', headers: authHeaders() });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message);
+    toast(data.message, 'info');
+    if (isMe) { localStorage.clear(); window.location.href = '/login'; return; }
+    await loadTokens();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function toast(msg, type = 'info') {
+  const c = { success:'bg-green-500', error:'bg-red-500', info:'bg-sky-500' };
+  const i = { success:'fa-circle-check', error:'fa-circle-xmark', info:'fa-circle-info' };
+  const el = document.createElement('div');
+  el.className = `toast pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl text-white text-sm shadow-lg ${c[type]}`;
+  el.innerHTML = `<i class="fa-solid ${i[type]} flex-shrink-0"></i><span>${msg}</span>`;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(), 300); }, 3500);
+}
+
+loadTokens();
+</script>
+</body>
+</html>

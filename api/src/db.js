@@ -29,11 +29,16 @@ async function connect() {
         CREATE TABLE IF NOT EXISTS tokens (
             token      VARCHAR(64) NOT NULL PRIMARY KEY,
             username   VARCHAR(64) NOT NULL,
+            label      VARCHAR(128) DEFAULT NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             expires_at DATETIME NOT NULL,
             INDEX idx_username (username)
         )
     `);
+
+    try {
+        await pool.execute(`ALTER TABLE tokens ADD COLUMN label VARCHAR(128) DEFAULT NULL`);
+    } catch (_) {}
 
     await pool.execute(`
         CREATE TABLE IF NOT EXISTS jobs (

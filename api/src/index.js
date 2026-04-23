@@ -76,11 +76,20 @@ expressWs(app);
     app.get('/dashboard', (req, res) => {
         return res.sendFile(path.join(__dirname, 'dashboard.html'));
     });
+    app.get('/tokens', (req, res) => {
+        return res.sendFile(path.join(__dirname, 'tokens.html'));
+    });
+    app.get('/jobs', (req, res) => {
+        return res.sendFile(path.join(__dirname, 'jobs.html'));
+    });
+    app.get('/api-docs', (req, res) => {
+        return res.sendFile(path.join(__dirname, 'api-docs.html'));
+    });
     app.get('/login', (req, res) => {
         return res.sendFile(path.join(__dirname, 'login.html'));
     });
-    app.get('/', (req, res, next) => {
-        return res.status(200).send({ message: `Compiler v${version}` });
+    app.get('/', (req, res) => {
+        return res.redirect('/dashboard');
     });
 
     app.use((req, res, next) => {
