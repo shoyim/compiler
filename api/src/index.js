@@ -82,6 +82,9 @@ expressWs(app);
     app.get('/jobs', (req, res) => {
         return res.sendFile(path.join(__dirname, 'jobs.html'));
     });
+    app.get('/tester', (req, res) => {
+        return res.sendFile(path.join(__dirname, 'tester.html'));
+    });
     app.get('/api-docs', (req, res) => {
         return res.sendFile(path.join(__dirname, 'api-docs.html'));
     });
