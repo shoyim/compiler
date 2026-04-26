@@ -133,6 +133,13 @@ class Runtime {
             );
         }
 
+        // Remove existing runtimes from this pkgdir before re-registering (prevents duplicates on reinstall)
+        const to_remove = runtimes.filter(rt => rt.pkgdir === package_dir);
+        to_remove.forEach(rt => rt.unregister());
+        if (to_remove.length > 0) {
+            logger.debug(`Removed ${to_remove.length} existing runtime(s) from ${package_dir}`);
+        }
+
         if (provides) {
             // Multiple languages in 1 package
             provides.forEach(lang => {

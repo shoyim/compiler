@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-
-# rename (Perl) is not guaranteed in the sandbox; use mv loop instead
+set -e
 
 case "${COMPILER_LANGUAGE}" in
     c)
@@ -11,9 +10,9 @@ case "${COMPILER_LANGUAGE}" in
         ;;
     c++)
         for f in "$@"; do
-            [[ "$f" == *.cpp ]] || [[ "$f" == *.cc ]] || mv "$f" "${f%.*}.cpp"
+            [[ "$f" == *.cpp ]] || mv "$f" "${f%.*}.cpp"
         done
-        g++ -std=c++17 *.cpp -o a.out 2>/dev/null || g++ -std=c++17 *.cpp *.cc -o a.out
+        g++ -std=c++17 *.cpp -o a.out
         ;;
     d)
         for f in "$@"; do
