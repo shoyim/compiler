@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+# rename (Perl) is not guaranteed in the sandbox; use mv loop instead
+
+case "${COMPILER_LANGUAGE}" in
+    c)
+        for f in "$@"; do
+            [[ "$f" == *.c ]] || mv "$f" "${f%.*}.c"
+        done
+        gcc -std=c11 *.c -lm -o a.out
+        ;;
+    c++)
+        for f in "$@"; do
+            [[ "$f" == *.cpp ]] || [[ "$f" == *.cc ]] || mv "$f" "${f%.*}.cpp"
+        done
+        g++ -std=c++17 *.cpp -o a.out 2>/dev/null || g++ -std=c++17 *.cpp *.cc -o a.out
+        ;;
+    d)
+        for f in "$@"; do
+            [[ "$f" == *.d ]] || mv "$f" "${f%.*}.d"
+        done
+        gdc *.d -o a.out
+        ;;
+    fortran)
+        for f in "$@"; do
+            [[ "$f" == *.f90 ]] || [[ "$f" == *.f ]] || mv "$f" "${f%.*}.f90"
+        done
+        gfortran *.f90 -o a.out
+        ;;
+    *)
+        echo "Unknown language: ${COMPILER_LANGUAGE}"
+        exit 1
+        ;;
+esac
+
+chmod +x a.out

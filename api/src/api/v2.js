@@ -298,15 +298,18 @@ router.get('/jobs', requireAuth, async (req, res) => {
     let where = '';
     if (lang) { where = 'WHERE language = ? '; params.push(lang); }
     try {
-        const [rows] = await getPool().query(
-            `SELECT id, username, language, version,
-                    compile_exit, compile_time, compile_memory, compile_status,
-                    run_exit, run_time, run_memory, run_status,
-                    created_at
-             FROM jobs ${where}ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`,
-            params
-        );
-        return res.json(rows);
+        const [[countResult], [rows]] = await Promise.all([
+            getPool().query(`SELECT COUNT(*) as total FROM jobs ${where}`, params),
+            getPool().query(
+                `SELECT id, username, language, version,
+                        compile_exit, compile_time, compile_memory, compile_status,
+                        run_exit, run_time, run_memory, run_status,
+                        created_at
+                 FROM jobs ${where}ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`,
+                params
+            ),
+        ]);
+        return res.json({ jobs: rows, total: countResult[0].total });
     } catch (e) {
         logger.error('GET /jobs error:', e.message);
         return res.status(500).json({ message: 'Joblarni olishda xato: ' + e.message });
