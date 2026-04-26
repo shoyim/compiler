@@ -1,30 +1,35 @@
 #!/usr/bin/env bash
+set -e
 
-LANG=$(echo "${COMPILER_LANGUAGE}" | tr '[:upper:]' '[:lower:]')
-
-case "${LANG}" in
-    c|gcc)
-        rename 's/$/\.c/' "$@" 2>/dev/null || true
-        gcc -pipe -O2 -std=c11 *.c -lm
+case "${COMPILER_LANGUAGE}" in
+    c)
+        for f in "$@"; do
+            [[ "$f" == *.c ]] || mv "$f" "${f%.*}.c"
+        done
+        gcc -O2 -std=c11 *.c -lm -o a.out
         ;;
-    c++|cpp|g++)
-        rename 's/$/\.cpp/' "$@" 2>/dev/null || true
-        g++ -pipe -O2 -std=c++23 *.cpp -lm
+    c++)
+        for f in "$@"; do
+            [[ "$f" == *.cpp ]] || mv "$f" "${f%.*}.cpp"
+        done
+        g++ -O2 -std=c++20 *.cpp -lm -o a.out
         ;;
-    d|gdc)
-        rename 's/.code$/\.d/' "$@" 2>/dev/null || true
-        gdc *.d
+    d)
+        for f in "$@"; do
+            [[ "$f" == *.d ]] || mv "$f" "${f%.*}.d"
+        done
+        gdc *.d -o a.out
         ;;
-    fortran|f90|gfortran)
-        rename 's/.code$/\.f90/' "$@" 2>/dev/null || true
-        gfortran *.f90
+    fortran)
+        for f in "$@"; do
+            [[ "$f" == *.f90 ]] || [[ "$f" == *.f ]] || mv "$f" "${f%.*}.f90"
+        done
+        gfortran *.f90 -o a.out
         ;;
     *)
-        echo "How did you get here? (${COMPILER_LANGUAGE})"
+        echo "Unknown language: ${COMPILER_LANGUAGE}" >&2
         exit 1
         ;;
 esac
 
-if [ -f a.out ]; then
-    chmod +x a.out
-fi
+chmod +x a.out
