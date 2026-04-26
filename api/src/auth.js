@@ -116,7 +116,8 @@ router.delete('/users/:username', requireAuth, async (req, res) => {
 router.get('/tokens', requireAuth, async (req, res) => {
     try {
         const [rows] = await getPool().execute(
-            'SELECT token, username, label, created_at, expires_at FROM tokens WHERE expires_at > NOW() ORDER BY created_at DESC'
+            'SELECT token, username, label, created_at, expires_at FROM tokens WHERE username = ? AND expires_at > NOW() ORDER BY created_at DESC',
+            [req.authUser]
         );
         return res.json(rows);
     } catch (e) {
@@ -142,7 +143,11 @@ router.post('/tokens', requireAuth, async (req, res) => {
 
 router.delete('/tokens/:token', requireAuth, async (req, res) => {
     try {
-        await getPool().execute('DELETE FROM tokens WHERE token = ?', [req.params.token]);
+        const [result] = await getPool().execute(
+            'DELETE FROM tokens WHERE token = ? AND username = ?',
+            [req.params.token, req.authUser]
+        );
+        if (result.affectedRows === 0) return res.status(404).json({ message: 'Token topilmadi' });
         return res.json({ message: 'Token o\'chirildi' });
     } catch (e) {
         return res.status(500).json({ message: 'Server xatosi: ' + e.message });

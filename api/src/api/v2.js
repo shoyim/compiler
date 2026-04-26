@@ -279,14 +279,11 @@ router.post('/execute', requireAuth, async (req, res) => {
         return res.status(200).send(response);
     } catch (error) {
         logger.error(`Error executing job: ${job.uuid}:\n${error}`);
-        return res.status(500).send();
+        return res.status(500).send({ message: 'Job bajarishda xato: ' + error.message });
     } finally {
-        try {
-            await job.cleanup();
-        } catch (error) {
+        job.cleanup().catch(error => {
             logger.error(`Error cleaning up job: ${job.uuid}:\n${error}`);
-            return res.status(500).send();
-        }
+        });
     }
 });
 
