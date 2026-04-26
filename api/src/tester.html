@@ -1,45 +1,92 @@
 <!DOCTYPE html>
-<html lang="uz">
+<html lang="uz" id="root">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tester — Compiler</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <style>
-    .toast { animation: slideIn .25s ease; }
-    @keyframes slideIn { from { transform:translateX(110%); } to { transform:none; } }
-    .spin { animation: spin 1s linear infinite; }
-    @keyframes spin { to { transform:rotate(360deg); } }
 
-    #codeArea {
-      font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
-      font-size: 13px;
-      line-height: 1.6;
-      tab-size: 4;
-      resize: none;
-      outline: none;
+  <!-- CodeMirror 5 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+  <!-- Dark themes (per-language) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/monokai.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/darcula.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/nord.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/gruvbox-dark.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/3024-night.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/oceanic-next.min.css">
+  <!-- Light themes -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/idea.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/eclipse.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/mdn-like.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/neat.min.css">
+
+  <style>
+    /* ── Theme variables ─────────────────────────────────── */
+    :root {
+      --page-bg:   #030712; --panel-bg:  #111827; --border:    #1f2937;
+      --text:      #e2e8f0; --text-dim:  #9ca3af; --text-muted:#6b7280;
+      --inp-bg:    #1f2937; --inp-bd:    #374151; --inp-text:  #e2e8f0;
+      --tab-a-bg:  #1e293b; --tab-a-txt: #e2e8f0; --tab-i-txt: #64748b;
+      --pro-bg:    #1f2937; --pro-bd:    #374151;
+      --pre-bg:    #0f172a; --pre-text:  #e2e8f0; --pre-err:   #fca5a5;
+      --cm-theme: monokai;
     }
-    #stdinArea {
-      font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
-      font-size: 12px;
-      resize: none;
-      outline: none;
+    html.light {
+      --page-bg:   #f8fafc; --panel-bg:  #ffffff; --border:    #e2e8f0;
+      --text:      #0f172a; --text-dim:  #64748b; --text-muted:#94a3b8;
+      --inp-bg:    #ffffff; --inp-bd:    #cbd5e1; --inp-text:  #0f172a;
+      --tab-a-bg:  #f1f5f9; --tab-a-txt: #0f172a; --tab-i-txt: #64748b;
+      --pro-bg:    #f1f5f9; --pro-bd:    #e2e8f0;
+      --pre-bg:    #1e293b; --pre-text:  #e2e8f0; --pre-err:   #fca5a5;
     }
+
+    body { background:var(--page-bg); color:var(--text); transition:background .15s,color .15s; }
+
+    /* ── Theme helper classes ─────────────────────────────── */
+    .th-panel    { background:var(--panel-bg); }
+    .th-border   { border-color:var(--border)  !important; }
+    .th-text     { color:var(--text); }
+    .th-text-dim { color:var(--text-dim); }
+    .th-text-muted { color:var(--text-muted); }
+    .th-page     { background:var(--page-bg); }
+    .th-inp      { background:var(--inp-bg)!important; border-color:var(--inp-bd)!important; color:var(--inp-text)!important; }
+    .th-tab-a    { background:var(--tab-a-bg); color:var(--tab-a-txt); }
+    .th-tab-i    { color:var(--tab-i-txt); }
+    .th-tab-i:hover { color:var(--text-dim); background:var(--tab-a-bg); }
+    .th-pro-btn  { background:var(--pro-bg); border-color:var(--pro-bd); }
+    .th-pro-menu { background:var(--panel-bg); border-color:var(--border); }
+    .th-pro-item { color:var(--text-dim); }
+    .th-pro-item:hover { background:var(--tab-a-bg); }
+
+    /* ── CodeMirror ───────────────────────────────────────── */
+    #cmEditor { overflow:hidden; }
+    .CodeMirror {
+      height:100%;
+      font-family:'Cascadia Code','Fira Code','JetBrains Mono',Consolas,monospace;
+      font-size:13px;
+      line-height:1.6;
+    }
+    .CodeMirror-scroll { padding-bottom:8px; }
+
+    /* ── Output ───────────────────────────────────────────── */
     .output-pre {
-      font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
-      font-size: 12px;
-      line-height: 1.6;
-      white-space: pre-wrap;
-      word-break: break-all;
+      font-family:'Cascadia Code','Fira Code',Consolas,monospace;
+      font-size:12px; line-height:1.6;
+      white-space:pre-wrap; word-break:break-all;
     }
-    .run-btn-glow { box-shadow: 0 0 20px rgba(34,197,94,0.4); }
-    .tab-active { background: #1e293b; color: #e2e8f0; }
-    .tab-inactive { color: #64748b; }
-    .tab-inactive:hover { color: #94a3b8; }
+
+    .run-btn-glow { box-shadow:0 0 20px rgba(34,197,94,.4); }
+    .spin  { animation:spin 1s linear infinite; }
+    @keyframes spin    { to { transform:rotate(360deg); } }
+    .toast { animation:slideIn .25s ease; }
+    @keyframes slideIn { from { transform:translateX(110%); } to { transform:none; } }
   </style>
 </head>
-<body class="bg-gray-950 min-h-screen font-sans text-gray-200">
+<body class="min-h-screen font-sans">
 
 <div id="toasts" class="fixed top-4 right-4 z-50 flex flex-col gap-2 w-80 pointer-events-none"></div>
 
@@ -63,28 +110,30 @@
 </div>
 
 <!-- Header -->
-<header class="bg-gray-900 border-b border-gray-800 sticky top-0 z-40">
+<header class="th-panel border-b th-border sticky top-0 z-40">
   <div class="max-w-full px-4 py-2.5 flex items-center gap-3">
+
+    <!-- Logo + Nav -->
     <div class="flex items-center gap-3 flex-shrink-0">
       <div class="w-8 h-8 bg-sky-600 rounded-lg flex items-center justify-center">
         <i class="fa-solid fa-code text-white text-xs"></i>
       </div>
-      <span class="text-sm font-bold text-gray-100 hidden sm:block">Compiler</span>
+      <span class="text-sm font-bold hidden sm:block th-text">Compiler</span>
     </div>
     <nav class="flex items-center gap-0.5 flex-shrink-0">
-      <a href="/dashboard" class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors">
+      <a href="/dashboard" class="th-tab-i flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors">
         <i class="fa-solid fa-gauge-high text-xs"></i><span class="hidden sm:inline">Dashboard</span>
       </a>
       <a href="/tester" class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-green-600 text-white">
         <i class="fa-solid fa-play text-xs"></i><span>Tester</span>
       </a>
-      <a href="/jobs" class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors">
+      <a href="/jobs" class="th-tab-i flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors">
         <i class="fa-solid fa-list-check text-xs"></i><span class="hidden sm:inline">Joblar</span>
       </a>
-      <a href="/tokens" class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors">
+      <a href="/tokens" class="th-tab-i flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors">
         <i class="fa-solid fa-key text-xs"></i><span class="hidden sm:inline">Tokenlar</span>
       </a>
-      <a href="/api-docs" class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors">
+      <a href="/api-docs" class="th-tab-i flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors">
         <i class="fa-solid fa-book text-xs"></i><span class="hidden md:inline">API Docs</span>
       </a>
     </nav>
@@ -92,11 +141,11 @@
     <!-- Toolbar -->
     <div class="flex items-center gap-2 ml-2 flex-1 min-w-0">
       <select id="langSelect"
-        class="text-xs bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-sky-500 min-w-[120px]">
-        <option value="">Til yuklanmoqda...</option>
+        class="th-inp text-xs border rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-sky-500 min-w-[110px]">
+        <option value="">Yuklanmoqda...</option>
       </select>
       <select id="versionSelect"
-        class="text-xs bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-sky-500">
+        class="th-inp text-xs border rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-sky-500">
         <option value="*">*</option>
       </select>
       <button id="runBtn" onclick="runCode()"
@@ -104,108 +153,115 @@
         <i class="fa-solid fa-play text-xs" id="runIcon"></i>
         <span id="runText">Ishga tushirish</span>
       </button>
-      <div id="runStats" class="hidden flex items-center gap-2 text-xs text-gray-500 flex-shrink-0">
-        <span id="statTime" class="flex items-center gap-1"><i class="fa-solid fa-clock text-gray-600"></i>—</span>
-        <span id="statMem" class="flex items-center gap-1"><i class="fa-solid fa-microchip text-gray-600"></i>—</span>
+      <div id="runStats" class="hidden flex items-center gap-2 text-xs flex-shrink-0 th-text-muted">
+        <span id="statTime" class="flex items-center gap-1"><i class="fa-solid fa-clock"></i>—</span>
+        <span id="statMem" class="flex items-center gap-1"><i class="fa-solid fa-microchip"></i>—</span>
       </div>
     </div>
 
-    <!-- Profile -->
-    <div class="relative flex-shrink-0" id="profileDropdown">
-      <button onclick="toggleProfileMenu()"
-        class="flex items-center gap-1.5 px-2 py-1.5 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 transition-colors">
-        <i class="fa-solid fa-circle-user text-sky-400 text-sm"></i>
-        <span id="headerUser" class="text-xs font-medium text-gray-300 hidden sm:inline">—</span>
-        <i class="fa-solid fa-chevron-down text-[9px] text-gray-500"></i>
+    <!-- Theme toggle + Profile -->
+    <div class="flex items-center gap-1.5 flex-shrink-0">
+      <!-- Dark/Light toggle -->
+      <button onclick="toggleTheme()" title="Mavzu o'zgartirish"
+        class="th-pro-btn w-8 h-8 flex items-center justify-center border rounded-lg transition-colors hover:opacity-80">
+        <i id="themeIcon" class="fa-solid fa-sun text-xs th-text-dim"></i>
       </button>
-      <div id="profileMenu" class="hidden absolute right-0 mt-1 w-44 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl z-50 py-1 overflow-hidden">
-        <button onclick="openProfileModal(); closeProfileMenu()"
-          class="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-300 hover:bg-gray-700 transition-colors">
-          <i class="fa-solid fa-lock text-gray-500 w-4"></i>Parolni o'zgartirish
+
+      <!-- Profile -->
+      <div class="relative" id="profileDropdown">
+        <button onclick="toggleProfileMenu()"
+          class="th-pro-btn flex items-center gap-1.5 px-2 py-1.5 border rounded-lg transition-colors hover:opacity-80">
+          <i class="fa-solid fa-circle-user text-sky-400 text-sm"></i>
+          <span id="headerUser" class="text-xs font-medium th-text hidden sm:inline">—</span>
+          <i class="fa-solid fa-chevron-down text-[9px] th-text-muted"></i>
         </button>
-        <div class="border-t border-gray-700 my-1"></div>
-        <button onclick="logout()" class="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-400 hover:bg-gray-700 transition-colors">
-          <i class="fa-solid fa-right-from-bracket w-4"></i>Chiqish
-        </button>
+        <div id="profileMenu" class="hidden absolute right-0 mt-1 w-44 th-pro-menu border rounded-xl shadow-2xl z-50 py-1 overflow-hidden">
+          <button onclick="openProfileModal(); closeProfileMenu()"
+            class="th-pro-item w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors">
+            <i class="fa-solid fa-lock th-text-muted w-4"></i>Parolni o'zgartirish
+          </button>
+          <div class="border-t th-border my-1"></div>
+          <button onclick="logout()" class="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-400 hover:bg-red-500/10 transition-colors">
+            <i class="fa-solid fa-right-from-bracket w-4"></i>Chiqish
+          </button>
+        </div>
       </div>
     </div>
+
   </div>
 </header>
 
 <!-- Main layout -->
-<div class="flex flex-col lg:flex-row h-[calc(100vh-49px)]">
+<div class="flex flex-col lg:flex-row" style="height:calc(100vh - 49px)">
 
-  <!-- Left: Editor -->
-  <div class="flex flex-col lg:w-1/2 xl:w-3/5 border-r border-gray-800 min-h-0">
+  <!-- ── Left: Editor ─────────────────────────────────────── -->
+  <div class="flex flex-col lg:w-1/2 xl:w-3/5 border-r th-border min-h-0">
 
-    <!-- Editor tabs -->
-    <div class="flex items-center gap-1 px-3 py-1.5 bg-gray-900 border-b border-gray-800 flex-shrink-0">
-      <div class="flex items-center gap-1.5 px-3 py-1 rounded-md bg-gray-800 text-xs text-gray-300">
-        <i class="fa-solid fa-file-code text-gray-500 text-[10px]"></i>
-        <span id="fileNameLabel">main</span>
+    <!-- Editor tab bar -->
+    <div id="editorTabBar" class="flex items-center gap-1 px-3 py-1.5 th-panel border-b th-border flex-shrink-0 transition-colors">
+      <div class="flex items-center gap-1.5 px-3 py-1 rounded-md th-tab-a text-xs">
+        <span id="langAccentDot" class="w-2 h-2 rounded-full flex-shrink-0 transition-colors" style="background:#6B7280"></span>
+        <span id="fileNameLabel" class="font-mono">main</span>
       </div>
       <div class="ml-auto flex items-center gap-1">
-        <button onclick="clearCode()" title="Tozalash" class="w-6 h-6 flex items-center justify-center text-gray-600 hover:text-gray-400 rounded transition-colors">
+        <button onclick="clearCode()" title="Tozalash"
+          class="w-6 h-6 flex items-center justify-center th-text-muted hover:th-text rounded transition-colors">
           <i class="fa-solid fa-eraser text-[10px]"></i>
         </button>
-        <button onclick="copyCode()" title="Kodni nusxalash" class="w-6 h-6 flex items-center justify-center text-gray-600 hover:text-gray-400 rounded transition-colors">
+        <button onclick="copyCode()" title="Kodni nusxalash"
+          class="w-6 h-6 flex items-center justify-center th-text-muted hover:th-text rounded transition-colors">
           <i class="fa-solid fa-copy text-[10px]"></i>
         </button>
       </div>
     </div>
 
-    <!-- Code editor -->
-    <div class="flex flex-1 min-h-0 overflow-hidden">
-      <!-- Line numbers -->
-      <div id="lineNumbers" class="select-none flex-shrink-0 bg-gray-950 border-r border-gray-800 text-right px-3 py-4 text-gray-600 text-[11px] leading-[1.6] font-mono overflow-hidden">
-        1
-      </div>
-      <!-- Textarea -->
-      <textarea id="codeArea" spellcheck="false" autocomplete="off" autocorrect="off"
-        class="flex-1 bg-gray-950 text-gray-100 p-4 caret-green-400"
-        placeholder="// Kodingizni shu yerga yozing..."></textarea>
-    </div>
+    <!-- CodeMirror -->
+    <div id="cmEditor" class="flex-1 min-h-0"></div>
 
     <!-- Stdin -->
-    <div class="border-t border-gray-800 flex-shrink-0">
-      <div class="flex items-center gap-2 px-3 py-1.5 bg-gray-900">
-        <span class="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">stdin</span>
-        <span class="text-[10px] text-gray-600">— dasturga beriladigan kirish ma'lumoti</span>
+    <div class="border-t th-border flex-shrink-0">
+      <div class="flex items-center gap-2 px-3 py-1.5 th-panel">
+        <span class="text-[10px] font-semibold th-text-muted uppercase tracking-wider">stdin</span>
+        <span class="text-[10px] th-text-muted">— dasturga beriladigan kirish</span>
       </div>
       <textarea id="stdinArea" rows="3"
-        class="w-full bg-gray-950 text-gray-300 px-4 py-3 border-t border-gray-800"
+        style="font-family:'Cascadia Code','Fira Code',Consolas,monospace;font-size:12px;resize:none;outline:none;"
+        class="th-inp w-full px-4 py-3 border-t th-border"
         placeholder="Kirish ma'lumotlari (stdin)..."></textarea>
     </div>
   </div>
 
-  <!-- Right: Output -->
+  <!-- ── Right: Output ────────────────────────────────────── -->
   <div class="flex flex-col lg:w-1/2 xl:w-2/5 min-h-0">
 
-    <!-- Output tabs -->
-    <div class="flex items-center gap-1 px-3 py-1.5 bg-gray-900 border-b border-gray-800 flex-shrink-0">
-      <button id="tab-output" onclick="switchOutputTab('output')" class="tab-active px-3 py-1 rounded-md text-xs font-medium transition-colors">
+    <!-- Output tab bar -->
+    <div class="flex items-center gap-1 px-3 py-1.5 th-panel border-b th-border flex-shrink-0">
+      <button id="tab-output" onclick="switchOutputTab('output')"
+        class="th-tab-a px-3 py-1 rounded-md text-xs font-medium transition-colors">
         <i class="fa-solid fa-terminal text-[10px] mr-1"></i>Natija
       </button>
-      <button id="tab-compile" onclick="switchOutputTab('compile')" class="tab-inactive px-3 py-1 rounded-md text-xs font-medium transition-colors hidden">
+      <button id="tab-compile" onclick="switchOutputTab('compile')"
+        class="th-tab-i hidden px-3 py-1 rounded-md text-xs font-medium transition-colors">
         <i class="fa-solid fa-gears text-[10px] mr-1"></i>Compile
       </button>
       <div class="ml-auto">
-        <button onclick="clearOutput()" class="w-6 h-6 flex items-center justify-center text-gray-600 hover:text-gray-400 rounded transition-colors" title="Tozalash">
+        <button onclick="clearOutput()"
+          class="w-6 h-6 flex items-center justify-center th-text-muted rounded transition-colors" title="Tozalash">
           <i class="fa-solid fa-eraser text-[10px]"></i>
         </button>
       </div>
     </div>
 
     <!-- Status bar -->
-    <div id="statusBar" class="hidden flex items-center gap-3 px-4 py-2 border-b border-gray-800 flex-shrink-0">
+    <div id="statusBar" class="hidden flex items-center gap-3 px-4 py-2 border-b th-border flex-shrink-0">
       <div id="statusBadge"></div>
-      <div id="statusDetails" class="flex items-center gap-3 text-[10px] text-gray-500"></div>
+      <div id="statusDetails" class="flex items-center gap-3 text-[10px] th-text-muted"></div>
     </div>
 
     <!-- Output content -->
-    <div class="flex-1 overflow-auto bg-gray-950">
+    <div class="flex-1 overflow-auto th-page">
       <div id="outputPanel" class="p-4">
-        <div class="text-center py-16 text-gray-700">
+        <div class="text-center py-16 th-text-muted">
           <i class="fa-solid fa-terminal text-4xl mb-4 block opacity-30"></i>
           <p class="text-sm">Kodni ishga tushiring</p>
           <p class="text-xs mt-1 opacity-60">Ctrl+Enter yoki "Ishga tushirish" tugmasi</p>
@@ -216,16 +272,30 @@
   </div>
 </div>
 
+<!-- CodeMirror scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/clike/clike.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/rust/rust.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/go/go.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/shell/shell.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/fortran/fortran.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/selection/active-line.min.js"></script>
+
 <script>
+// ── Auth ──────────────────────────────────────────────────────────────────
 const authToken = localStorage.getItem('auth_token');
 if (!authToken) window.location.href = '/login';
 document.getElementById('headerUser').textContent = localStorage.getItem('auth_user') || '?';
 
 function authHeaders() {
-  return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken };
+  return { 'Content-Type':'application/json', 'Authorization':'Bearer '+authToken };
 }
 async function logout() {
-  await fetch('/auth/logout', { method: 'POST', headers: authHeaders() }).catch(() => {});
+  await fetch('/auth/logout', { method:'POST', headers:authHeaders() }).catch(()=>{});
   localStorage.clear(); window.location.href = '/login';
 }
 function toggleProfileMenu() { document.getElementById('profileMenu').classList.toggle('hidden'); }
@@ -233,7 +303,10 @@ function closeProfileMenu()  { document.getElementById('profileMenu').classList.
 document.addEventListener('click', e => {
   if (!document.getElementById('profileDropdown').contains(e.target)) closeProfileMenu();
 });
-function openProfileModal()  { document.getElementById('profileModal').classList.remove('hidden'); document.getElementById('curPass').focus(); }
+function openProfileModal() {
+  document.getElementById('profileModal').classList.remove('hidden');
+  document.getElementById('curPass').focus();
+}
 function closeProfileModal() {
   document.getElementById('profileModal').classList.add('hidden');
   ['curPass','newPass1','newPass2'].forEach(id => document.getElementById(id).value = '');
@@ -248,7 +321,7 @@ async function submitProfileChange() {
   if (!cur || !n1) { toast('Barcha maydonlarni to\'ldiring', 'error'); return; }
   if (n1 !== n2)   { toast('Yangi parollar mos kelmadi', 'error'); return; }
   try {
-    const res = await fetch('/auth/profile', { method: 'PUT', headers: authHeaders(), body: JSON.stringify({ current_password: cur, new_password: n1 }) });
+    const res  = await fetch('/auth/profile', { method:'PUT', headers:authHeaders(), body:JSON.stringify({ current_password:cur, new_password:n1 }) });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message);
     toast(data.message, 'success');
@@ -256,11 +329,122 @@ async function submitProfileChange() {
   } catch(e) { toast(e.message, 'error'); }
 }
 
-// ── Runtimes ──────────────────────────────────────────────────────────
+// ── Dark / Light theme ────────────────────────────────────────────────────
+let isDark = localStorage.getItem('cm-theme') !== 'light';
+
+function applyTheme() {
+  document.getElementById('root').classList.toggle('light', !isDark);
+  document.getElementById('themeIcon').className =
+    isDark ? 'fa-solid fa-sun text-xs th-text-dim'
+           : 'fa-solid fa-moon text-xs th-text-dim';
+  localStorage.setItem('cm-theme', isDark ? 'dark' : 'light');
+  // Re-apply language-specific theme for new dark/light state
+  if (currentEditorLang) applyLangStyle(currentEditorLang);
+  else editor.setOption('theme', isDark ? 'monokai' : 'idea');
+}
+
+function toggleTheme() {
+  isDark = !isDark;
+  applyTheme();
+}
+
+// ── Language → CodeMirror theme & accent color ────────────────────────────
+// dark: CodeMirror theme for dark mode
+// light: CodeMirror theme for light mode
+// color: CSS accent color shown on the editor tab bar
+// label: border-left accent style
+const LANG_THEMES = {
+  'python':     { dark:'material',    light:'idea',    color:'#3776AB', label:'Python'     },
+  'c':          { dark:'dracula',     light:'eclipse', color:'#A8B9CC', label:'C'          },
+  'c++':        { dark:'dracula',     light:'eclipse', color:'#00599C', label:'C++'        },
+  'java':       { dark:'darcula',     light:'idea',    color:'#ED8B00', label:'Java'       },
+  'kotlin':     { dark:'darcula',     light:'idea',    color:'#7F52FF', label:'Kotlin'     },
+  'scala':      { dark:'darcula',     light:'idea',    color:'#DC322F', label:'Scala'      },
+  'groovy':     { dark:'darcula',     light:'idea',    color:'#4298B8', label:'Groovy'     },
+  'javascript': { dark:'monokai',     light:'mdn-like',color:'#F7DF1E', label:'JavaScript' },
+  'typescript': { dark:'monokai',     light:'mdn-like',color:'#3178C6', label:'TypeScript' },
+  'node':       { dark:'monokai',     light:'mdn-like',color:'#339933', label:'Node.js'    },
+  'rust':       { dark:'gruvbox-dark',light:'idea',    color:'#CE422B', label:'Rust'       },
+  'go':         { dark:'nord',        light:'neat',    color:'#00ACD7', label:'Go'         },
+  'bash':       { dark:'3024-night',  light:'eclipse', color:'#4EAA25', label:'Bash'       },
+  'shell':      { dark:'3024-night',  light:'eclipse', color:'#4EAA25', label:'Shell'      },
+  'fortran':    { dark:'oceanic-next',light:'idea',    color:'#4E8CA5', label:'Fortran'    },
+  'd':          { dark:'oceanic-next',light:'idea',    color:'#BA595E', label:'D'          },
+  'default':    { dark:'monokai',     light:'idea',    color:'#6B7280', label:''           },
+};
+
+function getLangTheme(lang) {
+  return LANG_THEMES[lang] || LANG_THEMES.default;
+}
+
+function applyLangStyle(lang) {
+  const lt = getLangTheme(lang);
+  editor.setOption('theme', isDark ? lt.dark : lt.light);
+
+  // Editor tab: left border accent
+  const tabBar = document.getElementById('editorTabBar');
+  tabBar.style.borderLeftColor = lt.color;
+  tabBar.style.borderLeftWidth = '3px';
+  tabBar.style.borderLeftStyle = 'solid';
+
+  // File name label accent color
+  document.getElementById('langAccentDot').style.background = lt.color;
+}
+
+// ── Language → CodeMirror mode ────────────────────────────────────────────
+const LANG_MODES = {
+  'c':          'text/x-csrc',
+  'c++':        'text/x-c++src',
+  'java':       'text/x-java',
+  'kotlin':     'text/x-kotlin',
+  'scala':      'text/x-scala',
+  'groovy':     'text/x-groovy',
+  'python':     'text/x-python',
+  'javascript': 'text/javascript',
+  'typescript': 'text/typescript',
+  'node':       'text/javascript',
+  'rust':       'text/x-rustsrc',
+  'go':         'text/x-go',
+  'bash':       'text/x-sh',
+  'shell':      'text/x-sh',
+  'fortran':    'text/x-fortran',
+  'd':          'text/x-csrc',
+};
+
+// ── CodeMirror editor ─────────────────────────────────────────────────────
+const editor = CodeMirror(document.getElementById('cmEditor'), {
+  value:             '',
+  mode:              'text/plain',
+  theme:             isDark ? 'monokai' : 'idea',
+  lineNumbers:       true,
+  tabSize:           4,
+  indentUnit:        4,
+  indentWithTabs:    false,
+  autoCloseBrackets: true,
+  matchBrackets:     true,
+  styleActiveLine:   true,
+  lineWrapping:      false,
+  extraKeys: {
+    'Ctrl-Enter': () => runCode(),
+    'Cmd-Enter':  () => runCode(),
+    'Tab':        'indentMore',
+    'Shift-Tab':  'indentLess',
+  },
+});
+
+// Set initial theme icon
+document.getElementById('themeIcon').className =
+  isDark ? 'fa-solid fa-sun text-xs th-text-dim'
+         : 'fa-solid fa-moon text-xs th-text-dim';
+
+// ── Runtimes ──────────────────────────────────────────────────────────────
 let runtimes = [];
+let currentEditorLang = '';
+
 const EXAMPLES = {
   python:     { ext:'py',   code:'def solve():\n    n = int(input())\n    print(n * n)\n\nsolve()\n', stdin:'7\n' },
   javascript: { ext:'js',   code:'const lines = require("fs").readFileSync("/dev/stdin","utf8").trim().split("\\n");\nconst n = parseInt(lines[0]);\nconsole.log(n * n);\n', stdin:'7\n' },
+  node:       { ext:'js',   code:'const lines = require("fs").readFileSync("/dev/stdin","utf8").trim().split("\\n");\nconst n = parseInt(lines[0]);\nconsole.log(n * n);\n', stdin:'7\n' },
   java:       { ext:'java', code:'import java.util.Scanner;\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        System.out.println(n * n);\n    }\n}\n', stdin:'7\n' },
   c:          { ext:'c',    code:'#include <stdio.h>\nint main() {\n    int n;\n    scanf("%d", &n);\n    printf("%d\\n", n * n);\n    return 0;\n}\n', stdin:'7\n' },
   'c++':      { ext:'cpp',  code:'#include <iostream>\nusing namespace std;\nint main() {\n    int n;\n    cin >> n;\n    cout << n * n << endl;\n    return 0;\n}\n', stdin:'7\n' },
@@ -279,9 +463,9 @@ async function loadRuntimes() {
       if (!grouped[rt.language]) grouped[rt.language] = [];
       grouped[rt.language].push(rt.version);
     });
-    const langSel = document.getElementById('langSelect');
-    langSel.innerHTML = Object.keys(grouped).sort().map(lang =>
-      `<option value="${lang}">${lang}</option>`
+    const sel = document.getElementById('langSelect');
+    sel.innerHTML = Object.keys(grouped).sort().map(l =>
+      `<option value="${l}">${l}</option>`
     ).join('');
     updateVersions();
   } catch(e) {
@@ -299,16 +483,16 @@ function updateVersions() {
 }
 
 function applyExample(lang) {
-  const area = document.getElementById('codeArea');
-  if (area.value.trim() === '' || area.dataset.lang !== lang) {
+  if (editor.getValue().trim() === '' || currentEditorLang !== lang) {
     const ex = EXAMPLES[lang] || EXAMPLES.default;
-    area.value = ex.code;
+    editor.setValue(ex.code);
     if (!document.getElementById('stdinArea').value.trim()) {
       document.getElementById('stdinArea').value = ex.stdin;
     }
-    area.dataset.lang = lang;
-    updateLineNumbers();
   }
+  editor.setOption('mode', LANG_MODES[lang] || 'text/plain');
+  currentEditorLang = lang;
+  applyLangStyle(lang);
 }
 
 function updateFileName(lang) {
@@ -318,45 +502,17 @@ function updateFileName(lang) {
 
 document.getElementById('langSelect').addEventListener('change', updateVersions);
 
-// ── Line numbers ─────────────────────────────────────────────────────
-const codeArea = document.getElementById('codeArea');
-const lineNumbers = document.getElementById('lineNumbers');
-
-function updateLineNumbers() {
-  const lines = codeArea.value.split('\n').length;
-  lineNumbers.innerHTML = Array.from({length: lines}, (_, i) => i + 1).join('<br>');
-}
-
-codeArea.addEventListener('input', updateLineNumbers);
-codeArea.addEventListener('scroll', () => { lineNumbers.scrollTop = codeArea.scrollTop; });
-
-codeArea.addEventListener('keydown', e => {
-  if (e.key === 'Tab') {
-    e.preventDefault();
-    const s = codeArea.selectionStart;
-    const val = codeArea.value;
-    codeArea.value = val.slice(0, s) + '    ' + val.slice(codeArea.selectionEnd);
-    codeArea.selectionStart = codeArea.selectionEnd = s + 4;
-    updateLineNumbers();
-  }
-  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-    e.preventDefault();
-    runCode();
-  }
-});
-
-// ── Run ───────────────────────────────────────────────────────────────
+// ── Run ───────────────────────────────────────────────────────────────────
 let running = false;
 
 async function runCode() {
   if (running) return;
-  const code = codeArea.value.trim();
+  const code = editor.getValue().trim();
   if (!code) { toast('Kod bo\'sh', 'error'); return; }
 
   const lang    = document.getElementById('langSelect').value;
   const version = document.getElementById('versionSelect').value;
   const stdin   = document.getElementById('stdinArea').value;
-
   if (!lang) { toast('Tilni tanlang', 'error'); return; }
 
   running = true;
@@ -364,21 +520,20 @@ async function runCode() {
   const runIcon = document.getElementById('runIcon');
   const runText = document.getElementById('runText');
   runBtn.disabled = true;
-  runBtn.classList.remove('run-btn-glow', 'bg-green-600', 'hover:bg-green-500');
-  runBtn.classList.add('bg-gray-700');
+  runBtn.classList.remove('run-btn-glow','bg-green-600','hover:bg-green-500');
+  runBtn.classList.add('bg-gray-600');
   runIcon.className = 'fa-solid fa-circle-notch spin text-xs';
   runText.textContent = 'Bajarilmoqda...';
 
   document.getElementById('statusBar').classList.add('hidden');
   document.getElementById('runStats').classList.add('hidden');
   document.getElementById('outputPanel').innerHTML = `
-    <div class="flex items-center gap-2 text-gray-500 text-sm py-8 justify-center">
+    <div class="flex items-center gap-2 th-text-muted text-sm py-8 justify-center">
       <i class="fa-solid fa-circle-notch spin text-green-500 text-lg"></i>
       <span>Kod bajarilmoqda...</span>
     </div>`;
 
   const startTime = Date.now();
-
   try {
     const res = await fetch('/api/v2/execute', {
       method: 'POST',
@@ -386,103 +541,87 @@ async function runCode() {
       body: JSON.stringify({
         language: lang,
         version,
-        files: [{ name: document.getElementById('fileNameLabel').textContent, content: codeArea.value }],
+        files: [{ name: document.getElementById('fileNameLabel').textContent, content: editor.getValue() }],
         stdin,
       }),
     });
-
     const elapsed = Date.now() - startTime;
-
     if (res.status === 401) { logout(); return; }
     if (!res.ok) {
-      const e = await res.json().catch(() => ({ message: 'Server xatosi' }));
-      showError(e.message);
-      return;
+      const e = await res.json().catch(() => ({ message:'Server xatosi' }));
+      showError(e.message); return;
     }
-
-    const data = await res.json();
-    renderOutput(data, elapsed);
+    renderOutput(await res.json(), elapsed);
   } catch(e) {
     showError('Serverga ulanib bo\'lmadi: ' + e.message);
   } finally {
     running = false;
     runBtn.disabled = false;
-    runBtn.classList.add('run-btn-glow', 'bg-green-600', 'hover:bg-green-500');
-    runBtn.classList.remove('bg-gray-700');
+    runBtn.classList.add('run-btn-glow','bg-green-600','hover:bg-green-500');
+    runBtn.classList.remove('bg-gray-600');
     runIcon.className = 'fa-solid fa-play text-xs';
     runText.textContent = 'Ishga tushirish';
   }
 }
 
+// ── Output rendering ──────────────────────────────────────────────────────
 function renderOutput(data, clientMs) {
-  const run = data.run;
+  const run     = data.run;
   const compile = data.compile;
-
   const hasCompile = compile && compile.code !== null && compile.code !== undefined;
   document.getElementById('tab-compile').classList.toggle('hidden', !hasCompile);
 
   const statusBar = document.getElementById('statusBar');
   statusBar.classList.remove('hidden');
 
-  let statusBadgeHtml, statusColor;
+  let badge, color;
   if (run.status === 'timed_out') {
-    statusBadgeHtml = '<span class="flex items-center gap-1.5 text-xs font-bold text-yellow-400"><i class="fa-solid fa-clock"></i>Timeout</span>';
-    statusColor = 'border-yellow-500/30 bg-yellow-500/5';
+    badge = '<span class="flex items-center gap-1.5 text-xs font-bold text-yellow-400"><i class="fa-solid fa-clock"></i>Timeout</span>';
+    color = 'border-yellow-500/30 bg-yellow-500/5';
   } else if (run.status === 'memory_limit') {
-    statusBadgeHtml = '<span class="flex items-center gap-1.5 text-xs font-bold text-orange-400"><i class="fa-solid fa-microchip"></i>Memory Limit</span>';
-    statusColor = 'border-orange-500/30 bg-orange-500/5';
+    badge = '<span class="flex items-center gap-1.5 text-xs font-bold text-orange-400"><i class="fa-solid fa-microchip"></i>Memory Limit</span>';
+    color = 'border-orange-500/30 bg-orange-500/5';
   } else if (run.code === 0) {
-    statusBadgeHtml = '<span class="flex items-center gap-1.5 text-xs font-bold text-green-400"><i class="fa-solid fa-circle-check"></i>OK · exit 0</span>';
-    statusColor = 'border-green-500/30 bg-green-500/5';
+    badge = '<span class="flex items-center gap-1.5 text-xs font-bold text-green-400"><i class="fa-solid fa-circle-check"></i>OK · exit 0</span>';
+    color = 'border-green-500/30 bg-green-500/5';
   } else {
-    statusBadgeHtml = `<span class="flex items-center gap-1.5 text-xs font-bold text-red-400"><i class="fa-solid fa-circle-xmark"></i>Xato · exit ${run.code}</span>`;
-    statusColor = 'border-red-500/30 bg-red-500/5';
+    badge = `<span class="flex items-center gap-1.5 text-xs font-bold text-red-400"><i class="fa-solid fa-circle-xmark"></i>Xato · exit ${run.code}</span>`;
+    color = 'border-red-500/30 bg-red-500/5';
   }
 
-  document.getElementById('statusBadge').innerHTML = statusBadgeHtml;
+  document.getElementById('statusBadge').innerHTML = badge;
 
-  const details = [];
-  if (run.time) details.push(`<span><i class="fa-solid fa-clock mr-1 text-gray-600"></i>${run.time}ms</span>`);
-  if (run.memory) details.push(`<span><i class="fa-solid fa-microchip mr-1 text-gray-600"></i>${run.memory}KB</span>`);
-  details.push(`<span><i class="fa-solid fa-stopwatch mr-1 text-gray-600"></i>~${clientMs}ms</span>`);
-  details.push(`<span class="text-gray-600">${data.language} ${data.version}</span>`);
-  document.getElementById('statusDetails').innerHTML = details.join('');
+  const d = [];
+  if (run.time)   d.push(`<span><i class="fa-solid fa-clock mr-1"></i>${run.time}ms</span>`);
+  if (run.memory) d.push(`<span><i class="fa-solid fa-microchip mr-1"></i>${run.memory}KB</span>`);
+  d.push(`<span><i class="fa-solid fa-stopwatch mr-1"></i>~${clientMs}ms</span>`);
+  d.push(`<span>${data.language} ${data.version}</span>`);
+  document.getElementById('statusDetails').innerHTML = d.join('');
 
   document.getElementById('runStats').classList.remove('hidden');
-  document.getElementById('statTime').innerHTML = `<i class="fa-solid fa-clock text-gray-600"></i>${run.time || '—'}ms`;
-  document.getElementById('statMem').innerHTML  = `<i class="fa-solid fa-microchip text-gray-600"></i>${run.memory || '—'}KB`;
+  document.getElementById('statTime').innerHTML = `<i class="fa-solid fa-clock"></i>${run.time||'—'}ms`;
+  document.getElementById('statMem').innerHTML  = `<i class="fa-solid fa-microchip"></i>${run.memory||'—'}KB`;
 
-  const outHtml = buildOutputHtml(run, statusColor);
-  document.getElementById('outputPanel').innerHTML = outHtml;
-
-  if (hasCompile) {
-    document.getElementById('compilePanel').innerHTML = buildOutputHtml(compile, '');
-  }
-
+  document.getElementById('outputPanel').innerHTML = buildOutputHtml(run);
+  if (hasCompile) document.getElementById('compilePanel').innerHTML = buildOutputHtml(compile);
   switchOutputTab('output');
 }
 
-function buildOutputHtml(stage, borderColor) {
-  const hasStdout = stage.stdout && stage.stdout.length > 0;
-  const hasStderr = stage.stderr && stage.stderr.length > 0;
-
-  if (!hasStdout && !hasStderr) {
-    return '<p class="text-gray-600 text-xs italic py-4">Chiqish yo\'q</p>';
-  }
-
+function buildOutputHtml(stage) {
+  const hasOut = stage.stdout && stage.stdout.length > 0;
+  const hasErr = stage.stderr && stage.stderr.length > 0;
+  if (!hasOut && !hasErr) return '<p class="th-text-muted text-xs italic py-4">Chiqish yo\'q</p>';
   let html = '';
-  if (hasStdout) {
-    html += `<div class="mb-4">
-      <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-600 mb-2">stdout</p>
-      <pre class="output-pre text-gray-100 bg-gray-900 rounded-xl p-4 overflow-auto">${escHtml(stage.stdout)}</pre>
+  if (hasOut) html += `
+    <div class="mb-4">
+      <p class="text-[10px] font-semibold uppercase tracking-wider text-green-500/70 mb-2">stdout</p>
+      <pre class="output-pre rounded-xl p-4 overflow-auto" style="background:var(--pre-bg);color:var(--pre-text)">${escHtml(stage.stdout)}</pre>
     </div>`;
-  }
-  if (hasStderr) {
-    html += `<div>
-      <p class="text-[10px] font-semibold uppercase tracking-wider text-red-600 mb-2">stderr</p>
-      <pre class="output-pre text-red-300 bg-gray-900 rounded-xl p-4 overflow-auto">${escHtml(stage.stderr)}</pre>
+  if (hasErr) html += `
+    <div>
+      <p class="text-[10px] font-semibold uppercase tracking-wider text-red-500/70 mb-2">stderr</p>
+      <pre class="output-pre rounded-xl p-4 overflow-auto" style="background:var(--pre-bg);color:var(--pre-err)">${escHtml(stage.stderr)}</pre>
     </div>`;
-  }
   return html;
 }
 
@@ -496,27 +635,35 @@ function showError(msg) {
 }
 
 function switchOutputTab(tab) {
-  const tabs = ['output', 'compile'];
-  tabs.forEach(t => {
-    document.getElementById('tab-' + t).className =
-      t === tab ? 'tab-active px-3 py-1 rounded-md text-xs font-medium transition-colors'
-                : 'tab-inactive px-3 py-1 rounded-md text-xs font-medium transition-colors';
+  ['output','compile'].forEach(t => {
+    const btn = document.getElementById('tab-' + t);
+    btn.className = t === tab
+      ? 'th-tab-a px-3 py-1 rounded-md text-xs font-medium transition-colors'
+      : 'th-tab-i px-3 py-1 rounded-md text-xs font-medium transition-colors' +
+        (t === 'compile' ? ' hidden' : '');
     document.getElementById(t + 'Panel').classList.toggle('hidden', t !== tab);
   });
+  // Re-show compile tab button if it exists
+  if (tab === 'output' && document.getElementById('compilePanel').innerHTML) {
+    const compileBtn = document.getElementById('tab-compile');
+    if (!compileBtn.classList.contains('hidden-compile')) {
+      compileBtn.classList.remove('hidden');
+    }
+  }
 }
 
 function escHtml(s) {
   return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
+// ── Editor controls ───────────────────────────────────────────────────────
 function clearCode() {
-  codeArea.value = '';
-  codeArea.dataset.lang = '';
-  updateLineNumbers();
+  editor.setValue('');
+  currentEditorLang = '';
 }
 function clearOutput() {
   document.getElementById('outputPanel').innerHTML = `
-    <div class="text-center py-16 text-gray-700">
+    <div class="text-center py-16 th-text-muted">
       <i class="fa-solid fa-terminal text-4xl mb-4 block opacity-30"></i>
       <p class="text-sm">Kodni ishga tushiring</p>
     </div>`;
@@ -526,9 +673,10 @@ function clearOutput() {
   document.getElementById('tab-compile').classList.add('hidden');
 }
 function copyCode() {
-  navigator.clipboard.writeText(codeArea.value).then(() => toast('Kod nusxalandi', 'success'));
+  navigator.clipboard.writeText(editor.getValue()).then(() => toast('Kod nusxalandi', 'success'));
 }
 
+// ── Toast ─────────────────────────────────────────────────────────────────
 function toast(msg, type = 'info') {
   const c = { success:'bg-green-500', error:'bg-red-500', info:'bg-sky-500' };
   const i = { success:'fa-circle-check', error:'fa-circle-xmark', info:'fa-circle-info' };
@@ -539,10 +687,9 @@ function toast(msg, type = 'info') {
   setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(),300); }, 3500);
 }
 
-// ── Init ──────────────────────────────────────────────────────────────
+// ── Init ──────────────────────────────────────────────────────────────────
 loadRuntimes();
-updateLineNumbers();
-codeArea.focus();
+editor.focus();
 </script>
 </body>
 </html>
