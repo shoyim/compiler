@@ -432,11 +432,6 @@ const editor = CodeMirror(document.getElementById('cmEditor'), {
   },
 });
 
-// Set initial theme icon
-document.getElementById('themeIcon').className =
-  isDark ? 'fa-solid fa-sun text-xs th-text-dim'
-         : 'fa-solid fa-moon text-xs th-text-dim';
-
 // ── Runtimes ──────────────────────────────────────────────────────────────
 let runtimes = [];
 let currentEditorLang = '';
@@ -504,6 +499,7 @@ document.getElementById('langSelect').addEventListener('change', updateVersions)
 
 // ── Run ───────────────────────────────────────────────────────────────────
 let running = false;
+let showCompileTab = false;
 
 async function runCode() {
   if (running) return;
@@ -569,6 +565,7 @@ function renderOutput(data, clientMs) {
   const run     = data.run;
   const compile = data.compile;
   const hasCompile = compile && compile.code !== null && compile.code !== undefined;
+  showCompileTab = hasCompile;
   document.getElementById('tab-compile').classList.toggle('hidden', !hasCompile);
 
   const statusBar = document.getElementById('statusBar');
@@ -603,7 +600,7 @@ function renderOutput(data, clientMs) {
   document.getElementById('statMem').innerHTML  = `<i class="fa-solid fa-microchip"></i>${run.memory||'—'}KB`;
 
   document.getElementById('outputPanel').innerHTML = buildOutputHtml(run);
-  if (hasCompile) document.getElementById('compilePanel').innerHTML = buildOutputHtml(compile);
+  document.getElementById('compilePanel').innerHTML = hasCompile ? buildOutputHtml(compile) : '';
   switchOutputTab('output');
 }
 
@@ -637,19 +634,13 @@ function showError(msg) {
 function switchOutputTab(tab) {
   ['output','compile'].forEach(t => {
     const btn = document.getElementById('tab-' + t);
-    btn.className = t === tab
+    const isActive = t === tab;
+    const shouldHide = t === 'compile' && !showCompileTab;
+    btn.className = isActive
       ? 'th-tab-a px-3 py-1 rounded-md text-xs font-medium transition-colors'
-      : 'th-tab-i px-3 py-1 rounded-md text-xs font-medium transition-colors' +
-        (t === 'compile' ? ' hidden' : '');
-    document.getElementById(t + 'Panel').classList.toggle('hidden', t !== tab);
+      : 'th-tab-i px-3 py-1 rounded-md text-xs font-medium transition-colors' + (shouldHide ? ' hidden' : '');
+    document.getElementById(t + 'Panel').classList.toggle('hidden', !isActive);
   });
-  // Re-show compile tab button if it exists
-  if (tab === 'output' && document.getElementById('compilePanel').innerHTML) {
-    const compileBtn = document.getElementById('tab-compile');
-    if (!compileBtn.classList.contains('hidden-compile')) {
-      compileBtn.classList.remove('hidden');
-    }
-  }
 }
 
 function escHtml(s) {
@@ -670,6 +661,7 @@ function clearOutput() {
   document.getElementById('statusBar').classList.add('hidden');
   document.getElementById('runStats').classList.add('hidden');
   document.getElementById('compilePanel').innerHTML = '';
+  showCompileTab = false;
   document.getElementById('tab-compile').classList.add('hidden');
 }
 function copyCode() {
@@ -688,6 +680,7 @@ function toast(msg, type = 'info') {
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────
+applyTheme();
 loadRuntimes();
 editor.focus();
 </script>

@@ -385,6 +385,7 @@ async function install(lang, ver) {
   try {
     await apiPkg('POST', lang, ver);
     toast(`${lang} v${ver} o'rnatildi`, 'success');
+    pending.delete(k);
     await loadAll();
   } catch(e) { toast(e.message, 'error'); pending.delete(k); render(); }
 }
@@ -395,6 +396,7 @@ async function uninstall(lang, ver) {
   try {
     await apiPkg('DELETE', lang, ver);
     toast(`${lang} v${ver} o'chirildi`, 'info');
+    pending.delete(k);
     await loadAll();
   } catch(e) { toast(e.message, 'error'); pending.delete(k); render(); }
 }
@@ -406,6 +408,7 @@ async function reinstall(lang, ver) {
     await apiPkg('DELETE', lang, ver);
     await apiPkg('POST', lang, ver);
     toast(`${lang} v${ver} qayta o'rnatildi`, 'success');
+    pending.delete(k);
     await loadAll();
   } catch(e) { toast(e.message, 'error'); pending.delete(k); render(); }
 }
