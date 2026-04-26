@@ -187,7 +187,7 @@ class Package {
         found_runtime.unregister();
 
         logger.debug('Cleaning files from disk');
-        await fs.rmdir(this.install_path, { recursive: true });
+        await fs.rm(this.install_path, { recursive: true, force: true });
 
         logger.info(`Uninstalled ${this.language}-${this.version.raw}`);
 
