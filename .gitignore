@@ -1,11 +1,4 @@
 data/
-# Track only the package script files (not large binaries)
-!data/compiler/
-!data/compiler/packages/
-!data/compiler/packages/*/
-!data/compiler/packages/*/compile
-!data/compiler/packages/*/run
-!data/compiler/packages/*/pkg-info.json
 .compiler_env
 node_modules
 .vscode/
