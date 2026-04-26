@@ -458,6 +458,19 @@ class Job {
             compile_errored = compile.code !== 0 || compile.status !== null;
 
             if (!compile_errored) {
+                // Defense-in-depth: verify the compiled binary actually exists.
+                // Catches cases where the compile script exits 0 but g++ silently failed
+                // (e.g., missing set -e or suppressed error output).
+                const aout = path.join(box.dir, 'submission', 'a.out');
+                const aout_missing = await fs.access(aout).then(() => false).catch(() => true);
+                if (aout_missing) {
+                    compile_errored = true;
+                    compile.stderr = (compile.stderr || '') +
+                        '\n[internal] a.out not found after compilation — compile script may have failed silently';
+                }
+            }
+
+            if (!compile_errored) {
                 const old_box_dir = box.dir;
                 box = await next_box_promise;
                 await fs.rename(
