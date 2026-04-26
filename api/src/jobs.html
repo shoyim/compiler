@@ -181,6 +181,7 @@ const PAGE_SIZE = 50;
 let currentOffset = 0;
 let totalJobs = 0;
 let allLoaded = [];
+let globalTotal = 0;
 
 function authHeaders() {
   return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken };
@@ -277,11 +278,13 @@ async function loadJobs() {
       renderEmpty();
       return;
     }
-    const jobs = await res.json();
-    allLoaded = jobs;
-    renderJobs(jobs);
-    updatePagination(jobs.length);
-    populateLangFilter(jobs);
+    const data = await res.json();
+    allLoaded = data.jobs;
+    globalTotal = data.total;
+    renderJobs(data.jobs);
+    updatePagination(data.jobs.length, data.total);
+    populateLangFilter(data.jobs);
+    document.getElementById('totalCount').textContent = data.total;
   } catch(e) {
     toast('Serverga ulanib bo\'lmadi: ' + e.message, 'error');
     renderEmpty();
@@ -361,14 +364,15 @@ function populateLangFilter(jobs) {
     langs.map(l => `<option value="${l}" ${l === cur ? 'selected' : ''}>${l}</option>`).join('');
 }
 
-function updatePagination(count) {
+function updatePagination(count, total) {
   const pg = document.getElementById('pagination');
   if (currentOffset === 0 && count < PAGE_SIZE) { pg.classList.add('hidden'); return; }
   pg.classList.remove('hidden');
   const page = Math.floor(currentOffset / PAGE_SIZE) + 1;
-  document.getElementById('pageInfo').textContent = `Sahifa ${page} · Ko'rsatilgan: ${count}`;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  document.getElementById('pageInfo').textContent = `Sahifa ${page}/${totalPages} · Jami: ${total} ta`;
   document.getElementById('prevBtn').disabled = currentOffset === 0;
-  document.getElementById('nextBtn').disabled = count < PAGE_SIZE;
+  document.getElementById('nextBtn').disabled = currentOffset + count >= total;
 }
 
 function changePage(dir) {

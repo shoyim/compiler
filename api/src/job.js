@@ -42,7 +42,7 @@ const baseline_promises = new Map();
 
 // Pre-warmed box pool — eliminates isolate --init latency from the critical path
 // Compiled languages need 2 boxes per job (compile + run), so size = jobs * 2
-const BOX_POOL_SIZE = Math.min(config.max_concurrent_jobs * 2, 20);
+const BOX_POOL_SIZE = Math.min(config.max_concurrent_jobs * 2, 40);
 const box_pool = [];
 
 function spawn_box_into_pool() {

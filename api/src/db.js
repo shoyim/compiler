@@ -13,7 +13,7 @@ async function connect() {
         user:     process.env.DB_USER     || 'compiler',
         password: process.env.DB_PASSWORD || 'compiler_pass',
         waitForConnections: true,
-        connectionLimit: 10,
+        connectionLimit: 20,
     });
 
     await pool.execute(`
