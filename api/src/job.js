@@ -455,7 +455,7 @@ class Job {
                 event_bus
             );
             emit_event_bus_result('compile', compile);
-            compile_errored = compile.code !== 0;
+            compile_errored = compile.code !== 0 || compile.status !== null;
 
             if (!compile_errored) {
                 const old_box_dir = box.dir;
