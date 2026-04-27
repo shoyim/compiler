@@ -25,7 +25,7 @@ let job_queue = [];
 // Fixed ID pool: each ID is in exactly one state (free / in-use) at all times.
 // A simple counter wraps around and reuses IDs that are still live — that causes
 // EACCES when isolate --init re-initialises a box that hasn't been cleaned up yet.
-const TOTAL_BOX_IDS = Math.max(config.max_concurrent_jobs * 6, 64);
+const TOTAL_BOX_IDS = Math.max(config.max_concurrent_jobs * 10, 128);
 const free_box_ids = Array.from({ length: TOTAL_BOX_IDS }, (_, i) => i + 1);
 
 function acquire_box_id() {
@@ -42,7 +42,7 @@ const baseline_promises = new Map();
 
 // Pre-warmed box pool — eliminates isolate --init latency from the critical path
 // Compiled languages need 2 boxes per job (compile + run), so size = jobs * 2
-const BOX_POOL_SIZE = Math.min(config.max_concurrent_jobs * 2, 40);
+const BOX_POOL_SIZE = Math.min(config.max_concurrent_jobs * 2, 128);
 const box_pool = [];
 
 function spawn_box_into_pool() {
