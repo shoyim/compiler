@@ -51,7 +51,7 @@ function spawn_box_into_pool() {
         if (!err && stdout && stdout.trim()) {
             box_pool.push({
                 id: bid,
-                metadata_file_path: `/tmp/${bid}-metadata.txt`,
+                metadata_file_path: `/tmp/${bid}-${uuidv4().slice(0, 8)}-metadata.txt`,
                 dir: `${stdout.trim()}/box`,
             });
         } else {
@@ -183,7 +183,7 @@ class Job {
             });
             box = {
                 id: bid,
-                metadata_file_path: `/tmp/${bid}-metadata.txt`,
+                metadata_file_path: `/tmp/${bid}-${uuidv4().slice(0, 8)}-metadata.txt`,
                 dir: `${stdout.trim()}/box`,
             };
         }
