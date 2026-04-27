@@ -41,8 +41,8 @@ const runtime_baselines = new Map();
 const baseline_promises = new Map();
 
 // Pre-warmed box pool — eliminates isolate --init latency from the critical path
-// Compiled languages need 2 boxes per job (compile + run), so size = jobs * 2
-const BOX_POOL_SIZE = Math.min(config.max_concurrent_jobs * 2, 128);
+// Single-box model: compile and run happen in the same box, so size = jobs * 1
+const BOX_POOL_SIZE = Math.min(config.max_concurrent_jobs, 128);
 const box_pool = [];
 
 function spawn_box_into_pool() {
@@ -160,10 +160,8 @@ class Job {
         let box;
         if (box_pool.length > 0) {
             box = box_pool.shift();
-            // Aggressively refill: compiled jobs consume 2 boxes each, so spawn 2 back
             setImmediate(() => {
                 spawn_box_into_pool();
-                if (box_pool.length < BOX_POOL_SIZE / 2) spawn_box_into_pool();
             });
         } else {
             const bid = acquire_box_id();
@@ -442,9 +440,6 @@ class Job {
             if (IS_DEBUG) this.logger.debug('Compiling');
             emit_event_bus_stage('compile');
 
-            // Create the run box concurrently with compilation to hide isolate --init latency
-            const next_box_promise = this.#create_isolate_box();
-
             compile = await this.safe_call(
                 box,
                 'compile',
@@ -468,19 +463,6 @@ class Job {
                     compile.stderr = (compile.stderr || '') +
                         '\n[internal] a.out not found after compilation — compile script may have failed silently';
                 }
-            }
-
-            if (!compile_errored) {
-                const old_box_dir = box.dir;
-                box = await next_box_promise;
-                await fs.rename(
-                    path.join(old_box_dir, 'submission'),
-                    path.join(box.dir, 'submission')
-                );
-            } else {
-                // Compilation failed — settle the promise so Node doesn't warn about
-                // unhandled rejection; box (if created) is already in dirty_boxes
-                await next_box_promise.catch(() => {});
             }
         }
 
