@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tekshirish Tizimi</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:none; } }
+    .fade-up { animation: fadeUp .5s ease both; }
+    .fade-up-2 { animation: fadeUp .5s .1s ease both; }
+    .fade-up-3 { animation: fadeUp .5s .2s ease both; }
+    .fade-up-4 { animation: fadeUp .5s .3s ease both; }
+    .lang-card:hover { transform: translateY(-2px); }
+    .lang-card { transition: transform .2s ease, box-shadow .2s ease; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+
+<!-- Header -->
+<header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+  <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 bg-sky-500 rounded-xl flex items-center justify-center shadow-lg shadow-sky-500/30">
+        <i class="fa-solid fa-code text-white text-sm"></i>
+      </div>
+      <span class="font-bold text-white text-base tracking-tight">Tekshirish Tizimi</span>
+    </div>
+    <a href="/login"
+      class="flex items-center gap-2 bg-sky-500 hover:bg-sky-400 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors shadow-lg shadow-sky-500/20">
+      <i class="fa-solid fa-right-to-bracket"></i>
+      Kirish
+    </a>
+  </div>
+</header>
+
+<!-- Hero -->
+<section class="max-w-6xl mx-auto px-4 pt-20 pb-14 text-center fade-up">
+  <div class="inline-flex items-center gap-2 bg-sky-500/10 border border-sky-500/20 text-sky-400 text-xs font-medium px-3 py-1.5 rounded-full mb-6">
+    <i class="fa-solid fa-circle text-xs"></i>
+    Onlayn dasturlash masalalari tekshiruv tizimi
+  </div>
+  <h1 class="text-4xl sm:text-5xl font-extrabold text-white leading-tight mb-4">
+    Kodingizni yuboring —<br>
+    <span class="text-sky-400">tizim tekshirsin</span>
+  </h1>
+  <p class="text-slate-400 text-lg max-w-xl mx-auto mb-8">
+    Standart kiritish-chiqarish orqali yoziladigan masalalarni bir nechta dasturlash tillarida yuborish va natijani bir zumda olish imkoniyati.
+  </p>
+  <a href="/login"
+    class="inline-flex items-center gap-2 bg-sky-500 hover:bg-sky-400 text-white font-bold px-7 py-3.5 rounded-xl text-base transition-colors shadow-xl shadow-sky-500/25">
+    <i class="fa-solid fa-right-to-bracket"></i>
+    Dashboardga kirish
+  </a>
+</section>
+
+<!-- Compilers Section -->
+<section class="max-w-6xl mx-auto px-4 pb-16 fade-up-2">
+  <div class="bg-slate-900 border border-slate-800 rounded-2xl p-8">
+
+    <h2 class="text-lg font-bold text-white mb-1">
+      <i class="fa-solid fa-microchip text-sky-400 mr-2"></i>
+      Tekshirish tizimi quyidagi kompilyatorlarni ishlatadi:
+    </h2>
+    <p class="text-slate-500 text-sm mb-6">Barcha tillar izolyatsiyalangan muhitda ishga tushiriladi</p>
+
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+
+      <!-- C -->
+      <div class="lang-card bg-slate-800 border border-slate-700 rounded-xl p-3 flex items-center gap-3">
+        <div class="w-8 h-8 bg-blue-500/15 rounded-lg flex items-center justify-center flex-shrink-0">
+          <span class="text-blue-400 font-bold text-xs">C</span>
+        </div>
+        <div><p class="text-white text-sm font-medium">C</p><p class="text-slate-500 text-xs">GCC 15.2</p></div>
+      </div>
+
+      <!-- C# -->
+      <div class="lang-card bg-slate-800 border border-slate-700 rounded-xl p-3 flex items-center gap-3">
+        <div class="w-8 h-8 bg-purple-500/15 rounded-lg flex items-center justify-center flex-shrink-0">
+          <span class="text-purple-400 font-bold text-xs">C#</span>
+        </div>
+        <div><p class="text-white text-sm font-medium">C# 12</p><p class="text-slate-500 text-xs">Mono 6.12</p></div>
+      </div>
+
+      <!-- C++ -->
+      <div class="lang-card bg-slate-800 border border-slate-700 rounded-xl p-3 flex items-center gap-3">
+        <div class="w-8 h-8 bg-blue-600/15 rounded-lg flex items-center justify-center flex-shrink-0">
+          <span class="text-blue-300 font-bold text-xs">C++</span>
+        </div>
+        <div><p class="text-white text-sm font-medium">C++ GCC</p><p class="text-slate-500 text-xs">GCC 15.2</p></div>
+      </div>
+
+      <!-- Dart -->
+      <div class="lang-card bg-slate-800 border border-slate-700 rounded-xl p-3 flex items-center gap-3">
+        <div class="w-8 h-8 bg-cyan-500/15 rounded-lg flex items-center justify-center flex-shrink-0">
+          <i class="fa-solid fa-circle-dot text-cyan-400 text-xs"></i>
+        </div>
+        <div><p class="text-white text-sm font-medium">Dart</p><p class="text-slate-500 text-xs">3.0.1</p></div>
+      </div>
+
+      <!-- Go -->
+      <div class="lang-card bg-slate-800 border border-slate-700 rounded-xl p-3 flex items-center gap-3">
+        <div class="w-8 h-8 bg-teal-500/15 rounded-lg flex items-center justify-center flex-shrink-0">
+          <span class="text-teal-400 font-bold text-xs">Go</span>
+        </div>
+        <div><p class="text-white text-sm font-medium">Go</p><p class="text-slate-500 text-xs">1.16.2</p></div>
+      </div>
+
+      <!-- Java -->
+      <div class="lang-card bg-slate-800 border border-slate-700 rounded-xl p-3 flex items-center gap-3">
+        <div class="w-8 h-8 bg-orange-500/15 rounded-lg flex items-center justify-center flex-shrink-0">
+          <i class="fa-brands fa-java text-orange-400 text-sm"></i>
+        </div>
+        <div><p class="text-white text-sm font-medium">Java</p><p class="text-slate-500 text-xs">15.0.2</p></div>
+      </div>
+
+      <!-- Python -->
+      <div class="lang-card bg-slate-800 border border-slate-700 rounded-xl p-3 flex items-center gap-3">
+        <div class="w-8 h-8 bg-yellow-500/15 rounded-lg flex items-center justify-center flex-shrink-0">
+          <i class="fa-brands fa-python text-yellow-400 text-sm"></i>
+        </div>
+        <div><p class="text-white text-sm font-medium">Python 3.12</p><p class="text-slate-500 text-xs">CPython</p></div>
+      </div>
+
+      <!-- PyPy -->
+      <div class="lang-card bg-slate-800 border border-slate-700 rounded-xl p-3 flex items-center gap-3">
+        <div class="w-8 h-8 bg-yellow-600/15 rounded-lg flex items-center justify-center flex-shrink-0">
+          <span class="text-yellow-300 font-bold text-xs">PP</span>
+        </div>
+        <div><p class="text-white text-sm font-medium">PyPy 3.10</p><p class="text-slate-500 text-xs">7.3.12 JIT</p></div>
+      </div>
+
+      <!-- Rust -->
+      <div class="lang-card bg-slate-800 border border-slate-700 rounded-xl p-3 flex items-center gap-3">
+        <div class="w-8 h-8 bg-red-500/15 rounded-lg flex items-center justify-center flex-shrink-0">
+          <i class="fa-brands fa-rust text-red-400 text-sm"></i>
+        </div>
+        <div><p class="text-white text-sm font-medium">Rust</p><p class="text-slate-500 text-xs">1.68.2</p></div>
+      </div>
+
+      <!-- Pascal -->
+      <div class="lang-card bg-slate-800 border border-slate-700 rounded-xl p-3 flex items-center gap-3">
+        <div class="w-8 h-8 bg-green-500/15 rounded-lg flex items-center justify-center flex-shrink-0">
+          <span class="text-green-400 font-bold text-xs">FP</span>
+        </div>
+        <div><p class="text-white text-sm font-medium">Pascal</p><p class="text-slate-500 text-xs">FPC 3.2.2</p></div>
+      </div>
+
+      <!-- Kotlin -->
+      <div class="lang-card bg-slate-800 border border-slate-700 rounded-xl p-3 flex items-center gap-3">
+        <div class="w-8 h-8 bg-violet-500/15 rounded-lg flex items-center justify-center flex-shrink-0">
+          <span class="text-violet-400 font-bold text-xs">Kt</span>
+        </div>
+        <div><p class="text-white text-sm font-medium">Kotlin</p><p class="text-slate-500 text-xs">1.8.20</p></div>
+      </div>
+
+      <!-- Swift -->
+      <div class="lang-card bg-slate-800 border border-slate-700 rounded-xl p-3 flex items-center gap-3">
+        <div class="w-8 h-8 bg-orange-400/15 rounded-lg flex items-center justify-center flex-shrink-0">
+          <span class="text-orange-300 font-bold text-xs">Sw</span>
+        </div>
+        <div><p class="text-white text-sm font-medium">Swift</p><p class="text-slate-500 text-xs">5.3.3</p></div>
+      </div>
+
+      <!-- Node.js -->
+      <div class="lang-card bg-slate-800 border border-slate-700 rounded-xl p-3 flex items-center gap-3">
+        <div class="w-8 h-8 bg-green-600/15 rounded-lg flex items-center justify-center flex-shrink-0">
+          <i class="fa-brands fa-node-js text-green-400 text-sm"></i>
+        </div>
+        <div><p class="text-white text-sm font-medium">JavaScript</p><p class="text-slate-500 text-xs">Node.js</p></div>
+      </div>
+
+      <!-- PHP -->
+      <div class="lang-card bg-slate-800 border border-slate-700 rounded-xl p-3 flex items-center gap-3">
+        <div class="w-8 h-8 bg-indigo-500/15 rounded-lg flex items-center justify-center flex-shrink-0">
+          <i class="fa-brands fa-php text-indigo-400 text-sm"></i>
+        </div>
+        <div><p class="text-white text-sm font-medium">PHP</p><p class="text-slate-500 text-xs">8.x</p></div>
+      </div>
+
+      <!-- Ruby -->
+      <div class="lang-card bg-slate-800 border border-slate-700 rounded-xl p-3 flex items-center gap-3">
+        <div class="w-8 h-8 bg-red-600/15 rounded-lg flex items-center justify-center flex-shrink-0">
+          <i class="fa-solid fa-gem text-red-400 text-xs"></i>
+        </div>
+        <div><p class="text-white text-sm font-medium">Ruby</p><p class="text-slate-500 text-xs">3.x</p></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- Info Section -->
+<section class="max-w-6xl mx-auto px-4 pb-16 fade-up-3">
+  <div class="grid sm:grid-cols-2 gap-6">
+
+    <!-- Matnli oqim -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+      <h3 class="font-bold text-white mb-1 flex items-center gap-2">
+        <i class="fa-solid fa-terminal text-sky-400 text-sm"></i>
+        Matnli oqim
+      </h3>
+      <p class="text-slate-500 text-xs mb-4">Standart stdin/stdout orqali ishlaydi</p>
+      <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 font-mono text-sm">
+        <span class="text-slate-500">>>> </span>
+        <span class="text-emerald-400">print</span>
+        <span class="text-white">(</span>
+        <span class="text-emerald-400">sum</span>
+        <span class="text-white">(</span>
+        <span class="text-emerald-400">map</span>
+        <span class="text-white">(</span>
+        <span class="text-sky-300">int</span>
+        <span class="text-white">, </span>
+        <span class="text-emerald-400">input</span>
+        <span class="text-white">().split())))</span>
+      </div>
+    </div>
+
+    <!-- Faylli oqim -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+      <h3 class="font-bold text-white mb-1 flex items-center gap-2">
+        <i class="fa-solid fa-file-lines text-sky-400 text-sm"></i>
+        Faylli oqim
+      </h3>
+      <p class="text-slate-500 text-xs mb-4">input.txt / output.txt orqali ishlaydi</p>
+      <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 font-mono text-xs leading-relaxed">
+        <div><span class="text-slate-400">fin</span><span class="text-white">  = </span><span class="text-emerald-400">open</span><span class="text-white">(</span><span class="text-amber-300">"input.txt"</span><span class="text-white">,  </span><span class="text-amber-300">"r"</span><span class="text-white">)</span></div>
+        <div><span class="text-slate-400">fout</span><span class="text-white"> = </span><span class="text-emerald-400">open</span><span class="text-white">(</span><span class="text-amber-300">"output.txt"</span><span class="text-white">, </span><span class="text-amber-300">"w"</span><span class="text-white">)</span></div>
+        <div class="mt-2"><span class="text-slate-400">a</span><span class="text-white">, </span><span class="text-slate-400">b</span><span class="text-white"> = </span><span class="text-emerald-400">map</span><span class="text-white">(</span><span class="text-sky-300">int</span><span class="text-white">, fin.</span><span class="text-emerald-400">readline</span><span class="text-white">().</span><span class="text-emerald-400">split</span><span class="text-white">())</span></div>
+        <div class="mt-2"><span class="text-slate-400">fout</span><span class="text-white">.</span><span class="text-emerald-400">write</span><span class="text-white">(</span><span class="text-emerald-400">str</span><span class="text-white">(a + b) + </span><span class="text-amber-300">"\n"</span><span class="text-white">)</span></div>
+        <div class="mt-2"><span class="text-slate-400">fin</span><span class="text-white">.</span><span class="text-emerald-400">close</span><span class="text-white">()</span></div>
+        <div><span class="text-slate-400">fout</span><span class="text-white">.</span><span class="text-emerald-400">close</span><span class="text-white">()</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Note -->
+  <div class="mt-6 bg-sky-500/5 border border-sky-500/20 rounded-2xl px-6 py-4 flex items-start gap-3">
+    <i class="fa-solid fa-circle-info text-sky-400 mt-0.5 flex-shrink-0"></i>
+    <p class="text-slate-300 text-sm">
+      <span class="font-semibold text-sky-300">Eslatma:</span>
+      Barcha masalalarni standart kiritish-chiqarish oqimlari orqali yechish mumkin (klaviatura orqali kiritish hamda ekranga chiqarish).
+    </p>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="border-t border-slate-800 py-6 fade-up-4">
+  <div class="max-w-6xl mx-auto px-4 text-center text-slate-600 text-sm">
+    Tekshirish tizimi &mdash; barcha huquqlar himoyalangan
+  </div>
+</footer>
+
+<script>
+  // Agar allaqachon login qilingan bo'lsa dashboardga o'tkazish
+  const token = localStorage.getItem('auth_token');
+  if (token) {
+    fetch('/auth/me', { headers: { 'Authorization': 'Bearer ' + token } })
+      .then(r => { if (r.ok) window.location.href = '/dashboard'; })
+      .catch(() => {});
+  }
+</script>
+</body>
+</html>
