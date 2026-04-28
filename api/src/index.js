@@ -92,7 +92,7 @@ expressWs(app);
         return res.sendFile(path.join(__dirname, 'login.html'));
     });
     app.get('/', (req, res) => {
-        return res.redirect('/dashboard');
+        return res.sendFile(path.join(__dirname, 'home.html'));
     });
 
     app.use((req, res, next) => {
