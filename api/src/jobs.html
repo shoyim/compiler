@@ -1,144 +1,187 @@
 <!DOCTYPE html>
-<html lang="uz">
+<html lang="uz" class="h-full">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Joblar — Compiler</title>
+  <script>
+    tailwind.config = { darkMode: 'class' };
+    (function(){
+      const t = localStorage.getItem('theme');
+      if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches))
+        document.documentElement.classList.add('dark');
+    })();
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
-    .toast { animation: slideIn .25s ease; }
+    .toast  { animation: slideIn .25s ease; }
     @keyframes slideIn { from { transform:translateX(110%); } to { transform:none; } }
-    .spin { animation: spin 1s linear infinite; }
+    .spin   { animation: spin 1s linear infinite; }
     @keyframes spin { to { transform:rotate(360deg); } }
     .row-in { animation: fadeUp .15s ease; }
-    @keyframes fadeUp { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(3px); } to { opacity:1; transform:none; } }
+    .sel-bar { animation: slideUp .2s ease; }
+    @keyframes slideUp { from { transform:translateY(100%); opacity:0; } to { transform:none; opacity:1; } }
   </style>
 </head>
-<body class="bg-gray-50 min-h-screen font-sans text-gray-800">
+<body class="h-full bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans transition-colors">
 
-<div id="toasts" class="fixed top-4 right-4 z-50 flex flex-col gap-2 w-80 pointer-events-none"></div>
-
-<!-- Header -->
-<header class="bg-white border-b border-gray-200 sticky top-0 z-40">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
-    <div class="flex items-center gap-4">
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 bg-sky-600 rounded-lg flex items-center justify-center flex-shrink-0">
-          <i class="fa-solid fa-code text-white text-sm"></i>
-        </div>
-        <span class="text-base font-bold text-gray-900 hidden sm:block">Compiler</span>
-      </div>
-      <nav class="flex items-center gap-1">
-        <a href="/dashboard" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
-          <i class="fa-solid fa-gauge-high text-xs"></i><span>Dashboard</span>
-        </a>
-        <a href="/tester" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
-          <i class="fa-solid fa-play text-xs"></i><span class="hidden sm:inline">Tester</span>
-        </a>
-        <a href="/jobs" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-sky-600 text-white">
-          <i class="fa-solid fa-list-check text-xs"></i><span>Joblar</span>
-        </a>
-        <a href="/tokens" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
-          <i class="fa-solid fa-key text-xs"></i><span>Tokenlar</span>
-        </a>
-        <a href="/api-docs" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
-          <i class="fa-solid fa-book text-xs"></i><span class="hidden sm:inline">API Docs</span>
-        </a>
-      </nav>
-    </div>
-    <div class="flex items-center gap-2">
-      <div class="relative" id="profileDropdown">
-        <button onclick="toggleProfileMenu()"
-          class="flex items-center gap-1.5 px-2.5 py-1.5 bg-sky-50 border border-sky-100 rounded-lg hover:bg-sky-100 transition-colors">
-          <i class="fa-solid fa-circle-user text-sky-500 text-sm"></i>
-          <span id="headerUser" class="text-xs font-medium text-sky-700">—</span>
-          <i class="fa-solid fa-chevron-down text-[9px] text-sky-400"></i>
-        </button>
-        <div id="profileMenu" class="hidden absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-xl shadow-lg z-50 py-1 overflow-hidden">
-          <button onclick="openProfileModal(); closeProfileMenu()"
-            class="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors">
-            <i class="fa-solid fa-lock text-gray-400 w-4"></i>Parolni o'zgartirish
-          </button>
-          <div class="border-t border-gray-100 my-1"></div>
-          <button onclick="logout()" class="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-500 hover:bg-red-50 transition-colors">
-            <i class="fa-solid fa-right-from-bracket w-4"></i>Chiqish
-          </button>
-        </div>
-      </div>
-      <button onclick="loadJobs()"
-        class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-        <i class="fa-solid fa-arrows-rotate text-sm" id="refreshIcon"></i>
-      </button>
-    </div>
-  </div>
-</header>
+<!-- Toasts -->
+<div id="toasts" class="fixed top-4 right-4 z-[60] flex flex-col gap-2 w-80 pointer-events-none"></div>
 
 <!-- Profile modal -->
-<div id="profileModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
-    <div class="flex items-center justify-between mb-4">
-      <h2 class="text-base font-bold text-gray-800"><i class="fa-solid fa-lock text-gray-400 mr-2"></i>Parolni o'zgartirish</h2>
-      <button onclick="closeProfileModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark"></i></button>
+<div id="profileModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+  <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl w-full max-w-sm p-6">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-base font-bold text-slate-800 dark:text-white flex items-center gap-2">
+        <i class="fa-solid fa-lock text-slate-400 dark:text-slate-500"></i>Parolni o'zgartirish
+      </h2>
+      <button onclick="closeProfileModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
     </div>
     <div class="space-y-3">
-      <div><label class="block text-xs font-medium text-gray-600 mb-1">Joriy parol</label>
-        <input id="curPass" type="password" placeholder="••••••••" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500"></div>
-      <div><label class="block text-xs font-medium text-gray-600 mb-1">Yangi parol</label>
-        <input id="newPass1" type="password" placeholder="••••••••" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500"></div>
-      <div><label class="block text-xs font-medium text-gray-600 mb-1">Yangi parolni tasdiqlang</label>
-        <input id="newPass2" type="password" placeholder="••••••••" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500"></div>
-      <button onclick="submitProfileChange()" class="w-full py-2.5 bg-sky-600 text-white text-sm font-medium rounded-lg hover:bg-sky-500 transition-colors">Saqlash</button>
+      <div>
+        <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Joriy parol</label>
+        <input id="curPass" type="password" placeholder="••••••••"
+          class="w-full text-sm border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-800 dark:text-white rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Yangi parol</label>
+        <input id="newPass1" type="password" placeholder="••••••••"
+          class="w-full text-sm border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-800 dark:text-white rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Tasdiqlang</label>
+        <input id="newPass2" type="password" placeholder="••••••••"
+          class="w-full text-sm border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-800 dark:text-white rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500">
+      </div>
+      <button onclick="submitProfileChange()"
+        class="w-full py-2.5 bg-sky-600 hover:bg-sky-500 text-white text-sm font-semibold rounded-lg transition-colors">
+        Saqlash
+      </button>
     </div>
   </div>
 </div>
 
 <!-- Detail panel -->
 <div id="detailPanel" class="hidden fixed inset-0 z-40 flex">
-  <div class="flex-1 bg-black/30" onclick="closeDetail()"></div>
-  <div class="w-full max-w-2xl bg-white shadow-2xl flex flex-col overflow-hidden">
-    <div class="flex items-center gap-3 px-5 py-4 border-b border-gray-100 flex-shrink-0">
-      <button onclick="closeDetail()" class="text-gray-400 hover:text-gray-600 flex items-center gap-1 text-xs">
+  <div class="flex-1 bg-black/40" onclick="closeDetail()"></div>
+  <div class="w-full max-w-2xl bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden">
+    <div class="flex items-center gap-3 px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex-shrink-0">
+      <button onclick="closeDetail()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 flex items-center gap-1 text-xs transition-colors">
         <i class="fa-solid fa-chevron-left"></i> Orqaga
       </button>
-      <div id="detailTitle" class="flex-1"></div>
+      <div id="detailTitle" class="flex-1 min-w-0"></div>
+      <button onclick="deleteJobFromPanel()" id="detailDeleteBtn"
+        class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg transition-colors">
+        <i class="fa-solid fa-trash-can"></i> O'chirish
+      </button>
     </div>
     <div id="detailBody" class="flex-1 overflow-y-auto p-5"></div>
   </div>
 </div>
 
+<!-- Header -->
+<header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40 shadow-sm">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+    <div class="flex items-center gap-4">
+      <a href="/dashboard" class="flex items-center gap-2.5">
+        <div class="w-8 h-8 bg-sky-600 rounded-lg flex items-center justify-center flex-shrink-0">
+          <i class="fa-solid fa-code text-white text-sm"></i>
+        </div>
+        <span class="text-sm font-bold text-slate-800 dark:text-white hidden sm:block">Compiler</span>
+      </a>
+      <nav class="flex items-center gap-0.5">
+        <a href="/dashboard" class="nav-link flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-white transition-colors">
+          <i class="fa-solid fa-gauge-high"></i><span class="hidden sm:inline">Dashboard</span>
+        </a>
+        <a href="/tester" class="nav-link flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-white transition-colors">
+          <i class="fa-solid fa-play"></i><span class="hidden sm:inline">Tester</span>
+        </a>
+        <a href="/jobs" class="nav-link flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-sky-600 text-white">
+          <i class="fa-solid fa-list-check"></i><span>Joblar</span>
+        </a>
+        <a href="/tokens" class="nav-link flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-white transition-colors">
+          <i class="fa-solid fa-key"></i><span class="hidden sm:inline">Tokenlar</span>
+        </a>
+        <a href="/api-docs" class="nav-link flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-white transition-colors">
+          <i class="fa-solid fa-book"></i><span class="hidden md:inline">API</span>
+        </a>
+      </nav>
+    </div>
+    <div class="flex items-center gap-1.5">
+      <!-- Theme toggle -->
+      <button onclick="toggleTheme()" title="Mavzu"
+        class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+        <i id="themeIcon" class="fa-solid fa-moon text-sm"></i>
+      </button>
+      <!-- Refresh -->
+      <button onclick="loadJobs()" title="Yangilash"
+        class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+        <i id="refreshIcon" class="fa-solid fa-arrows-rotate text-sm"></i>
+      </button>
+      <!-- User dropdown -->
+      <div class="relative" id="profileDropdown">
+        <button onclick="toggleProfileMenu()"
+          class="flex items-center gap-2 px-2.5 py-1.5 bg-sky-50 dark:bg-sky-900/30 border border-sky-200 dark:border-sky-800 rounded-lg hover:bg-sky-100 dark:hover:bg-sky-900/50 transition-colors">
+          <i class="fa-solid fa-circle-user text-sky-500 dark:text-sky-400 text-sm"></i>
+          <span id="headerUser" class="text-xs font-semibold text-sky-700 dark:text-sky-300">—</span>
+          <i class="fa-solid fa-chevron-down text-[9px] text-sky-400"></i>
+        </button>
+        <div id="profileMenu" class="hidden absolute right-0 mt-1.5 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 py-1 overflow-hidden">
+          <button onclick="openProfileModal(); closeProfileMenu()"
+            class="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+            <i class="fa-solid fa-lock text-slate-400 w-4"></i>Parolni o'zgartirish
+          </button>
+          <div class="border-t border-slate-100 dark:border-slate-700 my-1"></div>
+          <button onclick="logout()"
+            class="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+            <i class="fa-solid fa-right-from-bracket w-4"></i>Chiqish
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
 <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
 
-  <!-- Filters -->
+  <!-- Filters row -->
   <div class="flex flex-col sm:flex-row gap-3 mb-5">
     <div class="relative flex-1 max-w-xs">
-      <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
-      <input id="searchInput" type="text" placeholder="Username yoki til qidirish..."
-        class="w-full pl-8 pr-4 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-sky-500">
+      <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
+      <input id="searchInput" type="text" placeholder="Username yoki til..."
+        class="w-full pl-8 pr-4 py-2 text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500">
     </div>
     <select id="langFilter"
-      class="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500">
+      class="text-sm border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500">
       <option value="">Barcha tillar</option>
     </select>
     <select id="statusFilter"
-      class="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500">
+      class="text-sm border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500">
       <option value="">Barcha holatlar</option>
       <option value="ok">Muvaffaqiyat</option>
       <option value="error">Xato</option>
       <option value="timed_out">Timeout</option>
       <option value="memory_limit">Memory limit</option>
     </select>
-    <div class="flex items-center gap-2 ml-auto">
-      <span class="text-xs text-gray-500">Jami: <span id="totalCount" class="font-semibold text-gray-800">—</span></span>
+    <div class="flex items-center gap-2 ml-auto text-xs text-slate-500 dark:text-slate-400">
+      Jami: <span id="totalCount" class="font-semibold text-slate-700 dark:text-slate-200">—</span>
     </div>
   </div>
 
   <!-- Table -->
-  <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+  <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
     <div class="overflow-x-auto">
       <table class="w-full">
-        <thead class="border-b border-gray-100">
-          <tr class="text-left text-[11px] text-gray-400 uppercase tracking-wide">
+        <thead class="border-b border-slate-100 dark:border-slate-800">
+          <tr class="text-left text-[11px] text-slate-400 dark:text-slate-500 uppercase tracking-wide">
+            <th class="px-4 py-3 w-10">
+              <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)"
+                class="w-3.5 h-3.5 rounded border-slate-300 dark:border-slate-600 text-sky-600 focus:ring-sky-500 cursor-pointer">
+            </th>
             <th class="px-4 py-3 font-semibold">Til</th>
             <th class="px-4 py-3 font-semibold">Foydalanuvchi</th>
             <th class="px-4 py-3 font-semibold">Compile</th>
@@ -146,42 +189,66 @@
             <th class="px-4 py-3 font-semibold">Vaqt</th>
             <th class="px-4 py-3 font-semibold">Xotira</th>
             <th class="px-4 py-3 font-semibold">Sana</th>
-            <th class="px-4 py-3 font-semibold"></th>
+            <th class="px-4 py-3"></th>
           </tr>
         </thead>
-        <tbody id="jobsBody" class="divide-y divide-gray-50">
-          <tr><td colspan="8" class="py-16 text-center text-gray-400 text-sm">
-            <i class="fa-solid fa-circle-notch spin text-2xl mb-3 text-sky-400 block"></i>Yuklanmoqda...
+        <tbody id="jobsBody" class="divide-y divide-slate-50 dark:divide-slate-800">
+          <tr><td colspan="9" class="py-16 text-center text-slate-400 text-sm">
+            <i class="fa-solid fa-circle-notch spin text-2xl mb-3 text-sky-500 block"></i>Yuklanmoqda...
           </td></tr>
         </tbody>
       </table>
     </div>
 
     <!-- Pagination -->
-    <div id="pagination" class="hidden px-4 py-3 border-t border-gray-100 flex items-center justify-between">
+    <div id="pagination" class="hidden px-4 py-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
       <button id="prevBtn" onclick="changePage(-1)"
-        class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+        class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
         <i class="fa-solid fa-chevron-left"></i> Oldingi
       </button>
-      <span id="pageInfo" class="text-xs text-gray-500"></span>
+      <span id="pageInfo" class="text-xs text-slate-500 dark:text-slate-400"></span>
       <button id="nextBtn" onclick="changePage(1)"
-        class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+        class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
         Keyingi <i class="fa-solid fa-chevron-right"></i>
       </button>
     </div>
   </div>
 </main>
 
+<!-- Bulk action bar -->
+<div id="selBar" class="hidden sel-bar fixed bottom-6 left-1/2 -translate-x-1/2 z-50
+  flex items-center gap-3 px-5 py-3 rounded-2xl shadow-2xl
+  bg-slate-900 dark:bg-white border border-slate-700 dark:border-slate-200">
+  <span id="selCount" class="text-sm font-semibold text-white dark:text-slate-800"></span>
+  <div class="w-px h-4 bg-slate-600 dark:bg-slate-300"></div>
+  <button onclick="deleteSelected()"
+    class="flex items-center gap-2 px-4 py-1.5 bg-red-600 hover:bg-red-500 text-white text-xs font-semibold rounded-xl transition-colors">
+    <i class="fa-solid fa-trash-can"></i> O'chirish
+  </button>
+  <button onclick="clearSelection()"
+    class="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-slate-400 dark:text-slate-500 hover:text-white dark:hover:text-slate-800 transition-colors">
+    <i class="fa-solid fa-xmark"></i> Bekor
+  </button>
+</div>
+
 <script>
+// ── Theme ─────────────────────────────────────────────────────
+function updateThemeIcon() {
+  const dark = document.documentElement.classList.contains('dark');
+  document.getElementById('themeIcon').className = dark
+    ? 'fa-solid fa-sun text-sm' : 'fa-solid fa-moon text-sm';
+}
+function toggleTheme() {
+  const dark = document.documentElement.classList.toggle('dark');
+  localStorage.setItem('theme', dark ? 'dark' : 'light');
+  updateThemeIcon();
+}
+updateThemeIcon();
+
+// ── Auth ──────────────────────────────────────────────────────
 const authToken = localStorage.getItem('auth_token');
 if (!authToken) window.location.href = '/login';
 document.getElementById('headerUser').textContent = localStorage.getItem('auth_user') || '?';
-
-const PAGE_SIZE = 50;
-let currentOffset = 0;
-let totalJobs = 0;
-let allLoaded = [];
-let globalTotal = 0;
 
 function authHeaders() {
   return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken };
@@ -195,7 +262,7 @@ function closeProfileMenu()  { document.getElementById('profileMenu').classList.
 document.addEventListener('click', e => {
   if (!document.getElementById('profileDropdown').contains(e.target)) closeProfileMenu();
 });
-function openProfileModal()  {
+function openProfileModal() {
   document.getElementById('profileModal').classList.remove('hidden');
   document.getElementById('curPass').focus();
 }
@@ -224,31 +291,34 @@ async function submitProfileChange() {
   } catch(e) { toast(e.message, 'error'); }
 }
 
+// ── Lang icons ────────────────────────────────────────────────
 const LANG_META = {
-  python:   { icon:'fa-brands fa-python',  color:'#3776AB', bg:'#EBF4FB' },
-  node:     { icon:'fa-brands fa-node-js', color:'#339933', bg:'#EBF7EB' },
-  javascript: { icon:'fa-brands fa-js',    color:'#F7DF1E', bg:'#FEFCE8' },
-  java:     { icon:'fa-brands fa-java',    color:'#ED8B00', bg:'#FEF3E6' },
-  c:        { icon:'fa-solid fa-c',        color:'#A8B9CC', bg:'#F5F6F8' },
-  'c++':    { icon:'fa-solid fa-code',     color:'#00599C', bg:'#EBF2FA' },
-  rust:     { icon:'fa-brands fa-rust',    color:'#CE422B', bg:'#FDECEA' },
-  go:       { icon:'fa-solid fa-g',        color:'#00ACD7', bg:'#E6F7FC' },
-  ruby:     { icon:'fa-solid fa-gem',      color:'#CC342D', bg:'#FDECEA' },
-  php:      { icon:'fa-brands fa-php',     color:'#777BB4', bg:'#F2F2F9' },
-  bash:     { icon:'fa-solid fa-terminal', color:'#4EAA25', bg:'#EBF7E8' },
-  typescript:{ icon:'fa-solid fa-t',       color:'#3178C6', bg:'#EBF3FD' },
-  default:  { icon:'fa-solid fa-code',     color:'#6B7280', bg:'#F3F4F6' },
+  python:     { icon:'fa-brands fa-python',   color:'#3776AB' },
+  node:       { icon:'fa-brands fa-node-js',  color:'#339933' },
+  javascript: { icon:'fa-brands fa-js',       color:'#ca8a04' },
+  java:       { icon:'fa-brands fa-java',     color:'#ED8B00' },
+  c:          { icon:'fa-solid fa-c',         color:'#A8B9CC' },
+  'c++':      { icon:'fa-solid fa-code',      color:'#00599C' },
+  rust:       { icon:'fa-brands fa-rust',     color:'#CE422B' },
+  go:         { icon:'fa-solid fa-g',         color:'#00ACD7' },
+  ruby:       { icon:'fa-solid fa-gem',       color:'#CC342D' },
+  php:        { icon:'fa-brands fa-php',      color:'#777BB4' },
+  bash:       { icon:'fa-solid fa-terminal',  color:'#4EAA25' },
+  typescript: { icon:'fa-solid fa-t',         color:'#3178C6' },
+  kotlin:     { icon:'fa-solid fa-k',         color:'#7F52FF' },
+  swift:      { icon:'fa-brands fa-swift',    color:'#FA7343' },
+  pypy:       { icon:'fa-brands fa-python',   color:'#e08e25' },
+  pascal:     { icon:'fa-solid fa-p',         color:'#3b82f6' },
+  default:    { icon:'fa-solid fa-code',      color:'#6B7280' },
 };
-function getMeta(lang) {
-  return LANG_META[lang.toLowerCase()] || LANG_META.default;
-}
+function getMeta(lang) { return LANG_META[lang.toLowerCase()] || LANG_META.default; }
 
 function badge(exit, status) {
-  if (status === 'timed_out')    return '<span class="px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-yellow-100 text-yellow-700">Timeout</span>';
-  if (status === 'memory_limit') return '<span class="px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-orange-100 text-orange-700">Memory</span>';
-  if (exit === 0 || status === 'ok') return '<span class="px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-green-100 text-green-700">✓ OK</span>';
-  if (exit !== null && exit !== undefined) return `<span class="px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-red-100 text-red-700">✗ ${exit}</span>`;
-  return '<span class="text-[10px] text-gray-300">—</span>';
+  if (status === 'timed_out')    return '<span class="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400">⏱ TLE</span>';
+  if (status === 'memory_limit') return '<span class="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400">⚡ MLE</span>';
+  if (exit === 0 || status === 'ok') return '<span class="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400">✓ OK</span>';
+  if (exit !== null && exit !== undefined) return `<span class="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400">✗ ${exit}</span>`;
+  return '<span class="text-[10px] text-slate-300 dark:text-slate-600">—</span>';
 }
 
 function escHtml(s) {
@@ -256,14 +326,94 @@ function escHtml(s) {
 }
 
 function preBlock(label, content) {
-  if (!content) return `<p class="text-xs text-gray-400 italic">${label}: bo'sh</p>`;
-  return `
-    <div class="mt-3">
-      <p class="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1">${label}</p>
-      <pre class="text-xs bg-gray-950 text-gray-100 rounded-xl p-4 overflow-auto max-h-52 font-mono whitespace-pre-wrap break-all">${escHtml(content)}</pre>
-    </div>`;
+  if (!content) return `<p class="text-xs text-slate-400 dark:text-slate-500 italic">${label}: bo'sh</p>`;
+  return `<div class="mt-3">
+    <p class="text-[10px] font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500 mb-1">${label}</p>
+    <pre class="text-xs bg-slate-950 dark:bg-black text-green-400 rounded-xl p-4 overflow-auto max-h-52 font-mono whitespace-pre-wrap break-all">${escHtml(content)}</pre>
+  </div>`;
 }
 
+// ── State ─────────────────────────────────────────────────────
+const PAGE_SIZE = 50;
+let currentOffset = 0;
+let allLoaded = [];
+let selected = new Set();
+let currentDetailId = null;
+
+// ── Selection ─────────────────────────────────────────────────
+function toggleSelectAll(cb) {
+  document.querySelectorAll('.row-cb').forEach(c => {
+    c.checked = cb.checked;
+    const id = c.dataset.id;
+    if (cb.checked) selected.add(id); else selected.delete(id);
+  });
+  updateSelBar();
+}
+
+function toggleRow(cb) {
+  const id = cb.dataset.id;
+  if (cb.checked) selected.add(id); else selected.delete(id);
+  const all = document.querySelectorAll('.row-cb');
+  document.getElementById('selectAll').checked = all.length > 0 && [...all].every(c => c.checked);
+  updateSelBar();
+}
+
+function updateSelBar() {
+  const bar = document.getElementById('selBar');
+  if (selected.size > 0) {
+    bar.classList.remove('hidden');
+    document.getElementById('selCount').textContent = `${selected.size} ta tanlandi`;
+  } else {
+    bar.classList.add('hidden');
+  }
+}
+
+function clearSelection() {
+  selected.clear();
+  document.querySelectorAll('.row-cb').forEach(c => c.checked = false);
+  document.getElementById('selectAll').checked = false;
+  updateSelBar();
+}
+
+async function deleteSelected() {
+  if (!selected.size) return;
+  if (!confirm(`${selected.size} ta jobni o'chirishni tasdiqlaysizmi?`)) return;
+  try {
+    const res = await fetch('/api/v2/jobs', {
+      method: 'DELETE',
+      headers: authHeaders(),
+      body: JSON.stringify({ ids: [...selected] }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message);
+    toast(data.message, 'success');
+    selected.clear();
+    updateSelBar();
+    await loadJobs();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function deleteJobById(id, e) {
+  e && e.stopPropagation();
+  if (!confirm('Bu jobni o\'chirishni tasdiqlaysizmi?')) return;
+  try {
+    const res = await fetch(`/api/v2/jobs/${id}`, { method: 'DELETE', headers: authHeaders() });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message);
+    toast(data.message, 'success');
+    selected.delete(id);
+    updateSelBar();
+    await loadJobs();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function deleteJobFromPanel() {
+  if (!currentDetailId) return;
+  await deleteJobById(currentDetailId);
+  closeDetail();
+}
+
+// ── Load / Render ─────────────────────────────────────────────
 async function loadJobs() {
   document.getElementById('refreshIcon').classList.add('spin');
   const lang = document.getElementById('langFilter').value;
@@ -272,22 +422,15 @@ async function loadJobs() {
   try {
     const res = await fetch('/api/v2/jobs?' + params, { headers: authHeaders() });
     if (res.status === 401) { logout(); return; }
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ message: 'Server xatosi' }));
-      toast(err.message, 'error');
-      renderEmpty();
-      return;
-    }
+    if (!res.ok) { const e = await res.json().catch(() => ({})); toast(e.message || 'Xato', 'error'); renderEmpty(); return; }
     const data = await res.json();
     allLoaded = data.jobs;
-    globalTotal = data.total;
     renderJobs(data.jobs);
     updatePagination(data.jobs.length, data.total);
     populateLangFilter(data.jobs);
     document.getElementById('totalCount').textContent = data.total;
   } catch(e) {
-    toast('Serverga ulanib bo\'lmadi: ' + e.message, 'error');
-    renderEmpty();
+    toast('Serverga ulanib bo\'lmadi', 'error'); renderEmpty();
   } finally {
     document.getElementById('refreshIcon').classList.remove('spin');
   }
@@ -295,7 +438,7 @@ async function loadJobs() {
 
 function renderEmpty() {
   document.getElementById('jobsBody').innerHTML = `
-    <tr><td colspan="8" class="py-16 text-center text-gray-400 text-sm">
+    <tr><td colspan="9" class="py-16 text-center text-slate-400 dark:text-slate-500 text-sm">
       <i class="fa-solid fa-inbox text-3xl mb-3 block opacity-40"></i>Joblar topilmadi
     </td></tr>`;
 }
@@ -304,9 +447,9 @@ function applyFilters() {
   const q = document.getElementById('searchInput').value.toLowerCase();
   const status = document.getElementById('statusFilter').value;
   const filtered = allLoaded.filter(j => {
-    const matchQ = !q || j.language.toLowerCase().includes(q) || (j.username || '').toLowerCase().includes(q);
+    const matchQ = !q || j.language.toLowerCase().includes(q) || (j.username||'').toLowerCase().includes(q);
     let matchS = true;
-    if (status === 'ok')           matchS = j.run_exit === 0 && j.run_status === 'ok';
+    if (status === 'ok')           matchS = j.run_exit === 0;
     else if (status === 'error')   matchS = j.run_exit !== 0 && j.run_status !== 'timed_out' && j.run_status !== 'memory_limit';
     else if (status === 'timed_out')    matchS = j.run_status === 'timed_out';
     else if (status === 'memory_limit') matchS = j.run_status === 'memory_limit';
@@ -323,34 +466,44 @@ document.getElementById('langFilter').addEventListener('change', () => { current
 function renderJobs(jobs) {
   document.getElementById('totalCount').textContent = jobs.length;
   if (!jobs.length) { renderEmpty(); return; }
-
   document.getElementById('jobsBody').innerHTML = jobs.map(j => {
     const m = getMeta(j.language);
     const dt = new Date(j.created_at);
     const timeStr = dt.toLocaleString('uz', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
-    const runMs = j.run_time != null ? j.run_time + 'ms' : '—';
-    const runKb = j.run_memory != null ? Math.round(j.run_memory/1024) + 'KB' : '—';
-
+    const runMs = j.run_time != null ? j.run_time + ' ms' : '—';
+    const runKb = j.run_memory != null ? (j.run_memory/1024).toFixed(0) + ' KB' : '—';
+    const isSel = selected.has(j.id);
     return `
-    <tr class="row-in hover:bg-sky-50/30 transition-colors group cursor-pointer" onclick="showDetail('${j.id}')">
-      <td class="px-4 py-3">
+    <tr class="row-in hover:bg-sky-50/40 dark:hover:bg-sky-900/10 transition-colors group ${isSel ? 'bg-sky-50/60 dark:bg-sky-900/20' : ''}">
+      <td class="px-4 py-3" onclick="event.stopPropagation()">
+        <input type="checkbox" class="row-cb w-3.5 h-3.5 rounded border-slate-300 dark:border-slate-600 text-sky-600 focus:ring-sky-500 cursor-pointer"
+          data-id="${j.id}" onchange="toggleRow(this)" ${isSel ? 'checked' : ''}>
+      </td>
+      <td class="px-4 py-3 cursor-pointer" onclick="showDetail('${j.id}')">
         <div class="flex items-center gap-2">
-          <div class="w-7 h-7 rounded-lg flex items-center justify-center text-xs flex-shrink-0"
-            style="background:${m.bg};color:${m.color}"><i class="${m.icon}"></i></div>
+          <div class="w-7 h-7 rounded-lg flex items-center justify-center text-xs flex-shrink-0 bg-slate-100 dark:bg-slate-800" style="color:${m.color}">
+            <i class="${m.icon}"></i>
+          </div>
           <div>
-            <div class="text-xs font-medium text-gray-800 capitalize">${j.language}</div>
-            <div class="text-[10px] text-gray-400 font-mono">v${j.version}</div>
+            <div class="text-xs font-semibold text-slate-700 dark:text-slate-200 capitalize">${j.language}</div>
+            <div class="text-[10px] text-slate-400 dark:text-slate-500 font-mono">v${j.version}</div>
           </div>
         </div>
       </td>
-      <td class="px-4 py-3 text-xs text-gray-500">${j.username || '<span class="text-gray-300">—</span>'}</td>
-      <td class="px-4 py-3">${j.compile_status !== null && j.compile_status !== undefined ? badge(j.compile_exit, j.compile_status) : '<span class="text-[10px] text-gray-300">—</span>'}</td>
-      <td class="px-4 py-3">${badge(j.run_exit, j.run_status)}</td>
-      <td class="px-4 py-3 text-xs text-gray-500 font-mono">${runMs}</td>
-      <td class="px-4 py-3 text-xs text-gray-500 font-mono">${runKb}</td>
-      <td class="px-4 py-3 text-[11px] text-gray-400 whitespace-nowrap">${timeStr}</td>
+      <td class="px-4 py-3 text-xs text-slate-500 dark:text-slate-400 cursor-pointer" onclick="showDetail('${j.id}')">${j.username || '<span class="text-slate-300 dark:text-slate-600">—</span>'}</td>
+      <td class="px-4 py-3 cursor-pointer" onclick="showDetail('${j.id}')">${j.compile_exit !== null && j.compile_exit !== undefined ? badge(j.compile_exit, j.compile_status) : '<span class="text-[10px] text-slate-300 dark:text-slate-600">—</span>'}</td>
+      <td class="px-4 py-3 cursor-pointer" onclick="showDetail('${j.id}')">${badge(j.run_exit, j.run_status)}</td>
+      <td class="px-4 py-3 text-xs text-slate-500 dark:text-slate-400 font-mono cursor-pointer" onclick="showDetail('${j.id}')">${runMs}</td>
+      <td class="px-4 py-3 text-xs text-slate-500 dark:text-slate-400 font-mono cursor-pointer" onclick="showDetail('${j.id}')">${runKb}</td>
+      <td class="px-4 py-3 text-[11px] text-slate-400 dark:text-slate-500 whitespace-nowrap cursor-pointer" onclick="showDetail('${j.id}')">${timeStr}</td>
       <td class="px-4 py-3">
-        <i class="fa-solid fa-chevron-right text-gray-300 group-hover:text-sky-400 text-xs transition-colors"></i>
+        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button onclick="deleteJobById('${j.id}', event)"
+            class="w-7 h-7 flex items-center justify-center text-red-400 hover:text-red-600 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+            <i class="fa-solid fa-trash-can text-xs"></i>
+          </button>
+          <i class="fa-solid fa-chevron-right text-slate-300 dark:text-slate-600 text-xs"></i>
+        </div>
       </td>
     </tr>`;
   }).join('');
@@ -361,7 +514,7 @@ function populateLangFilter(jobs) {
   const sel = document.getElementById('langFilter');
   const cur = sel.value;
   sel.innerHTML = '<option value="">Barcha tillar</option>' +
-    langs.map(l => `<option value="${l}" ${l === cur ? 'selected' : ''}>${l}</option>`).join('');
+    langs.map(l => `<option value="${l}" ${l===cur?'selected':''}>${l}</option>`).join('');
 }
 
 function updatePagination(count, total) {
@@ -370,80 +523,67 @@ function updatePagination(count, total) {
   pg.classList.remove('hidden');
   const page = Math.floor(currentOffset / PAGE_SIZE) + 1;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  document.getElementById('pageInfo').textContent = `Sahifa ${page}/${totalPages} · Jami: ${total} ta`;
+  document.getElementById('pageInfo').textContent = `Sahifa ${page}/${totalPages} · Jami: ${total}`;
   document.getElementById('prevBtn').disabled = currentOffset === 0;
   document.getElementById('nextBtn').disabled = currentOffset + count >= total;
 }
 
 function changePage(dir) {
   currentOffset = Math.max(0, currentOffset + dir * PAGE_SIZE);
+  clearSelection();
   loadJobs();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+// ── Detail panel ──────────────────────────────────────────────
 async function showDetail(id) {
+  currentDetailId = id;
   document.getElementById('detailPanel').classList.remove('hidden');
   document.getElementById('detailBody').innerHTML = `
-    <div class="py-12 text-center text-gray-400 text-sm">
-      <i class="fa-solid fa-circle-notch spin text-xl mb-2 block text-sky-400"></i>Yuklanmoqda...
+    <div class="py-12 text-center text-slate-400 dark:text-slate-500 text-sm">
+      <i class="fa-solid fa-circle-notch spin text-xl mb-2 block text-sky-500"></i>Yuklanmoqda...
     </div>`;
-
   try {
     const res = await fetch(`/api/v2/jobs/${id}`, { headers: authHeaders() });
-    if (!res.ok) {
-      const e = await res.json().catch(() => ({ message: 'Xato' }));
-      document.getElementById('detailBody').innerHTML = `<p class="text-red-500 text-sm">${e.message}</p>`;
-      return;
-    }
+    if (!res.ok) { document.getElementById('detailBody').innerHTML = `<p class="text-red-500 text-sm">Xato: ${(await res.json()).message}</p>`; return; }
     const j = await res.json();
     const m = getMeta(j.language);
     const dt = new Date(j.created_at).toLocaleString();
-
     document.getElementById('detailTitle').innerHTML = `
-      <div class="flex items-center gap-2">
-        <div class="w-7 h-7 rounded-lg flex items-center justify-center text-xs flex-shrink-0"
-          style="background:${m.bg};color:${m.color}"><i class="${m.icon}"></i></div>
-        <div>
-          <span class="text-sm font-semibold text-gray-800 capitalize">${j.language}</span>
-          <span class="text-xs text-gray-400 font-mono ml-1">v${j.version}</span>
-        </div>
-        <span class="text-xs text-gray-400 ml-2">${j.username || '—'}</span>
-        <span class="text-xs text-gray-300 ml-auto hidden sm:block font-mono">${dt}</span>
+      <div class="flex items-center gap-2 min-w-0">
+        <div class="w-6 h-6 rounded-md flex items-center justify-center text-xs flex-shrink-0 bg-slate-100 dark:bg-slate-800" style="color:${m.color}"><i class="${m.icon}"></i></div>
+        <span class="text-sm font-bold text-slate-800 dark:text-white capitalize">${j.language}</span>
+        <span class="text-xs text-slate-400 dark:text-slate-500 font-mono">v${j.version}</span>
+        <span class="text-xs text-slate-400 dark:text-slate-500 ml-1">${j.username || '—'}</span>
       </div>`;
 
     let html = '';
-
     if (j.compile_exit !== null && j.compile_exit !== undefined) {
-      html += `
-        <div class="bg-gray-50 rounded-xl p-4 mb-4">
-          <div class="flex items-center gap-3 mb-2 flex-wrap">
-            <span class="text-xs font-bold text-gray-600 uppercase tracking-wide">Compile</span>
-            ${badge(j.compile_exit, j.compile_status)}
-            ${j.compile_time != null ? `<span class="text-xs text-gray-400 font-mono">${j.compile_time}ms</span>` : ''}
-            ${j.compile_memory != null ? `<span class="text-xs text-gray-400 font-mono">${Math.round(j.compile_memory/1024)}KB</span>` : ''}
-          </div>
-          ${preBlock('stdout', j.compile_stdout)}
-          ${preBlock('stderr', j.compile_stderr)}
-        </div>`;
-    }
-
-    html += `
-      <div class="bg-gray-50 rounded-xl p-4">
+      html += `<div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-4 mb-4">
         <div class="flex items-center gap-3 mb-2 flex-wrap">
-          <span class="text-xs font-bold text-gray-600 uppercase tracking-wide">Run</span>
-          ${badge(j.run_exit, j.run_status)}
-          ${j.run_time != null ? `<span class="text-xs text-gray-400 font-mono">${j.run_time}ms</span>` : ''}
-          ${j.run_memory != null ? `<span class="text-xs text-gray-400 font-mono">${Math.round(j.run_memory/1024)}KB</span>` : ''}
+          <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Compile</span>
+          ${badge(j.compile_exit, j.compile_status)}
+          ${j.compile_time != null ? `<span class="text-xs text-slate-400 font-mono">${j.compile_time}ms</span>` : ''}
+          ${j.compile_memory != null ? `<span class="text-xs text-slate-400 font-mono">${(j.compile_memory/1024).toFixed(0)}KB</span>` : ''}
         </div>
-        ${preBlock('stdout', j.run_stdout)}
-        ${preBlock('stderr', j.run_stderr)}
-      </div>
-
-      <div class="mt-4 pt-4 border-t border-gray-100">
-        <p class="text-[10px] text-gray-400 font-mono break-all">ID: ${j.id}</p>
-        <p class="text-[10px] text-gray-400 mt-1">${dt}</p>
+        ${preBlock('stdout', j.compile_stdout)}
+        ${preBlock('stderr', j.compile_stderr)}
       </div>`;
-
+    }
+    html += `<div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-4">
+      <div class="flex items-center gap-3 mb-2 flex-wrap">
+        <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Run</span>
+        ${badge(j.run_exit, j.run_status)}
+        ${j.run_time != null ? `<span class="text-xs text-slate-400 font-mono">${j.run_time}ms</span>` : ''}
+        ${j.run_memory != null ? `<span class="text-xs text-slate-400 font-mono">${(j.run_memory/1024).toFixed(0)}KB</span>` : ''}
+      </div>
+      ${preBlock('stdout', j.run_stdout)}
+      ${preBlock('stderr', j.run_stderr)}
+    </div>
+    <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+      <p class="text-[10px] text-slate-400 dark:text-slate-500 font-mono break-all">ID: ${j.id}</p>
+      <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">${dt}</p>
+    </div>`;
     document.getElementById('detailBody').innerHTML = html;
   } catch(e) {
     document.getElementById('detailBody').innerHTML = `<p class="text-red-500 text-sm">Xato: ${e.message}</p>`;
@@ -452,20 +592,20 @@ async function showDetail(id) {
 
 function closeDetail() {
   document.getElementById('detailPanel').classList.add('hidden');
+  currentDetailId = null;
 }
 
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeDetail();
-});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(); });
 
+// ── Toast ─────────────────────────────────────────────────────
 function toast(msg, type = 'info') {
-  const c = { success:'bg-green-500', error:'bg-red-500', info:'bg-sky-500' };
+  const c = { success:'bg-green-600', error:'bg-red-600', info:'bg-sky-600' };
   const i = { success:'fa-circle-check', error:'fa-circle-xmark', info:'fa-circle-info' };
   const el = document.createElement('div');
-  el.className = `toast pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl text-white text-sm shadow-lg ${c[type]}`;
+  el.className = `toast pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl text-white text-sm shadow-xl ${c[type]}`;
   el.innerHTML = `<i class="fa-solid ${i[type]} flex-shrink-0"></i><span>${msg}</span>`;
   document.getElementById('toasts').appendChild(el);
-  setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(), 300); }, 4000);
+  setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(),300); }, 4000);
 }
 
 loadJobs();

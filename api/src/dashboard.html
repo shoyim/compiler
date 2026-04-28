@@ -1,169 +1,183 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uz" class="h-full">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Compiler Dashboard</title>
+  <title>Dashboard — Compiler</title>
+  <script>
+    tailwind.config = { darkMode: 'class' };
+    (function(){
+      const t = localStorage.getItem('theme');
+      if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches))
+        document.documentElement.classList.add('dark');
+    })();
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
-    .card-enter { animation: fadeIn .2s ease; }
-    @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
-    .spin { animation: spin 1s linear infinite; }
+    .card-in { animation: fadeUp .2s ease; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+    .spin   { animation: spin 1s linear infinite; }
     @keyframes spin { to { transform:rotate(360deg); } }
-    .toast { animation: slideIn .25s ease; }
+    .toast  { animation: slideIn .25s ease; }
     @keyframes slideIn { from { transform:translateX(110%); } to { transform:none; } }
     .modal-bg { animation: fadeBg .2s ease; }
     @keyframes fadeBg { from { opacity:0; } to { opacity:1; } }
   </style>
 </head>
-<body class="bg-gray-50 min-h-screen font-sans text-gray-800">
+<body class="h-full bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans transition-colors">
 
 <!-- Toasts -->
-<div id="toasts" class="fixed top-4 right-4 z-50 flex flex-col gap-2 w-80 pointer-events-none"></div>
+<div id="toasts" class="fixed top-4 right-4 z-[60] flex flex-col gap-2 w-80 pointer-events-none"></div>
 
 <!-- Modal -->
-<div id="modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-bg bg-black/40">
-  <div id="modalBox" class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+<div id="modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-bg bg-black/50">
+  <div id="modalBox" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl w-full max-w-md p-6">
     <div id="modalContent"></div>
   </div>
 </div>
 
 <!-- Header -->
-<header class="bg-white border-b border-gray-200 sticky top-0 z-40">
+<header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40 shadow-sm">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
     <div class="flex items-center gap-4">
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 bg-sky-600 rounded-lg flex items-center justify-center flex-shrink-0">
+      <a href="/dashboard" class="flex items-center gap-2.5">
+        <div class="w-8 h-8 bg-sky-600 rounded-lg flex items-center justify-center flex-shrink-0">
           <i class="fa-solid fa-code text-white text-sm"></i>
         </div>
-        <span class="text-base font-bold text-gray-900 hidden sm:block">Compiler</span>
-      </div>
-      <nav class="flex items-center gap-1">
-        <a href="/dashboard"
-          class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-sky-600 text-white">
-          <i class="fa-solid fa-gauge-high text-xs"></i>
-          <span>Dashboard</span>
+        <span class="text-sm font-bold text-slate-800 dark:text-white hidden sm:block">Compiler</span>
+      </a>
+      <nav class="flex items-center gap-0.5">
+        <a href="/dashboard" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-sky-600 text-white">
+          <i class="fa-solid fa-gauge-high"></i><span>Dashboard</span>
         </a>
-        <a href="/tester"
-          class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
-          <i class="fa-solid fa-play text-xs"></i>
-          <span class="hidden sm:inline">Tester</span>
+        <a href="/tester" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-white transition-colors">
+          <i class="fa-solid fa-play"></i><span class="hidden sm:inline">Tester</span>
         </a>
-        <a href="/jobs"
-          class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
-          <i class="fa-solid fa-list-check text-xs"></i>
-          <span class="hidden sm:inline">Joblar</span>
+        <a href="/jobs" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-white transition-colors">
+          <i class="fa-solid fa-list-check"></i><span class="hidden sm:inline">Joblar</span>
         </a>
-        <a href="/tokens"
-          class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
-          <i class="fa-solid fa-key text-xs"></i>
-          <span>Tokenlar</span>
+        <a href="/tokens" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-white transition-colors">
+          <i class="fa-solid fa-key"></i><span class="hidden sm:inline">Tokenlar</span>
         </a>
-        <a href="/api-docs"
-          class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
-          <i class="fa-solid fa-book text-xs"></i>
-          <span class="hidden sm:inline">API Docs</span>
+        <a href="/api-docs" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-white transition-colors">
+          <i class="fa-solid fa-book"></i><span class="hidden md:inline">API</span>
         </a>
       </nav>
     </div>
-    <div class="flex items-center gap-2">
-      <!-- Foydalanuvchilar -->
+    <div class="flex items-center gap-1.5">
+      <!-- Users btn -->
       <button onclick="openUsersModal()"
-        class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-gray-600">
-        <i class="fa-solid fa-users text-gray-400"></i>
+        class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-white transition-colors border border-slate-200 dark:border-slate-700">
+        <i class="fa-solid fa-users text-xs"></i>
         <span class="hidden md:inline">Foydalanuvchilar</span>
       </button>
-      <!-- Profile dropdown -->
+      <!-- Theme toggle -->
+      <button onclick="toggleTheme()" title="Mavzu"
+        class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+        <i id="themeIcon" class="fa-solid fa-moon text-sm"></i>
+      </button>
+      <!-- Refresh -->
+      <button onclick="loadAll()"
+        class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+        <i id="refreshIcon" class="fa-solid fa-arrows-rotate text-sm"></i>
+      </button>
+      <!-- User dropdown -->
       <div class="relative" id="profileDropdown">
         <button onclick="toggleProfileMenu()"
-          class="flex items-center gap-1.5 px-2.5 py-1.5 bg-sky-50 border border-sky-100 rounded-lg hover:bg-sky-100 transition-colors">
-          <i class="fa-solid fa-circle-user text-sky-500 text-sm"></i>
-          <span id="headerUser" class="text-xs font-medium text-sky-700">—</span>
+          class="flex items-center gap-2 px-2.5 py-1.5 bg-sky-50 dark:bg-sky-900/30 border border-sky-200 dark:border-sky-800 rounded-lg hover:bg-sky-100 dark:hover:bg-sky-900/50 transition-colors">
+          <i class="fa-solid fa-circle-user text-sky-500 dark:text-sky-400 text-sm"></i>
+          <span id="headerUser" class="text-xs font-semibold text-sky-700 dark:text-sky-300">—</span>
           <i class="fa-solid fa-chevron-down text-[9px] text-sky-400"></i>
         </button>
-        <div id="profileMenu" class="hidden absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-xl shadow-lg z-50 py-1 overflow-hidden">
+        <div id="profileMenu" class="hidden absolute right-0 mt-1.5 w-52 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 py-1 overflow-hidden">
           <button onclick="openProfileModal(); closeProfileMenu()"
-            class="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors">
-            <i class="fa-solid fa-lock text-gray-400 w-4"></i>
-            Parolni o'zgartirish
+            class="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+            <i class="fa-solid fa-lock text-slate-400 w-4"></i>Parolni o'zgartirish
           </button>
-          <div class="border-t border-gray-100 my-1"></div>
+          <div class="border-t border-slate-100 dark:border-slate-700 my-1"></div>
           <button onclick="logout()"
-            class="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-500 hover:bg-red-50 transition-colors">
-            <i class="fa-solid fa-right-from-bracket w-4"></i>
-            Chiqish
+            class="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+            <i class="fa-solid fa-right-from-bracket w-4"></i>Chiqish
           </button>
         </div>
       </div>
-      <!-- Refresh -->
-      <button onclick="loadAll()"
-        class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-        <i class="fa-solid fa-arrows-rotate text-sm" id="refreshIcon"></i>
-      </button>
     </div>
   </div>
 </header>
 
-<!-- Stats -->
-<div class="bg-white border-b border-gray-100">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex gap-5 flex-wrap">
+<!-- Stats strip -->
+<div class="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex gap-6 flex-wrap">
     <div class="flex items-center gap-2">
       <div class="w-2 h-2 rounded-full bg-sky-500"></div>
-      <span class="text-xs text-gray-500">Jami:</span>
-      <span class="text-xs font-semibold text-gray-800" id="statTotal">—</span>
+      <span class="text-xs text-slate-500 dark:text-slate-400">Jami:</span>
+      <span id="statTotal" class="text-xs font-bold text-slate-700 dark:text-slate-200">—</span>
     </div>
     <div class="flex items-center gap-2">
       <div class="w-2 h-2 rounded-full bg-green-500"></div>
-      <span class="text-xs text-gray-500">O'rnatilgan:</span>
-      <span class="text-xs font-semibold text-green-700" id="statInstalled">—</span>
+      <span class="text-xs text-slate-500 dark:text-slate-400">O'rnatilgan:</span>
+      <span id="statInstalled" class="text-xs font-bold text-green-600 dark:text-green-400">—</span>
     </div>
     <div class="flex items-center gap-2">
-      <div class="w-2 h-2 rounded-full bg-gray-400"></div>
-      <span class="text-xs text-gray-500">Mavjud:</span>
-      <span class="text-xs font-semibold text-gray-600" id="statAvailable">—</span>
+      <div class="w-2 h-2 rounded-full bg-slate-400"></div>
+      <span class="text-xs text-slate-500 dark:text-slate-400">Mavjud:</span>
+      <span id="statAvailable" class="text-xs font-bold text-slate-600 dark:text-slate-400">—</span>
     </div>
   </div>
 </div>
 
 <!-- Controls -->
 <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row gap-3">
-  <div class="relative flex-1">
-    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+  <div class="relative flex-1 max-w-xs">
+    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
     <input id="search" type="text" placeholder="Til qidirish..." oninput="render()"
-      class="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-sky-500">
+      class="w-full pl-8 pr-4 py-2.5 text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500">
   </div>
-  <div class="flex bg-gray-100 rounded-lg p-1 gap-1">
+  <div class="flex bg-slate-100 dark:bg-slate-800 rounded-xl p-1 gap-1">
     <button onclick="setFilter('all')" id="tab-all"
-      class="tab-btn px-4 py-1.5 text-sm rounded-md font-medium transition-all bg-white text-gray-800 shadow-sm">
+      class="tab-btn px-4 py-1.5 text-xs rounded-lg font-semibold transition-all bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm">
       Hammasi
     </button>
     <button onclick="setFilter('installed')" id="tab-installed"
-      class="tab-btn px-4 py-1.5 text-sm rounded-md font-medium transition-all text-gray-500 hover:text-gray-700">
-      <i class="fa-solid fa-circle-check text-green-500 mr-1 text-xs"></i>O'rnatilgan
+      class="tab-btn px-4 py-1.5 text-xs rounded-lg font-semibold transition-all text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white">
+      <i class="fa-solid fa-circle-check text-green-500 mr-1 text-[10px]"></i>O'rnatilgan
     </button>
     <button onclick="setFilter('available')" id="tab-available"
-      class="tab-btn px-4 py-1.5 text-sm rounded-md font-medium transition-all text-gray-500 hover:text-gray-700">
-      <i class="fa-solid fa-circle-plus text-gray-400 mr-1 text-xs"></i>Mavjud
+      class="tab-btn px-4 py-1.5 text-xs rounded-lg font-semibold transition-all text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white">
+      <i class="fa-solid fa-circle-plus text-slate-400 dark:text-slate-500 mr-1 text-[10px]"></i>Mavjud
     </button>
   </div>
 </div>
 
-<!-- Grid -->
+<!-- Package grid -->
 <main class="max-w-7xl mx-auto px-4 sm:px-6 pb-12">
   <div id="grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"></div>
-  <div id="empty" class="hidden text-center py-20 text-gray-400">
-    <i class="fa-solid fa-box-open text-4xl mb-3"></i>
-    <p class="text-lg font-medium">Hech narsa topilmadi</p>
+  <div id="empty" class="hidden text-center py-20 text-slate-400 dark:text-slate-500">
+    <i class="fa-solid fa-box-open text-4xl mb-3 opacity-50"></i>
+    <p class="text-sm font-medium">Hech narsa topilmadi</p>
   </div>
-  <div id="loading" class="text-center py-20 text-gray-400">
+  <div id="loading" class="text-center py-20 text-slate-400 dark:text-slate-500">
     <i class="fa-solid fa-circle-notch text-3xl spin text-sky-500 mb-3"></i>
     <p class="text-sm">Yuklanmoqda...</p>
   </div>
 </main>
 
 <script>
-// ── Auth ──────────────────────────────────────────────────────────────
+// ── Theme ─────────────────────────────────────────────────────
+function updateThemeIcon() {
+  document.getElementById('themeIcon').className =
+    document.documentElement.classList.contains('dark')
+      ? 'fa-solid fa-sun text-sm' : 'fa-solid fa-moon text-sm';
+}
+function toggleTheme() {
+  const dark = document.documentElement.classList.toggle('dark');
+  localStorage.setItem('theme', dark ? 'dark' : 'light');
+  updateThemeIcon();
+}
+updateThemeIcon();
+
+// ── Auth ──────────────────────────────────────────────────────
 const token = localStorage.getItem('auth_token');
 if (!token) window.location.href = '/login';
 document.getElementById('headerUser').textContent = localStorage.getItem('auth_user') || '?';
@@ -171,23 +185,15 @@ document.getElementById('headerUser').textContent = localStorage.getItem('auth_u
 function authHeaders() {
   return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
 }
-
 async function logout() {
   await fetch('/auth/logout', { method: 'POST', headers: authHeaders() }).catch(() => {});
-  localStorage.clear();
-  window.location.href = '/login';
+  localStorage.clear(); window.location.href = '/login';
 }
-
 function copyToken() {
   navigator.clipboard.writeText(token).then(() => toast('Token nusxalandi', 'info'));
 }
-
-function toggleProfileMenu() {
-  document.getElementById('profileMenu').classList.toggle('hidden');
-}
-function closeProfileMenu() {
-  document.getElementById('profileMenu').classList.add('hidden');
-}
+function toggleProfileMenu() { document.getElementById('profileMenu').classList.toggle('hidden'); }
+function closeProfileMenu()  { document.getElementById('profileMenu').classList.add('hidden'); }
 document.addEventListener('click', e => {
   if (!document.getElementById('profileDropdown').contains(e.target)) closeProfileMenu();
 });
@@ -195,111 +201,95 @@ document.addEventListener('click', e => {
 function openProfileModal() {
   openModal('max-w-sm');
   document.getElementById('modalContent').innerHTML = `
-    <div class="flex items-center justify-between mb-4">
-      <h2 class="text-base font-bold text-gray-800"><i class="fa-solid fa-lock text-gray-400 mr-2"></i>Parolni o'zgartirish</h2>
-      <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark"></i></button>
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-base font-bold text-slate-800 dark:text-white flex items-center gap-2">
+        <i class="fa-solid fa-lock text-slate-400"></i>Parolni o'zgartirish
+      </h2>
+      <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
     </div>
     <div class="space-y-3">
-      <div>
-        <label class="block text-xs font-medium text-gray-600 mb-1">Joriy parol</label>
+      <div><label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Joriy parol</label>
         <input id="curPass" type="password" placeholder="••••••••"
-          class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500">
-      </div>
-      <div>
-        <label class="block text-xs font-medium text-gray-600 mb-1">Yangi parol</label>
+          class="w-full text-sm border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-800 dark:text-white rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500"></div>
+      <div><label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Yangi parol</label>
         <input id="newPass1" type="password" placeholder="••••••••"
-          class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500">
-      </div>
-      <div>
-        <label class="block text-xs font-medium text-gray-600 mb-1">Yangi parolni tasdiqlang</label>
+          class="w-full text-sm border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-800 dark:text-white rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500"></div>
+      <div><label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Tasdiqlang</label>
         <input id="newPass2" type="password" placeholder="••••••••"
-          class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500">
-      </div>
+          class="w-full text-sm border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-800 dark:text-white rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500"></div>
       <button onclick="submitProfileChange()"
-        class="w-full py-2.5 bg-sky-600 text-white text-sm font-medium rounded-lg hover:bg-sky-500 transition-colors">
-        Saqlash
-      </button>
+        class="w-full py-2.5 bg-sky-600 hover:bg-sky-500 text-white text-sm font-semibold rounded-lg transition-colors">Saqlash</button>
     </div>`;
   document.getElementById('curPass').focus();
 }
-
 async function submitProfileChange() {
   const cur = document.getElementById('curPass').value;
   const n1  = document.getElementById('newPass1').value;
   const n2  = document.getElementById('newPass2').value;
-  if (!cur || !n1) { toast('Barcha maydonlarni to\'ldiring', 'error'); return; }
-  if (n1 !== n2)   { toast('Yangi parollar mos kelmadi', 'error'); return; }
+  if (!cur || !n1) { toast('Barcha maydonlarni to\'ldiring','error'); return; }
+  if (n1 !== n2)   { toast('Yangi parollar mos kelmadi','error'); return; }
   try {
-    const res = await fetch('/auth/profile', {
-      method: 'PUT', headers: authHeaders(),
-      body: JSON.stringify({ current_password: cur, new_password: n1 })
-    });
+    const res = await fetch('/auth/profile', { method:'PUT', headers:authHeaders(), body:JSON.stringify({current_password:cur,new_password:n1}) });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message);
-    toast(data.message, 'success');
-    closeModal();
-  } catch(e) { toast(e.message, 'error'); }
+    toast(data.message,'success'); closeModal();
+  } catch(e) { toast(e.message,'error'); }
 }
 
-// ── Language icons ────────────────────────────────────────────────────
+// ── Lang icons ─────────────────────────────────────────────────
 const LANG_META = {
-  python:   { icon:'fa-brands fa-python',    color:'#3776AB', bg:'#EBF4FB' },
-  node:     { icon:'fa-brands fa-node-js',   color:'#339933', bg:'#EBF7EB' },
-  java:     { icon:'fa-brands fa-java',      color:'#ED8B00', bg:'#FEF3E6' },
-  kotlin:   { icon:'fa-solid fa-k',          color:'#7F52FF', bg:'#F3EEFF' },
-  scala:    { icon:'fa-solid fa-s',          color:'#DC322F', bg:'#FDEAEA' },
-  groovy:   { icon:'fa-solid fa-g',          color:'#4298B8', bg:'#EBF5FA' },
-  c:        { icon:'fa-solid fa-c',          color:'#A8B9CC', bg:'#F5F6F8' },
-  'c++':    { icon:'fa-solid fa-code',       color:'#00599C', bg:'#EBF2FA' },
-  rust:     { icon:'fa-brands fa-rust',      color:'#CE422B', bg:'#FDECEA' },
-  go:       { icon:'fa-solid fa-g',          color:'#00ACD7', bg:'#E6F7FC' },
-  ruby:     { icon:'fa-solid fa-gem',        color:'#CC342D', bg:'#FDECEA' },
-  php:      { icon:'fa-brands fa-php',       color:'#777BB4', bg:'#F2F2F9' },
-  swift:    { icon:'fa-brands fa-swift',     color:'#FA7343', bg:'#FEF0EA' },
-  bash:     { icon:'fa-solid fa-terminal',   color:'#4EAA25', bg:'#EBF7E8' },
-  lua:      { icon:'fa-solid fa-moon',       color:'#000080', bg:'#E8E8F7' },
-  perl:     { icon:'fa-brands fa-perl',      color:'#39457E', bg:'#ECEEF7' },
-  haskell:  { icon:'fa-solid fa-h',          color:'#5E5086', bg:'#F0EEF8' },
-  dart:     { icon:'fa-solid fa-d',          color:'#0175C2', bg:'#EBF4FD' },
-  rust:     { icon:'fa-brands fa-rust',      color:'#CE422B', bg:'#FDECEA' },
-  sqlite3:  { icon:'fa-solid fa-database',   color:'#0078D4', bg:'#EBF4FD' },
-  typescript:{ icon:'fa-solid fa-t',         color:'#3178C6', bg:'#EBF3FD' },
-  default:  { icon:'fa-solid fa-code',       color:'#6B7280', bg:'#F3F4F6' },
+  python:   { icon:'fa-brands fa-python',    color:'#3776AB', bg:'#EBF4FB', bgd:'#1e3a5f' },
+  node:     { icon:'fa-brands fa-node-js',   color:'#339933', bg:'#EBF7EB', bgd:'#1a3a1a' },
+  java:     { icon:'fa-brands fa-java',      color:'#ED8B00', bg:'#FEF3E6', bgd:'#3d2600' },
+  kotlin:   { icon:'fa-solid fa-k',          color:'#7F52FF', bg:'#F3EEFF', bgd:'#2a1a4a' },
+  c:        { icon:'fa-solid fa-c',          color:'#A8B9CC', bg:'#F5F6F8', bgd:'#1e2533' },
+  'c++':    { icon:'fa-solid fa-code',       color:'#00599C', bg:'#EBF2FA', bgd:'#0a1f3a' },
+  rust:     { icon:'fa-brands fa-rust',      color:'#CE422B', bg:'#FDECEA', bgd:'#3a0f0a' },
+  go:       { icon:'fa-solid fa-g',          color:'#00ACD7', bg:'#E6F7FC', bgd:'#0a2a33' },
+  ruby:     { icon:'fa-solid fa-gem',        color:'#CC342D', bg:'#FDECEA', bgd:'#3a0a0a' },
+  php:      { icon:'fa-brands fa-php',       color:'#777BB4', bg:'#F2F2F9', bgd:'#1e1e35' },
+  swift:    { icon:'fa-brands fa-swift',     color:'#FA7343', bg:'#FEF0EA', bgd:'#3a1e0a' },
+  bash:     { icon:'fa-solid fa-terminal',   color:'#4EAA25', bg:'#EBF7E8', bgd:'#152b0a' },
+  lua:      { icon:'fa-solid fa-moon',       color:'#000080', bg:'#E8E8F7', bgd:'#0a0a2a' },
+  perl:     { icon:'fa-brands fa-perl',      color:'#39457E', bg:'#ECEEF7', bgd:'#0f1228' },
+  haskell:  { icon:'fa-solid fa-h',          color:'#5E5086', bg:'#F0EEF8', bgd:'#1a1528' },
+  dart:     { icon:'fa-solid fa-d',          color:'#0175C2', bg:'#EBF4FD', bgd:'#082040' },
+  typescript:{ icon:'fa-solid fa-t',         color:'#3178C6', bg:'#EBF3FD', bgd:'#0f2040' },
+  pypy:     { icon:'fa-brands fa-python',    color:'#e08e25', bg:'#FEF6E6', bgd:'#3d2800' },
+  pascal:   { icon:'fa-solid fa-p',          color:'#3b82f6', bg:'#EBF3FE', bgd:'#0f2040' },
+  sqlite3:  { icon:'fa-solid fa-database',   color:'#0078D4', bg:'#EBF4FD', bgd:'#082040' },
+  default:  { icon:'fa-solid fa-code',       color:'#6B7280', bg:'#F3F4F6', bgd:'#1e2030' },
 };
-function getMeta(lang) {
-  return LANG_META[lang.toLowerCase()] || LANG_META.default;
-}
+function getMeta(lang) { return LANG_META[lang.toLowerCase()] || LANG_META.default; }
 
-// ── State ─────────────────────────────────────────────────────────────
+// ── State ─────────────────────────────────────────────────────
 let allPackages = [];
 let currentFilter = 'all';
-let pending = new Set(); // "lang@version"
+let pending = new Set();
+function key(l, v) { return l + '@' + v; }
 
-function key(lang, ver) { return lang + '@' + ver; }
-
-// ── Render ────────────────────────────────────────────────────────────
 function setFilter(f) {
   currentFilter = f;
   document.querySelectorAll('.tab-btn').forEach(b => {
-    b.classList.remove('bg-white','text-gray-800','shadow-sm');
-    b.classList.add('text-gray-500');
+    b.classList.remove('bg-white','dark:bg-slate-700','text-slate-800','dark:text-white','shadow-sm');
+    b.classList.add('text-slate-500','dark:text-slate-400');
   });
   const a = document.getElementById('tab-'+f);
-  a.classList.add('bg-white','text-gray-800','shadow-sm');
-  a.classList.remove('text-gray-500');
+  a.classList.add('bg-white','dark:bg-slate-700','text-slate-800','dark:text-white','shadow-sm');
+  a.classList.remove('text-slate-500','dark:text-slate-400');
   render();
 }
 
 function render() {
   const q = document.getElementById('search').value.toLowerCase();
+  const isDark = document.documentElement.classList.contains('dark');
   const list = allPackages.filter(p => {
     const ok = p.language.toLowerCase().includes(q) || p.language_version.includes(q);
-    const f = currentFilter === 'all' ? true
-            : currentFilter === 'installed' ? p.installed
-            : !p.installed;
+    const f = currentFilter === 'all' ? true : currentFilter === 'installed' ? p.installed : !p.installed;
     return ok && f;
   });
-
   const grid = document.getElementById('grid');
   document.getElementById('empty').classList.toggle('hidden', list.length > 0);
   if (!list.length) { grid.innerHTML = ''; return; }
@@ -308,40 +298,39 @@ function render() {
     const m = getMeta(p.language);
     const k = key(p.language, p.language_version);
     const busy = pending.has(k);
+    const bgColor = isDark ? m.bgd : m.bg;
     return `
-    <div class="card-enter bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+    <div class="card-in bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md dark:hover:shadow-slate-700/30 transition-all hover:-translate-y-0.5">
       <div class="p-4 flex items-start gap-3">
-        <div class="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 text-xl"
-          style="background:${m.bg};color:${m.color}">
+        <div class="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 text-xl" style="background:${bgColor};color:${m.color}">
           <i class="${m.icon}"></i>
         </div>
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2 flex-wrap">
-            <span class="font-semibold text-gray-800 capitalize">${p.language}</span>
-            ${p.installed ? `<span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-green-50 text-green-700 border border-green-100">
-              <i class="fa-solid fa-check text-[9px]"></i>Faol
+            <span class="font-semibold text-slate-800 dark:text-white text-sm capitalize">${p.language}</span>
+            ${p.installed ? `<span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-100 dark:border-green-800">
+              <i class="fa-solid fa-check text-[9px]"></i> Faol
             </span>` : ''}
           </div>
-          <p class="text-xs text-gray-400 font-mono mt-0.5">v${p.language_version}</p>
+          <p class="text-xs text-slate-400 dark:text-slate-500 font-mono mt-0.5">v${p.language_version}</p>
         </div>
       </div>
       <div class="px-4 pb-4 flex gap-2">
         ${p.installed ? `
           <button onclick="reinstall('${p.language}','${p.language_version}')" ${busy?'disabled':''}
-            class="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 text-xs font-medium rounded-lg border border-sky-200 text-sky-600 hover:bg-sky-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            class="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 text-xs font-semibold rounded-lg border border-sky-200 dark:border-sky-800 text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
             <i class="fa-solid fa-rotate${busy?' spin':''}"></i>
             ${busy ? 'Kutilmoqda...' : 'Qayta o\'rnatish'}
           </button>
           <button onclick="uninstall('${p.language}','${p.language_version}')" ${busy?'disabled':''}
-            class="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            class="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg border border-red-200 dark:border-red-800 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
             <i class="fa-solid fa-trash-can"></i>
           </button>
         ` : `
           <button onclick="install('${p.language}','${p.language_version}')" ${busy?'disabled':''}
-            class="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-sky-600 text-white hover:bg-sky-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-            ${busy
-              ? `<i class="fa-solid fa-circle-notch spin"></i>O'rnatilmoqda...`
-              : `<i class="fa-solid fa-download"></i>O'rnatish`}
+            class="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-sky-600 hover:bg-sky-500 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            ${busy ? `<i class="fa-solid fa-circle-notch spin"></i>O'rnatilmoqda...`
+                   : `<i class="fa-solid fa-download"></i>O'rnatish`}
           </button>
         `}
       </div>
@@ -349,7 +338,7 @@ function render() {
   }).join('');
 }
 
-// ── API calls ─────────────────────────────────────────────────────────
+// ── API ───────────────────────────────────────────────────────
 async function loadAll() {
   document.getElementById('refreshIcon').classList.add('spin');
   try {
@@ -357,417 +346,154 @@ async function loadAll() {
     if (res.status === 401) { logout(); return; }
     allPackages = await res.json();
     const inst = allPackages.filter(p => p.installed).length;
-    document.getElementById('statTotal').textContent = allPackages.length;
+    document.getElementById('statTotal').textContent     = allPackages.length;
     document.getElementById('statInstalled').textContent = inst;
     document.getElementById('statAvailable').textContent = allPackages.length - inst;
     document.getElementById('loading').classList.add('hidden');
     render();
-  } catch(e) {
-    toast('Server bilan bog\'lanib bo\'lmadi', 'error');
-  } finally {
-    document.getElementById('refreshIcon').classList.remove('spin');
-  }
+  } catch(e) { toast('Server bilan bog\'lanib bo\'lmadi','error'); }
+  finally { document.getElementById('refreshIcon').classList.remove('spin'); }
 }
 
 async function apiPkg(method, lang, version) {
-  const res = await fetch('/api/v2/packages', {
-    method,
-    headers: authHeaders(),
-    body: JSON.stringify({ language: lang, version }),
-  });
+  const res = await fetch('/api/v2/packages', { method, headers: authHeaders(), body: JSON.stringify({ language:lang, version }) });
   if (!res.ok) { const e = await res.json(); throw new Error(e.message || 'Xatolik'); }
   return res.json();
 }
-
 async function install(lang, ver) {
-  const k = key(lang, ver);
-  pending.add(k); render();
-  try {
-    await apiPkg('POST', lang, ver);
-    toast(`${lang} v${ver} o'rnatildi`, 'success');
-    pending.delete(k);
-    await loadAll();
-  } catch(e) { toast(e.message, 'error'); pending.delete(k); render(); }
+  const k = key(lang, ver); pending.add(k); render();
+  try { await apiPkg('POST', lang, ver); toast(`${lang} v${ver} o'rnatildi`, 'success'); pending.delete(k); await loadAll(); }
+  catch(e) { toast(e.message,'error'); pending.delete(k); render(); }
 }
-
 async function uninstall(lang, ver) {
-  const k = key(lang, ver);
-  pending.add(k); render();
-  try {
-    await apiPkg('DELETE', lang, ver);
-    toast(`${lang} v${ver} o'chirildi`, 'info');
-    pending.delete(k);
-    await loadAll();
-  } catch(e) { toast(e.message, 'error'); pending.delete(k); render(); }
+  const k = key(lang, ver); pending.add(k); render();
+  try { await apiPkg('DELETE', lang, ver); toast(`${lang} v${ver} o'chirildi`,'info'); pending.delete(k); await loadAll(); }
+  catch(e) { toast(e.message,'error'); pending.delete(k); render(); }
 }
-
 async function reinstall(lang, ver) {
-  const k = key(lang, ver);
-  pending.add(k); render();
+  const k = key(lang, ver); pending.add(k); render();
   try {
     await apiPkg('DELETE', lang, ver);
     await apiPkg('POST', lang, ver);
-    toast(`${lang} v${ver} qayta o'rnatildi`, 'success');
-    pending.delete(k);
-    await loadAll();
-  } catch(e) { toast(e.message, 'error'); pending.delete(k); render(); }
+    toast(`${lang} v${ver} qayta o'rnatildi`,'success');
+    pending.delete(k); await loadAll();
+  } catch(e) { toast(e.message,'error'); pending.delete(k); render(); }
 }
 
-// ── Users Modal ───────────────────────────────────────────────────────
+// ── Users Modal ───────────────────────────────────────────────
 async function openUsersModal() {
   openModal('max-w-lg');
   document.getElementById('modalContent').innerHTML = `
-    <div class="flex items-center justify-between mb-4">
-      <h2 class="text-base font-bold text-gray-800"><i class="fa-solid fa-users text-gray-400 mr-2"></i>Foydalanuvchilar</h2>
-      <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark"></i></button>
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-base font-bold text-slate-800 dark:text-white flex items-center gap-2">
+        <i class="fa-solid fa-users text-slate-400"></i>Foydalanuvchilar
+      </h2>
+      <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"><i class="fa-solid fa-xmark"></i></button>
     </div>
-    <div class="bg-gray-50 rounded-xl p-4 mb-4">
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Yangi foydalanuvchi</p>
+    <div class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4 mb-4">
+      <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">Yangi foydalanuvchi</p>
       <div class="flex gap-2">
-        <input id="newUser" type="text" placeholder="Username" class="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500">
-        <input id="newPass" type="password" placeholder="Parol" class="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500">
-        <button onclick="addUser()" class="px-3 py-2 bg-sky-600 text-white rounded-lg text-sm hover:bg-sky-500 transition-colors">
+        <input id="newUser" type="text" placeholder="Username"
+          class="flex-1 text-sm border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500">
+        <input id="newPass" type="password" placeholder="Parol"
+          class="flex-1 text-sm border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500">
+        <button onclick="addUser()" class="px-3 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-sm transition-colors">
           <i class="fa-solid fa-plus"></i>
         </button>
       </div>
     </div>
     <div id="usersList" class="space-y-2 max-h-64 overflow-y-auto">
-      <div class="text-center py-4 text-gray-400 text-sm"><i class="fa-solid fa-circle-notch spin mr-2"></i>Yuklanmoqda...</div>
+      <div class="text-center py-4 text-slate-400 text-sm"><i class="fa-solid fa-circle-notch spin mr-2"></i>Yuklanmoqda...</div>
     </div>`;
 
   const res = await fetch('/auth/users', { headers: authHeaders() });
   const users = await res.json();
   const me = localStorage.getItem('auth_user');
-
   document.getElementById('usersList').innerHTML = users.map(u => `
     <div>
-      <div class="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2.5">
-        <i class="fa-solid fa-circle-user text-gray-400"></i>
-        <span class="text-sm font-medium text-gray-700 flex-1">${u.username}</span>
-        ${u.username === me ? '<span class="text-xs text-sky-600 bg-sky-50 px-1.5 py-0.5 rounded-full border border-sky-100">Siz</span>' : ''}
-        <span class="text-xs text-gray-400">${new Date(u.created_at).toLocaleDateString()}</span>
+      <div class="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl px-3 py-2.5">
+        <i class="fa-solid fa-circle-user text-slate-400 dark:text-slate-500"></i>
+        <span class="text-sm font-semibold text-slate-700 dark:text-slate-300 flex-1">${u.username}</span>
+        ${u.username === me ? '<span class="text-[10px] font-bold text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-900/30 border border-sky-200 dark:border-sky-800 px-1.5 py-0.5 rounded-full">Siz</span>' : ''}
+        <span class="text-[10px] text-slate-400 dark:text-slate-500">${new Date(u.created_at).toLocaleDateString()}</span>
         <button onclick="toggleEditUser('${u.username}')" title="Parol o'zgartirish"
-          class="w-7 h-7 flex items-center justify-center text-amber-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors">
+          class="w-7 h-7 flex items-center justify-center text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-colors">
           <i class="fa-solid fa-pen text-xs"></i>
         </button>
         ${u.username !== me ? `<button onclick="deleteUser('${u.username}')" title="O'chirish"
-          class="w-7 h-7 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+          class="w-7 h-7 flex items-center justify-center text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
           <i class="fa-solid fa-trash-can text-xs"></i>
         </button>` : '<div class="w-7"></div>'}
       </div>
-      <div id="editRow_${u.username}" class="hidden px-3 pt-1 pb-2">
-        <div class="flex gap-2 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+      <div id="editRow_${u.username}" class="hidden px-1 pt-1 pb-2">
+        <div class="flex gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
           <input id="editPass_${u.username}" type="password" placeholder="Yangi parol"
-            class="flex-1 text-sm bg-white border border-gray-200 rounded-md px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-400">
+            class="flex-1 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-white rounded-md px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-400">
           <button onclick="changePassword('${u.username}')"
-            class="px-3 py-1.5 bg-amber-500 text-white rounded-md text-xs hover:bg-amber-400 transition-colors font-medium">
-            Saqlash
-          </button>
+            class="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-white rounded-md text-xs font-bold transition-colors">Saqlash</button>
           <button onclick="toggleEditUser('${u.username}')"
-            class="px-2 py-1.5 text-gray-400 hover:text-gray-600 rounded-md text-xs transition-colors">
-            Bekor
-          </button>
+            class="px-2 py-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-md text-xs transition-colors">Bekor</button>
         </div>
       </div>
-    </div>`).join('') || '<p class="text-sm text-gray-400 text-center py-4">Foydalanuvchilar yo\'q</p>';
+    </div>`).join('') || '<p class="text-sm text-slate-400 text-center py-4">Foydalanuvchilar yo\'q</p>';
 }
-
-function toggleEditUser(username) {
-  const row = document.getElementById('editRow_' + username);
+function toggleEditUser(u) {
+  const row = document.getElementById('editRow_' + u);
   row.classList.toggle('hidden');
-  if (!row.classList.contains('hidden')) {
-    document.getElementById('editPass_' + username).focus();
-  }
+  if (!row.classList.contains('hidden')) document.getElementById('editPass_' + u).focus();
 }
-
-async function changePassword(username) {
-  const inp = document.getElementById('editPass_' + username);
-  const newPass = inp.value;
-  if (!newPass) { toast('Yangi parol kiriting', 'error'); return; }
+async function changePassword(u) {
+  const v = document.getElementById('editPass_' + u).value;
+  if (!v) { toast('Yangi parol kiriting','error'); return; }
   try {
-    const res = await fetch(`/auth/users/${username}`, {
-      method: 'PUT', headers: authHeaders(),
-      body: JSON.stringify({ password: newPass })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message);
-    toast(data.message, 'success');
-    openUsersModal();
-  } catch(e) { toast(e.message, 'error'); }
+    const res = await fetch(`/auth/users/${u}`, { method:'PUT', headers:authHeaders(), body:JSON.stringify({password:v}) });
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.message);
+    toast(d.message,'success'); openUsersModal();
+  } catch(e) { toast(e.message,'error'); }
 }
-
 async function addUser() {
   const u = document.getElementById('newUser').value.trim();
   const p = document.getElementById('newPass').value;
-  if (!u || !p) { toast('Username va parol kerak', 'error'); return; }
+  if (!u || !p) { toast('Username va parol kerak','error'); return; }
   try {
-    const res = await fetch('/auth/users', {
-      method: 'POST', headers: authHeaders(),
-      body: JSON.stringify({ username: u, password: p })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message);
-    toast(data.message, 'success');
-    openUsersModal();
-  } catch(e) { toast(e.message, 'error'); }
+    const res = await fetch('/auth/users', { method:'POST', headers:authHeaders(), body:JSON.stringify({username:u,password:p}) });
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.message);
+    toast(d.message,'success'); openUsersModal();
+  } catch(e) { toast(e.message,'error'); }
 }
-
-async function deleteUser(username) {
+async function deleteUser(u) {
   try {
-    const res = await fetch(`/auth/users/${username}`, { method: 'DELETE', headers: authHeaders() });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message);
-    toast(data.message, 'info');
-    openUsersModal();
-  } catch(e) { toast(e.message, 'error'); }
+    const res = await fetch(`/auth/users/${u}`, { method:'DELETE', headers:authHeaders() });
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.message);
+    toast(d.message,'info'); openUsersModal();
+  } catch(e) { toast(e.message,'error'); }
 }
 
-// ── Tokens Modal ──────────────────────────────────────────────────────
-async function openTokensModal() {
-  openModal('max-w-xl');
-  document.getElementById('modalContent').innerHTML = `
-    <div class="flex items-center justify-between mb-4">
-      <h2 class="text-base font-bold text-gray-800"><i class="fa-solid fa-key text-gray-400 mr-2"></i>Faol tokenlar</h2>
-      <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-    <div class="mb-3 flex gap-2">
-      <button onclick="copyToken()"
-        class="flex items-center gap-1.5 px-3 py-2 text-xs bg-sky-50 border border-sky-200 text-sky-600 rounded-lg hover:bg-sky-100 transition-colors">
-        <i class="fa-solid fa-copy"></i> Mening tokenimni nusxalash
-      </button>
-    </div>
-    <div id="tokensList" class="space-y-2 max-h-72 overflow-y-auto">
-      <div class="text-center py-4 text-gray-400 text-sm"><i class="fa-solid fa-circle-notch spin mr-2"></i>Yuklanmoqda...</div>
-    </div>`;
-
-  const res = await fetch('/auth/tokens', { headers: authHeaders() });
-  const tokens = await res.json();
-  const myToken = localStorage.getItem('auth_token');
-
-  document.getElementById('tokensList').innerHTML = tokens.length ? tokens.map(t => {
-    const isMe = t.token === myToken;
-    const expires = new Date(t.expires_at);
-    const created = new Date(t.created_at);
-    const shortToken = t.token.slice(0, 8) + '...' + t.token.slice(-4);
-    return `
-    <div class="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2.5 ${isMe ? 'border border-sky-100' : ''}">
-      <i class="fa-solid fa-key text-gray-300 text-xs"></i>
-      <div class="flex-1 min-w-0">
-        <div class="flex items-center gap-2">
-          <span class="text-xs font-mono text-gray-600">${shortToken}</span>
-          <span class="text-xs text-gray-500 font-medium">${t.username}</span>
-          ${isMe ? '<span class="text-xs text-sky-600 bg-sky-50 px-1.5 py-0.5 rounded-full border border-sky-100">Joriy</span>' : ''}
-        </div>
-        <div class="flex gap-3 mt-0.5">
-          <span class="text-[10px] text-gray-400"><i class="fa-solid fa-clock mr-0.5"></i>${created.toLocaleString()}</span>
-          <span class="text-[10px] text-gray-400"><i class="fa-solid fa-hourglass-half mr-0.5"></i>${expires.toLocaleDateString()} gacha</span>
-        </div>
-      </div>
-      <button onclick="deleteToken('${t.token}', ${isMe})" title="Tokenni o'chirish"
-        class="w-7 h-7 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0">
-        <i class="fa-solid fa-trash-can text-xs"></i>
-      </button>
-    </div>`;
-  }).join('') : '<p class="text-sm text-gray-400 text-center py-6">Faol tokenlar yo\'q</p>';
-}
-
-async function deleteToken(tkn, isMe) {
-  try {
-    const res = await fetch(`/auth/tokens/${tkn}`, { method: 'DELETE', headers: authHeaders() });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message);
-    toast(data.message, 'info');
-    if (isMe) { localStorage.clear(); window.location.href = '/login'; return; }
-    openTokensModal();
-  } catch(e) { toast(e.message, 'error'); }
-}
-
-function openModal(size = 'max-w-md') {
+// ── Modal utils ───────────────────────────────────────────────
+function openModal(size='max-w-md') {
   document.getElementById('modalBox').className =
-    `bg-white rounded-2xl shadow-2xl w-full ${size} p-6`;
+    `bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl w-full ${size} p-6`;
   document.getElementById('modal').classList.remove('hidden');
 }
-function closeModal() {
-  document.getElementById('modal').classList.add('hidden');
-}
-document.getElementById('modal').addEventListener('click', function(e) {
-  if (e.target === this) closeModal();
-});
+function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+document.getElementById('modal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
-// ── Toast ─────────────────────────────────────────────────────────────
-function toast(msg, type = 'info') {
-  const c = { success:'bg-green-500', error:'bg-red-500', info:'bg-sky-500' };
+// ── Toast ─────────────────────────────────────────────────────
+function toast(msg, type='info') {
+  const c = { success:'bg-green-600', error:'bg-red-600', info:'bg-sky-600' };
   const i = { success:'fa-circle-check', error:'fa-circle-xmark', info:'fa-circle-info' };
   const el = document.createElement('div');
-  el.className = `toast pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl text-white text-sm shadow-lg ${c[type]}`;
+  el.className = `toast pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl text-white text-sm shadow-xl ${c[type]}`;
   el.innerHTML = `<i class="fa-solid ${i[type]} flex-shrink-0"></i><span>${msg}</span>`;
   document.getElementById('toasts').appendChild(el);
-  setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(), 300); }, 3000);
+  setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(),300); }, 3500);
 }
 
-// ── Jobs Modal ────────────────────────────────────────────────────────
-function jobStatusBadge(exit, status) {
-  if (status === 'timed_out')     return '<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-yellow-100 text-yellow-700">⏱ Timeout</span>';
-  if (status === 'memory_limit')  return '<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-orange-100 text-orange-700">⚡ Memory</span>';
-  if (exit === 0 || status === 'ok') return '<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-green-100 text-green-700">✓ 0</span>';
-  if (exit !== null && exit !== undefined) return `<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-red-100 text-red-700">✗ ${exit}</span>`;
-  return '<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-gray-100 text-gray-500">—</span>';
-}
-
-function preBlock(label, content) {
-  if (!content) return `<div class="text-xs text-gray-400 italic">${label}: bo'sh</div>`;
-  return `
-    <div class="mt-2">
-      <div class="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1">${label}</div>
-      <pre class="text-xs bg-gray-950 text-gray-100 rounded-lg p-3 overflow-auto max-h-48 whitespace-pre-wrap break-all font-mono">${escHtml(content)}</pre>
-    </div>`;
-}
-
-function escHtml(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
-async function openJobsModal(offset = 0) {
-  openModal('max-w-4xl max-h-[90vh] flex flex-col overflow-hidden');
-  document.getElementById('modalContent').innerHTML = `
-    <div class="flex items-center justify-between mb-4 flex-shrink-0">
-      <h2 class="text-base font-bold text-gray-800"><i class="fa-solid fa-list-check text-gray-400 mr-2"></i>Oxirgi joblar</h2>
-      <div class="flex items-center gap-2">
-        <select id="jobLangFilter" onchange="openJobsModal(0)"
-          class="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-sky-500">
-          <option value="">Barcha tillar</option>
-          ${[...new Set(allPackages.filter(p=>p.installed).map(p=>p.language))].sort().map(l=>`<option value="${l}">${l}</option>`).join('')}
-        </select>
-        <button onclick="openJobsModal(${offset})" class="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-          <i class="fa-solid fa-arrows-rotate text-xs" id="jobRefreshIcon"></i>
-        </button>
-        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-    </div>
-    <div id="jobsBody" class="overflow-y-auto flex-1">
-      <div class="text-center py-8 text-gray-400 text-sm"><i class="fa-solid fa-circle-notch spin mr-2"></i>Yuklanmoqda...</div>
-    </div>`;
-
-  document.getElementById('modalBox').classList.add('flex', 'flex-col');
-
-  const lang = document.getElementById('jobLangFilter')?.value || '';
-  const url = `/api/v2/jobs?limit=50&offset=${offset}${lang ? '&language='+encodeURIComponent(lang) : ''}`;
-  const res = await fetch(url, { headers: authHeaders() });
-  if (res.status === 401) { logout(); return; }
-  const jobs = await res.json();
-
-  if (!jobs.length) {
-    document.getElementById('jobsBody').innerHTML = `
-      <div class="text-center py-16 text-gray-400">
-        <i class="fa-solid fa-inbox text-3xl mb-3"></i>
-        <p class="text-sm">Hech qanday job topilmadi</p>
-      </div>`;
-    return;
-  }
-
-  document.getElementById('jobsBody').innerHTML = `
-    <table class="w-full text-sm border-collapse">
-      <thead class="sticky top-0 bg-white border-b border-gray-100">
-        <tr class="text-left text-[11px] text-gray-400 uppercase tracking-wide">
-          <th class="pb-2 pr-3 pl-1 font-semibold">Til</th>
-          <th class="pb-2 pr-3 font-semibold">Foydalanuvchi</th>
-          <th class="pb-2 pr-3 font-semibold">Compile</th>
-          <th class="pb-2 pr-3 font-semibold">Run</th>
-          <th class="pb-2 pr-3 font-semibold">Vaqt</th>
-          <th class="pb-2 pr-3 font-semibold">Sana</th>
-          <th class="pb-2 font-semibold"></th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-gray-50">
-        ${jobs.map(j => {
-          const m = getMeta(j.language);
-          const dt = new Date(j.created_at);
-          const timeStr = dt.toLocaleString('uz', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
-          const runMs = j.run_time != null ? j.run_time + 'ms' : '—';
-          return `
-          <tr class="hover:bg-gray-50 transition-colors group">
-            <td class="py-2 pr-3 pl-1">
-              <div class="flex items-center gap-2">
-                <div class="w-6 h-6 rounded-md flex items-center justify-center text-xs flex-shrink-0"
-                  style="background:${m.bg};color:${m.color}"><i class="${m.icon}"></i></div>
-                <div>
-                  <div class="font-medium text-gray-800 capitalize text-xs">${j.language}</div>
-                  <div class="text-[10px] text-gray-400 font-mono">v${j.version}</div>
-                </div>
-              </div>
-            </td>
-            <td class="py-2 pr-3 text-xs text-gray-500">${j.username || '<span class="italic text-gray-300">—</span>'}</td>
-            <td class="py-2 pr-3">${j.compile_status !== null && j.compile_exit !== null ? jobStatusBadge(j.compile_exit, j.compile_status) : '<span class="text-[10px] text-gray-300">—</span>'}</td>
-            <td class="py-2 pr-3">${jobStatusBadge(j.run_exit, j.run_status)}</td>
-            <td class="py-2 pr-3 text-xs text-gray-500 font-mono">${runMs}</td>
-            <td class="py-2 pr-3 text-[11px] text-gray-400 whitespace-nowrap">${timeStr}</td>
-            <td class="py-2">
-              <button onclick="showJobDetail('${j.id}')"
-                class="opacity-0 group-hover:opacity-100 px-2 py-1 text-xs text-sky-600 hover:bg-sky-50 rounded-lg transition-all">
-                <i class="fa-solid fa-chevron-right"></i>
-              </button>
-            </td>
-          </tr>`;
-        }).join('')}
-      </tbody>
-    </table>
-    ${jobs.length === 50 ? `
-    <div class="text-center pt-4 pb-2">
-      <button onclick="openJobsModal(${offset + 50})"
-        class="px-4 py-2 text-xs text-sky-600 border border-sky-200 rounded-lg hover:bg-sky-50 transition-colors">
-        Keyingisi →
-      </button>
-    </div>` : ''}`;
-}
-
-async function showJobDetail(id) {
-  document.getElementById('jobsBody').innerHTML = `
-    <div class="text-center py-8 text-gray-400 text-sm"><i class="fa-solid fa-circle-notch spin mr-2"></i>Yuklanmoqda...</div>`;
-
-  const res = await fetch(`/api/v2/jobs/${id}`, { headers: authHeaders() });
-  const j = await res.json();
-  const m = getMeta(j.language);
-  const dt = new Date(j.created_at).toLocaleString();
-
-  document.getElementById('jobsBody').innerHTML = `
-    <div class="mb-4 flex items-center gap-3 flex-shrink-0">
-      <button onclick="openJobsModal()" class="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1">
-        <i class="fa-solid fa-chevron-left"></i> Orqaga
-      </button>
-      <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-        style="background:${m.bg};color:${m.color}"><i class="${m.icon}"></i></div>
-      <div>
-        <div class="font-semibold text-gray-800 capitalize">${j.language} <span class="font-mono text-xs text-gray-400">v${j.version}</span></div>
-        <div class="text-xs text-gray-400">${j.username || '—'} · ${dt}</div>
-      </div>
-      <div class="ml-auto font-mono text-[10px] text-gray-300 hidden sm:block">${j.id}</div>
-    </div>
-
-    ${j.compile_exit !== null ? `
-    <div class="mb-4 bg-gray-50 rounded-xl p-4">
-      <div class="flex items-center gap-3 mb-2">
-        <span class="text-xs font-bold text-gray-600 uppercase tracking-wide">Compile</span>
-        ${jobStatusBadge(j.compile_exit, j.compile_status)}
-        ${j.compile_time != null ? `<span class="text-xs text-gray-400 font-mono">${j.compile_time}ms</span>` : ''}
-        ${j.compile_memory != null ? `<span class="text-xs text-gray-400 font-mono">${Math.round(j.compile_memory/1024)}KB</span>` : ''}
-      </div>
-      ${preBlock('stdout', j.compile_stdout)}
-      ${preBlock('stderr', j.compile_stderr)}
-    </div>` : ''}
-
-    <div class="bg-gray-50 rounded-xl p-4">
-      <div class="flex items-center gap-3 mb-2">
-        <span class="text-xs font-bold text-gray-600 uppercase tracking-wide">Run</span>
-        ${jobStatusBadge(j.run_exit, j.run_status)}
-        ${j.run_time != null ? `<span class="text-xs text-gray-400 font-mono">${j.run_time}ms</span>` : ''}
-        ${j.run_memory != null ? `<span class="text-xs text-gray-400 font-mono">${Math.round(j.run_memory/1024)}KB</span>` : ''}
-      </div>
-      ${preBlock('stdout', j.run_stdout)}
-      ${preBlock('stderr', j.run_stderr)}
-    </div>`;
-}
-
-// ── Boot ──────────────────────────────────────────────────────────────
+// ── Boot ──────────────────────────────────────────────────────
 loadAll();
 </script>
 </body>

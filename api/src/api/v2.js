@@ -367,6 +367,34 @@ router.get('/jobs/:id', requireAuth, async (req, res) => {
     }
 });
 
+router.delete('/jobs/:id', requireAuth, async (req, res) => {
+    try {
+        const [result] = await getPool().execute('DELETE FROM jobs WHERE id = ?', [req.params.id]);
+        if (result.affectedRows === 0) return res.status(404).json({ message: 'Job topilmadi' });
+        return res.json({ message: 'Job o\'chirildi' });
+    } catch (e) {
+        logger.error('DELETE /jobs/:id error:', e.message);
+        return res.status(500).json({ message: 'Job o\'chirishda xato: ' + e.message });
+    }
+});
+
+router.delete('/jobs', requireAuth, async (req, res) => {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ message: 'ids massivi kerak' });
+    }
+    try {
+        const placeholders = ids.map(() => '?').join(',');
+        const [result] = await getPool().execute(
+            `DELETE FROM jobs WHERE id IN (${placeholders})`, ids
+        );
+        return res.json({ message: `${result.affectedRows} ta job o'chirildi`, deleted: result.affectedRows });
+    } catch (e) {
+        logger.error('DELETE /jobs error:', e.message);
+        return res.status(500).json({ message: 'Joblarni o\'chirishda xato: ' + e.message });
+    }
+});
+
 router.get('/runtimes', (req, res) => {
     const runtimes = runtime.map(rt => ({
         language: rt.language,
