@@ -104,16 +104,26 @@ expressWs(app);
             const [result] = await db.getPool().execute(
                 'DELETE FROM jobs WHERE created_at < DATE_SUB(NOW(), INTERVAL 30 DAY)'
             );
-            if (result.affectedRows > 0) {
-                logger.info(`Job cleanup: ${result.affectedRows} eski yozuv o'chirildi`);
-            }
+            logger.info(`Job cleanup: ${result.affectedRows} eski yozuv o'chirildi`);
         } catch (e) {
             logger.error('Job cleanup xatosi:', e.message);
         }
     }
 
+    function scheduleMidnightCleanup() {
+        const now = new Date();
+        const midnight = new Date(now);
+        midnight.setHours(24, 0, 0, 0); // keyingi kun 00:00:00
+        const msUntilMidnight = midnight - now;
+        setTimeout(async () => {
+            await cleanOldJobs();
+            setInterval(cleanOldJobs, 24 * 60 * 60 * 1000);
+        }, msUntilMidnight);
+        logger.info(`Job cleanup rejalashtirildi: ${Math.round(msUntilMidnight / 60000)} daqiqadan so'ng (00:00)`);
+    }
+
     await cleanOldJobs();
-    setInterval(cleanOldJobs, 24 * 60 * 60 * 1000);
+    scheduleMidnightCleanup();
 
     logger.debug('Calling app.listen');
     const [address, port] = config.bind_address.split(':');

@@ -1,5 +1,5 @@
 {
     "language": "pypy",
-    "version": "3.10-7.3.12",
+    "version": "7.3.12",
     "aliases": ["pypy3", "pypy3.10"]
 }
