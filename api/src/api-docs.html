@@ -1,11 +1,13 @@
 <!DOCTYPE html>
-<html lang="uz">
+<html lang="uz" id="html-root">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>API Hujjatlar — Compiler</title>
+  <script>tailwind.config = { darkMode: 'class' }</script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script>(function(){const t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark')}else{document.documentElement.classList.remove('dark')}})()</script>
   <style>
     pre { white-space: pre-wrap; word-break: break-all; }
     .tab-content { display: none; }
@@ -15,38 +17,44 @@
     .method-put    { background:#FEF9C3; color:#A16207; }
     .method-delete { background:#FEE2E2; color:#DC2626; }
     .method-ws     { background:#F3E8FF; color:#7C3AED; }
+    .dark .method-get    { background:#14532d; color:#4ade80; }
+    .dark .method-post   { background:#1e3a5f; color:#60a5fa; }
+    .dark .method-put    { background:#3d2b00; color:#fbbf24; }
+    .dark .method-delete { background:#3b0000; color:#f87171; }
+    .dark .method-ws     { background:#2e1065; color:#c084fc; }
     .nav-link { scroll-margin-top: 70px; }
     .sidebar-link.active { background:#EFF6FF; color:#1D4ED8; font-weight:600; }
+    .dark .sidebar-link.active { background:#1e3a5f; color:#60a5fa; }
     .copy-btn:active { transform: scale(0.95); }
     .toast { animation: slideIn .25s ease; }
     @keyframes slideIn { from { transform:translateX(110%); } to { transform:none; } }
   </style>
 </head>
-<body class="bg-gray-50 font-sans text-gray-800">
+<body class="bg-slate-50 dark:bg-slate-950 font-sans text-slate-800 dark:text-slate-200 transition-colors">
 
 <div id="toasts" class="fixed top-4 right-4 z-50 flex flex-col gap-2 w-80 pointer-events-none"></div>
 
 <!-- Header -->
-<header class="bg-white border-b border-gray-200 sticky top-0 z-40">
+<header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-40">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
     <div class="flex items-center gap-4">
       <div class="flex items-center gap-3">
         <div class="w-9 h-9 bg-sky-600 rounded-lg flex items-center justify-center flex-shrink-0">
           <i class="fa-solid fa-code text-white text-sm"></i>
         </div>
-        <span class="text-base font-bold text-gray-900 hidden sm:block">Compiler</span>
+        <span class="text-base font-bold text-slate-900 dark:text-slate-100 hidden sm:block">Compiler</span>
       </div>
       <nav class="flex items-center gap-1">
-        <a href="/dashboard" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
+        <a href="/dashboard" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
           <i class="fa-solid fa-gauge-high text-xs"></i><span>Dashboard</span>
         </a>
-        <a href="/tester" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
+        <a href="/tester" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
           <i class="fa-solid fa-play text-xs"></i><span class="hidden sm:inline">Tester</span>
         </a>
-        <a href="/jobs" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
+        <a href="/jobs" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
           <i class="fa-solid fa-list-check text-xs"></i><span class="hidden sm:inline">Joblar</span>
         </a>
-        <a href="/tokens" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
+        <a href="/tokens" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
           <i class="fa-solid fa-key text-xs"></i><span>Tokenlar</span>
         </a>
         <a href="/api-docs" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-sky-600 text-white">
@@ -55,22 +63,28 @@
       </nav>
     </div>
     <div class="flex items-center gap-2">
+      <!-- Theme toggle -->
+      <button onclick="toggleTheme()" title="Mavzu o'zgartirish"
+        class="w-8 h-8 flex items-center justify-center bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+        <i id="themeIcon" class="fa-solid fa-moon text-xs text-slate-500 dark:text-yellow-400"></i>
+      </button>
+      <!-- Profile -->
       <div class="relative" id="profileDropdown">
         <button onclick="toggleProfileMenu()"
-          class="flex items-center gap-1.5 px-2.5 py-1.5 bg-sky-50 border border-sky-100 rounded-lg hover:bg-sky-100 transition-colors">
+          class="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
           <i class="fa-solid fa-circle-user text-sky-500 text-sm"></i>
-          <span id="headerUser" class="text-xs font-medium text-sky-700">—</span>
-          <i class="fa-solid fa-chevron-down text-[9px] text-sky-400"></i>
+          <span id="headerUser" class="text-xs font-medium text-slate-700 dark:text-slate-300">—</span>
+          <i class="fa-solid fa-chevron-down text-[9px] text-slate-400"></i>
         </button>
-        <div id="profileMenu" class="hidden absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-xl shadow-lg z-50 py-1 overflow-hidden">
+        <div id="profileMenu" class="hidden absolute right-0 mt-1 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-50 py-1 overflow-hidden">
           <button onclick="openProfileModal(); closeProfileMenu()"
-            class="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors">
-            <i class="fa-solid fa-lock text-gray-400 w-4"></i>
+            class="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+            <i class="fa-solid fa-lock text-slate-400 w-4"></i>
             Parolni o'zgartirish
           </button>
-          <div class="border-t border-gray-100 my-1"></div>
+          <div class="border-t border-slate-100 dark:border-slate-700 my-1"></div>
           <button onclick="logout()"
-            class="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-500 hover:bg-red-50 transition-colors">
+            class="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
             <i class="fa-solid fa-right-from-bracket w-4"></i>
             Chiqish
           </button>
@@ -81,27 +95,27 @@
 </header>
 
 <!-- Profile modal -->
-<div id="profileModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+<div id="profileModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl w-full max-w-sm p-6">
     <div class="flex items-center justify-between mb-4">
-      <h2 class="text-base font-bold text-gray-800"><i class="fa-solid fa-lock text-gray-400 mr-2"></i>Parolni o'zgartirish</h2>
-      <button onclick="closeProfileModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark"></i></button>
+      <h2 class="text-base font-bold text-slate-800 dark:text-slate-100"><i class="fa-solid fa-lock text-slate-400 mr-2"></i>Parolni o'zgartirish</h2>
+      <button onclick="closeProfileModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="space-y-3">
       <div>
-        <label class="block text-xs font-medium text-gray-600 mb-1">Joriy parol</label>
+        <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Joriy parol</label>
         <input id="curPass" type="password" placeholder="••••••••"
-          class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500">
+          class="w-full text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500">
       </div>
       <div>
-        <label class="block text-xs font-medium text-gray-600 mb-1">Yangi parol</label>
+        <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Yangi parol</label>
         <input id="newPass1" type="password" placeholder="••••••••"
-          class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500">
+          class="w-full text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500">
       </div>
       <div>
-        <label class="block text-xs font-medium text-gray-600 mb-1">Yangi parolni tasdiqlang</label>
+        <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Yangi parolni tasdiqlang</label>
         <input id="newPass2" type="password" placeholder="••••••••"
-          class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500">
+          class="w-full text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500">
       </div>
       <button onclick="submitProfileChange()"
         class="w-full py-2.5 bg-sky-600 text-white text-sm font-medium rounded-lg hover:bg-sky-500 transition-colors">
@@ -114,47 +128,47 @@
 <div class="max-w-7xl mx-auto flex">
 
   <!-- Sidebar -->
-  <aside class="hidden lg:block w-60 flex-shrink-0 sticky top-[57px] h-[calc(100vh-57px)] overflow-y-auto py-6 px-4 border-r border-gray-200 bg-white">
-    <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3 px-2">Kirish</p>
+  <aside class="hidden lg:block w-60 flex-shrink-0 sticky top-[57px] h-[calc(100vh-57px)] overflow-y-auto py-6 px-4 border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+    <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-3 px-2">Kirish</p>
     <nav class="space-y-0.5 text-sm">
-      <a href="#intro" class="sidebar-link block px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors text-xs">Umumiy ma'lumot</a>
-      <a href="#auth-section" class="sidebar-link block px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors text-xs">Autentifikatsiya</a>
-      <a href="#base-url" class="sidebar-link block px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors text-xs">Base URL</a>
+      <a href="#intro" class="sidebar-link block px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs">Umumiy ma'lumot</a>
+      <a href="#auth-section" class="sidebar-link block px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs">Autentifikatsiya</a>
+      <a href="#base-url" class="sidebar-link block px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs">Base URL</a>
     </nav>
-    <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mt-5 mb-3 px-2">Kod bajarish</p>
+    <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mt-5 mb-3 px-2">Kod bajarish</p>
     <nav class="space-y-0.5 text-sm">
-      <a href="#execute" class="sidebar-link block px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors text-xs">POST /execute</a>
-      <a href="#ws-connect" class="sidebar-link block px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors text-xs">WS /connect</a>
-      <a href="#runtimes" class="sidebar-link block px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors text-xs">GET /runtimes</a>
+      <a href="#execute" class="sidebar-link block px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs">POST /execute</a>
+      <a href="#ws-connect" class="sidebar-link block px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs">WS /connect</a>
+      <a href="#runtimes" class="sidebar-link block px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs">GET /runtimes</a>
     </nav>
-    <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mt-5 mb-3 px-2">Paketlar</p>
+    <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mt-5 mb-3 px-2">Paketlar</p>
     <nav class="space-y-0.5 text-sm">
-      <a href="#pkg-list" class="sidebar-link block px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors text-xs">GET /packages</a>
-      <a href="#pkg-install" class="sidebar-link block px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors text-xs">POST /packages</a>
-      <a href="#pkg-uninstall" class="sidebar-link block px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors text-xs">DELETE /packages</a>
+      <a href="#pkg-list" class="sidebar-link block px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs">GET /packages</a>
+      <a href="#pkg-install" class="sidebar-link block px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs">POST /packages</a>
+      <a href="#pkg-uninstall" class="sidebar-link block px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs">DELETE /packages</a>
     </nav>
-    <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mt-5 mb-3 px-2">Joblar</p>
+    <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mt-5 mb-3 px-2">Joblar</p>
     <nav class="space-y-0.5 text-sm">
-      <a href="#jobs-list" class="sidebar-link block px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors text-xs">GET /jobs</a>
-      <a href="#jobs-detail" class="sidebar-link block px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors text-xs">GET /jobs/:id</a>
+      <a href="#jobs-list" class="sidebar-link block px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs">GET /jobs</a>
+      <a href="#jobs-detail" class="sidebar-link block px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs">GET /jobs/:id</a>
     </nav>
-    <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mt-5 mb-3 px-2">Auth</p>
+    <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mt-5 mb-3 px-2">Auth</p>
     <nav class="space-y-0.5 text-sm">
-      <a href="#auth-login" class="sidebar-link block px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors text-xs">POST /auth/login</a>
-      <a href="#auth-logout" class="sidebar-link block px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors text-xs">POST /auth/logout</a>
-      <a href="#auth-me" class="sidebar-link block px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors text-xs">GET /auth/me</a>
-      <a href="#tokens-create" class="sidebar-link block px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors text-xs">POST /auth/tokens</a>
-      <a href="#tokens-list" class="sidebar-link block px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors text-xs">GET /auth/tokens</a>
-      <a href="#tokens-delete" class="sidebar-link block px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors text-xs">DELETE /auth/tokens/:token</a>
-      <a href="#users-list" class="sidebar-link block px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors text-xs">GET /auth/users</a>
-      <a href="#users-create" class="sidebar-link block px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors text-xs">POST /auth/users</a>
-      <a href="#users-update" class="sidebar-link block px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors text-xs">PUT /auth/users/:username</a>
-      <a href="#users-delete" class="sidebar-link block px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors text-xs">DELETE /auth/users/:username</a>
-      <a href="#profile" class="sidebar-link block px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors text-xs">PUT /auth/profile</a>
+      <a href="#auth-login" class="sidebar-link block px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs">POST /auth/login</a>
+      <a href="#auth-logout" class="sidebar-link block px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs">POST /auth/logout</a>
+      <a href="#auth-me" class="sidebar-link block px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs">GET /auth/me</a>
+      <a href="#tokens-create" class="sidebar-link block px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs">POST /auth/tokens</a>
+      <a href="#tokens-list" class="sidebar-link block px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs">GET /auth/tokens</a>
+      <a href="#tokens-delete" class="sidebar-link block px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs">DELETE /auth/tokens/:token</a>
+      <a href="#users-list" class="sidebar-link block px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs">GET /auth/users</a>
+      <a href="#users-create" class="sidebar-link block px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs">POST /auth/users</a>
+      <a href="#users-update" class="sidebar-link block px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs">PUT /auth/users/:username</a>
+      <a href="#users-delete" class="sidebar-link block px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs">DELETE /auth/users/:username</a>
+      <a href="#profile" class="sidebar-link block px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs">PUT /auth/profile</a>
     </nav>
-    <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mt-5 mb-3 px-2">Xatolar</p>
+    <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mt-5 mb-3 px-2">Xatolar</p>
     <nav class="space-y-0.5 text-sm">
-      <a href="#errors" class="sidebar-link block px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors text-xs">HTTP kodlar</a>
+      <a href="#errors" class="sidebar-link block px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs">HTTP kodlar</a>
     </nav>
   </aside>
 
@@ -163,126 +177,126 @@
 
     <!-- Intro -->
     <section id="intro" class="nav-link mb-12">
-      <h1 class="text-2xl font-bold text-gray-900 mb-2">Compiler API Hujjatlari</h1>
-      <p class="text-gray-500 mb-6">Bu API orqali 20+ dasturlash tilida kodni bajarish mumkin. Barcha so'rovlar uchun Bearer token talab qilinadi.</p>
+      <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">Compiler API Hujjatlari</h1>
+      <p class="text-slate-500 dark:text-slate-400 mb-6">Bu API orqali 20+ dasturlash tilida kodni bajarish mumkin. Barcha so'rovlar uchun Bearer token talab qilinadi.</p>
       <div class="grid sm:grid-cols-3 gap-3">
-        <div class="bg-sky-50 border border-sky-100 rounded-xl p-4">
-          <div class="w-8 h-8 bg-sky-100 rounded-lg flex items-center justify-center mb-2">
-            <i class="fa-solid fa-bolt text-sky-600 text-sm"></i>
+        <div class="bg-sky-50 dark:bg-sky-900/20 border border-sky-100 dark:border-sky-800 rounded-xl p-4">
+          <div class="w-8 h-8 bg-sky-100 dark:bg-sky-900/40 rounded-lg flex items-center justify-center mb-2">
+            <i class="fa-solid fa-bolt text-sky-600 dark:text-sky-400 text-sm"></i>
           </div>
-          <p class="text-sm font-semibold text-sky-900">Tez bajarish</p>
-          <p class="text-xs text-sky-600 mt-1">HTTP POST bilan bir necha millisekund ichida natija</p>
+          <p class="text-sm font-semibold text-sky-900 dark:text-sky-300">Tez bajarish</p>
+          <p class="text-xs text-sky-600 dark:text-sky-400 mt-1">HTTP POST bilan bir necha millisekund ichida natija</p>
         </div>
-        <div class="bg-purple-50 border border-purple-100 rounded-xl p-4">
-          <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mb-2">
-            <i class="fa-solid fa-satellite-dish text-purple-600 text-sm"></i>
+        <div class="bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800 rounded-xl p-4">
+          <div class="w-8 h-8 bg-purple-100 dark:bg-purple-900/40 rounded-lg flex items-center justify-center mb-2">
+            <i class="fa-solid fa-satellite-dish text-purple-600 dark:text-purple-400 text-sm"></i>
           </div>
-          <p class="text-sm font-semibold text-purple-900">Real-time WebSocket</p>
-          <p class="text-xs text-purple-600 mt-1">stdout/stderr oqimini jonli kuzating</p>
+          <p class="text-sm font-semibold text-purple-900 dark:text-purple-300">Real-time WebSocket</p>
+          <p class="text-xs text-purple-600 dark:text-purple-400 mt-1">stdout/stderr oqimini jonli kuzating</p>
         </div>
-        <div class="bg-green-50 border border-green-100 rounded-xl p-4">
-          <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mb-2">
-            <i class="fa-solid fa-shield-halved text-green-600 text-sm"></i>
+        <div class="bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800 rounded-xl p-4">
+          <div class="w-8 h-8 bg-green-100 dark:bg-green-900/40 rounded-lg flex items-center justify-center mb-2">
+            <i class="fa-solid fa-shield-halved text-green-600 dark:text-green-400 text-sm"></i>
           </div>
-          <p class="text-sm font-semibold text-green-900">Xavfsiz sandbox</p>
-          <p class="text-xs text-green-600 mt-1">Har bir kod alohida izolyatsiyada ishlaydi</p>
+          <p class="text-sm font-semibold text-green-900 dark:text-green-300">Xavfsiz sandbox</p>
+          <p class="text-xs text-green-600 dark:text-green-400 mt-1">Har bir kod alohida izolyatsiyada ishlaydi</p>
         </div>
       </div>
     </section>
 
     <!-- Auth section -->
     <section id="auth-section" class="nav-link mb-10">
-      <h2 class="text-lg font-bold text-gray-900 mb-4 pb-2 border-b border-gray-200">Autentifikatsiya</h2>
-      <p class="text-sm text-gray-600 mb-4">Barcha himoyalangan endpointlar uchun <code class="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono text-gray-800">Authorization</code> yoki <code class="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono text-gray-800">X-Auth-Token</code> sarlavhasi talab qilinadi.</p>
+      <h2 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">Autentifikatsiya</h2>
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Barcha himoyalangan endpointlar uchun <code class="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-xs font-mono text-slate-800 dark:text-slate-200">Authorization</code> yoki <code class="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-xs font-mono text-slate-800 dark:text-slate-200">X-Auth-Token</code> sarlavhasi talab qilinadi.</p>
       <div class="bg-gray-950 rounded-xl p-4 mb-4">
         <p class="text-[10px] text-gray-500 mb-2 font-semibold uppercase tracking-wider">HTTP sarlavha</p>
         <code class="text-sm text-green-400 font-mono">Authorization: Bearer &lt;token&gt;</code>
         <br>
         <code class="text-sm text-gray-500 font-mono mt-1 block">X-Auth-Token: &lt;token&gt;</code>
       </div>
-      <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3">
+      <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 flex gap-3">
         <i class="fa-solid fa-triangle-exclamation text-amber-500 mt-0.5 flex-shrink-0"></i>
         <div>
-          <p class="text-sm font-semibold text-amber-800">Token olish</p>
-          <p class="text-xs text-amber-700 mt-1">Token olish uchun <code class="bg-amber-100 px-1 rounded font-mono">POST /auth/login</code> ga username va password yuboring, yoki Dashboard → <a href="/tokens" class="underline">Tokenlar</a> sahifasidan yangi API token yarating.</p>
+          <p class="text-sm font-semibold text-amber-800 dark:text-amber-300">Token olish</p>
+          <p class="text-xs text-amber-700 dark:text-amber-400 mt-1">Token olish uchun <code class="bg-amber-100 dark:bg-amber-900/40 px-1 rounded font-mono">POST /auth/login</code> ga username va password yuboring, yoki Dashboard → <a href="/tokens" class="underline">Tokenlar</a> sahifasidan yangi API token yarating.</p>
         </div>
       </div>
     </section>
 
     <!-- Base URL -->
     <section id="base-url" class="nav-link mb-10">
-      <h2 class="text-lg font-bold text-gray-900 mb-4 pb-2 border-b border-gray-200">Base URL</h2>
+      <h2 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">Base URL</h2>
       <div class="bg-gray-950 rounded-xl p-4">
         <code class="text-sm text-sky-300 font-mono" id="baseUrl">http://your-server:2000</code>
       </div>
-      <p class="text-xs text-gray-500 mt-2">Barcha endpoint'lar shu manzilga nisbatan ko'rsatilgan.</p>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">Barcha endpoint'lar shu manzilga nisbatan ko'rsatilgan.</p>
     </section>
 
     <!-- ═══════════════ EXECUTE ═══════════════ -->
     <section id="execute" class="nav-link mb-10">
-      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-gray-200">
+      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">
         <span class="method-post text-xs font-bold px-2.5 py-1 rounded-lg">POST</span>
-        <code class="text-base font-mono text-gray-800">/api/v2/execute</code>
-        <span class="ml-auto text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-lg"><i class="fa-solid fa-lock text-xs mr-1"></i>Token kerak</span>
+        <code class="text-base font-mono text-slate-800 dark:text-slate-200">/api/v2/execute</code>
+        <span class="ml-auto text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg"><i class="fa-solid fa-lock text-xs mr-1"></i>Token kerak</span>
       </div>
-      <p class="text-sm text-gray-600 mb-6">Kodni serverda izolyatsiyalangan muhitda bajaradi va natijani qaytaradi.</p>
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-6">Kodni serverda izolyatsiyalangan muhitda bajaradi va natijani qaytaradi.</p>
 
-      <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">So'rov tanasi (Request Body)</h3>
+      <h3 class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">So'rov tanasi (Request Body)</h3>
       <div class="overflow-x-auto mb-6">
         <table class="w-full text-xs border-collapse">
           <thead>
-            <tr class="bg-gray-100">
-              <th class="text-left px-3 py-2 rounded-tl-lg font-semibold text-gray-600">Maydon</th>
-              <th class="text-left px-3 py-2 font-semibold text-gray-600">Tur</th>
-              <th class="text-left px-3 py-2 font-semibold text-gray-600">Majburiy</th>
-              <th class="text-left px-3 py-2 rounded-tr-lg font-semibold text-gray-600">Tavsif</th>
+            <tr class="bg-slate-100 dark:bg-slate-800">
+              <th class="text-left px-3 py-2 rounded-tl-lg font-semibold text-slate-600 dark:text-slate-300">Maydon</th>
+              <th class="text-left px-3 py-2 font-semibold text-slate-600 dark:text-slate-300">Tur</th>
+              <th class="text-left px-3 py-2 font-semibold text-slate-600 dark:text-slate-300">Majburiy</th>
+              <th class="text-left px-3 py-2 rounded-tr-lg font-semibold text-slate-600 dark:text-slate-300">Tavsif</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-100">
-            <tr class="hover:bg-gray-50"><td class="px-3 py-2 font-mono text-blue-600">language</td><td class="px-3 py-2 text-gray-500">string</td><td class="px-3 py-2 text-red-500 font-medium">Ha</td><td class="px-3 py-2 text-gray-600">Dasturlash tili nomi (masalan: "python", "javascript")</td></tr>
-            <tr class="hover:bg-gray-50"><td class="px-3 py-2 font-mono text-blue-600">version</td><td class="px-3 py-2 text-gray-500">string</td><td class="px-3 py-2 text-red-500 font-medium">Ha</td><td class="px-3 py-2 text-gray-600">Til versiyasi (masalan: "3.12.0"). Wildcard: "*"</td></tr>
-            <tr class="hover:bg-gray-50"><td class="px-3 py-2 font-mono text-blue-600">files</td><td class="px-3 py-2 text-gray-500">array</td><td class="px-3 py-2 text-red-500 font-medium">Ha</td><td class="px-3 py-2 text-gray-600">Fayl ob'ektlari ro'yxati (kamida bitta, content maydoni bilan)</td></tr>
-            <tr class="hover:bg-gray-50"><td class="px-3 py-2 font-mono text-blue-600">files[].name</td><td class="px-3 py-2 text-gray-500">string</td><td class="px-3 py-2 text-gray-400">Yo'q</td><td class="px-3 py-2 text-gray-600">Fayl nomi (ko'rsatilmasa default nom ishlatiladi)</td></tr>
-            <tr class="hover:bg-gray-50"><td class="px-3 py-2 font-mono text-blue-600">files[].content</td><td class="px-3 py-2 text-gray-500">string</td><td class="px-3 py-2 text-red-500 font-medium">Ha</td><td class="px-3 py-2 text-gray-600">Fayl tarkibi (kod matni)</td></tr>
-            <tr class="hover:bg-gray-50"><td class="px-3 py-2 font-mono text-blue-600">files[].encoding</td><td class="px-3 py-2 text-gray-500">string</td><td class="px-3 py-2 text-gray-400">Yo'q</td><td class="px-3 py-2 text-gray-600">"utf8" (default) yoki "base64"</td></tr>
-            <tr class="hover:bg-gray-50"><td class="px-3 py-2 font-mono text-blue-600">stdin</td><td class="px-3 py-2 text-gray-500">string</td><td class="px-3 py-2 text-gray-400">Yo'q</td><td class="px-3 py-2 text-gray-600">Dasturga beriluvchi standart kirish ma'lumoti</td></tr>
-            <tr class="hover:bg-gray-50"><td class="px-3 py-2 font-mono text-blue-600">args</td><td class="px-3 py-2 text-gray-500">array</td><td class="px-3 py-2 text-gray-400">Yo'q</td><td class="px-3 py-2 text-gray-600">Buyruq qatori argumentlari (string ro'yxat)</td></tr>
-            <tr class="hover:bg-gray-50"><td class="px-3 py-2 font-mono text-blue-600">run_timeout</td><td class="px-3 py-2 text-gray-500">number</td><td class="px-3 py-2 text-gray-400">Yo'q</td><td class="px-3 py-2 text-gray-600">Bajarish vaqt chegarasi (millisekund)</td></tr>
-            <tr class="hover:bg-gray-50"><td class="px-3 py-2 font-mono text-blue-600">run_memory_limit</td><td class="px-3 py-2 text-gray-500">number</td><td class="px-3 py-2 text-gray-400">Yo'q</td><td class="px-3 py-2 text-gray-600">Xotira chegarasi (bayt)</td></tr>
-            <tr class="hover:bg-gray-50"><td class="px-3 py-2 font-mono text-blue-600">compile_timeout</td><td class="px-3 py-2 text-gray-500">number</td><td class="px-3 py-2 text-gray-400">Yo'q</td><td class="px-3 py-2 text-gray-600">Kompilyatsiya vaqt chegarasi (millisekund)</td></tr>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">language</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">string</td><td class="px-3 py-2 text-red-500 font-medium">Ha</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Dasturlash tili nomi (masalan: "python", "javascript")</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">version</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">string</td><td class="px-3 py-2 text-red-500 font-medium">Ha</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Til versiyasi (masalan: "3.12.0"). Wildcard: "*"</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">files</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">array</td><td class="px-3 py-2 text-red-500 font-medium">Ha</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Fayl ob'ektlari ro'yxati (kamida bitta, content maydoni bilan)</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">files[].name</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">string</td><td class="px-3 py-2 text-slate-400">Yo'q</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Fayl nomi (ko'rsatilmasa default nom ishlatiladi)</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">files[].content</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">string</td><td class="px-3 py-2 text-red-500 font-medium">Ha</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Fayl tarkibi (kod matni)</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">files[].encoding</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">string</td><td class="px-3 py-2 text-slate-400">Yo'q</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">"utf8" (default) yoki "base64"</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">stdin</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">string</td><td class="px-3 py-2 text-slate-400">Yo'q</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Dasturga beriluvchi standart kirish ma'lumoti</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">args</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">array</td><td class="px-3 py-2 text-slate-400">Yo'q</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Buyruq qatori argumentlari (string ro'yxat)</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">run_timeout</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">number</td><td class="px-3 py-2 text-slate-400">Yo'q</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Bajarish vaqt chegarasi (millisekund)</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">run_memory_limit</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">number</td><td class="px-3 py-2 text-slate-400">Yo'q</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Xotira chegarasi (bayt)</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">compile_timeout</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">number</td><td class="px-3 py-2 text-slate-400">Yo'q</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Kompilyatsiya vaqt chegarasi (millisekund)</td></tr>
           </tbody>
         </table>
       </div>
 
-      <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Javob (Response)</h3>
+      <h3 class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">Javob (Response)</h3>
       <div class="overflow-x-auto mb-6">
         <table class="w-full text-xs border-collapse">
           <thead>
-            <tr class="bg-gray-100">
-              <th class="text-left px-3 py-2 rounded-tl-lg font-semibold text-gray-600">Maydon</th>
-              <th class="text-left px-3 py-2 rounded-tr-lg font-semibold text-gray-600">Tavsif</th>
+            <tr class="bg-slate-100 dark:bg-slate-800">
+              <th class="text-left px-3 py-2 rounded-tl-lg font-semibold text-slate-600 dark:text-slate-300">Maydon</th>
+              <th class="text-left px-3 py-2 rounded-tr-lg font-semibold text-slate-600 dark:text-slate-300">Tavsif</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-100">
-            <tr class="hover:bg-gray-50"><td class="px-3 py-2 font-mono text-blue-600">language</td><td class="px-3 py-2 text-gray-600">Bajarilgan tilning nomi</td></tr>
-            <tr class="hover:bg-gray-50"><td class="px-3 py-2 font-mono text-blue-600">version</td><td class="px-3 py-2 text-gray-600">Bajarilgan versiya</td></tr>
-            <tr class="hover:bg-gray-50"><td class="px-3 py-2 font-mono text-blue-600">run.stdout</td><td class="px-3 py-2 text-gray-600">Dastur chiqargan matn (stdout)</td></tr>
-            <tr class="hover:bg-gray-50"><td class="px-3 py-2 font-mono text-blue-600">run.stderr</td><td class="px-3 py-2 text-gray-600">Xato chiqishi (stderr)</td></tr>
-            <tr class="hover:bg-gray-50"><td class="px-3 py-2 font-mono text-blue-600">run.code</td><td class="px-3 py-2 text-gray-600">Chiqish kodi (0 = muvaffaqiyat)</td></tr>
-            <tr class="hover:bg-gray-50"><td class="px-3 py-2 font-mono text-blue-600">run.time</td><td class="px-3 py-2 text-gray-600">Bajarish vaqti (millisekund, string)</td></tr>
-            <tr class="hover:bg-gray-50"><td class="px-3 py-2 font-mono text-blue-600">run.memory</td><td class="px-3 py-2 text-gray-600">Ishlatilgan xotira (KB, string)</td></tr>
-            <tr class="hover:bg-gray-50"><td class="px-3 py-2 font-mono text-blue-600">run.status</td><td class="px-3 py-2 text-gray-600">"ok", "timed_out", "memory_limit"</td></tr>
-            <tr class="hover:bg-gray-50"><td class="px-3 py-2 font-mono text-blue-600">compile</td><td class="px-3 py-2 text-gray-600">Kompilyatsiya bosqichi ma'lumotlari (agar mavjud bo'lsa)</td></tr>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">language</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Bajarilgan tilning nomi</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">version</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Bajarilgan versiya</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">run.stdout</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Dastur chiqargan matn (stdout)</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">run.stderr</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Xato chiqishi (stderr)</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">run.code</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Chiqish kodi (0 = muvaffaqiyat)</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">run.time</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Bajarish vaqti (millisekund, string)</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">run.memory</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Ishlatilgan xotira (KB, string)</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">run.status</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">"ok", "timed_out", "memory_limit"</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">compile</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Kompilyatsiya bosqichi ma'lumotlari (agar mavjud bo'lsa)</td></tr>
           </tbody>
         </table>
       </div>
 
       <!-- Tabs -->
-      <div class="flex gap-1 mb-0 border-b border-gray-200">
+      <div class="flex gap-1 mb-0 border-b border-slate-200 dark:border-slate-700">
         <button onclick="switchTab('exec', 'curl')" id="exec-tab-curl" class="tab-btn-exec px-3 py-2 text-xs font-medium border-b-2 border-sky-500 text-sky-600">cURL</button>
-        <button onclick="switchTab('exec', 'js')" id="exec-tab-js" class="tab-btn-exec px-3 py-2 text-xs font-medium border-b-2 border-transparent text-gray-400 hover:text-gray-600">JavaScript</button>
-        <button onclick="switchTab('exec', 'python')" id="exec-tab-python" class="tab-btn-exec px-3 py-2 text-xs font-medium border-b-2 border-transparent text-gray-400 hover:text-gray-600">Python</button>
-        <button onclick="switchTab('exec', 'response')" id="exec-tab-response" class="tab-btn-exec px-3 py-2 text-xs font-medium border-b-2 border-transparent text-gray-400 hover:text-gray-600">Javob namunasi</button>
+        <button onclick="switchTab('exec', 'js')" id="exec-tab-js" class="tab-btn-exec px-3 py-2 text-xs font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">JavaScript</button>
+        <button onclick="switchTab('exec', 'python')" id="exec-tab-python" class="tab-btn-exec px-3 py-2 text-xs font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">Python</button>
+        <button onclick="switchTab('exec', 'response')" id="exec-tab-response" class="tab-btn-exec px-3 py-2 text-xs font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">Javob namunasi</button>
       </div>
       <div class="relative bg-gray-950 rounded-b-xl rounded-tr-xl">
         <button onclick="copyCode('exec-curl')" class="copy-btn absolute top-3 right-3 text-gray-500 hover:text-gray-200 transition-colors text-xs flex items-center gap-1 bg-gray-800 px-2 py-1 rounded-md"><i class="fa-solid fa-copy"></i></button>
@@ -367,21 +381,21 @@ print(result['run']['stdout'])
 
     <!-- ═══════════════ WS CONNECT ═══════════════ -->
     <section id="ws-connect" class="nav-link mb-10">
-      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-gray-200">
+      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">
         <span class="method-ws text-xs font-bold px-2.5 py-1 rounded-lg">WS</span>
-        <code class="text-base font-mono text-gray-800">/api/v2/connect</code>
-        <span class="ml-auto text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-lg"><i class="fa-solid fa-lock text-xs mr-1"></i>Token kerak</span>
+        <code class="text-base font-mono text-slate-800 dark:text-slate-200">/api/v2/connect</code>
+        <span class="ml-auto text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg"><i class="fa-solid fa-lock text-xs mr-1"></i>Token kerak</span>
       </div>
-      <p class="text-sm text-gray-600 mb-4">WebSocket orqali kodni real-time rejimda bajaradi. stdout/stderr oqimini darhol ko'rish imkonini beradi.</p>
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">WebSocket orqali kodni real-time rejimda bajaradi. stdout/stderr oqimini darhol ko'rish imkonini beradi.</p>
 
-      <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Ulanish URL</h3>
+      <h3 class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">Ulanish URL</h3>
       <div class="bg-gray-950 rounded-xl p-4 mb-6 font-mono text-sm text-sky-300">ws://your-server:2000/api/v2/connect?authorization=Bearer%20YOUR_TOKEN</div>
 
-      <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Xabar turlari (Client → Server)</h3>
+      <h3 class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">Xabar turlari (Client → Server)</h3>
       <div class="space-y-3 mb-6">
-        <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
-          <p class="text-xs font-mono font-bold text-gray-700 mb-2">type: "init" — Kodni boshlash</p>
-          <pre class="text-xs text-gray-600 font-mono">{
+        <div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-4 border border-slate-100 dark:border-slate-700">
+          <p class="text-xs font-mono font-bold text-slate-700 dark:text-slate-300 mb-2">type: "init" — Kodni boshlash</p>
+          <pre class="text-xs text-slate-600 dark:text-slate-400 font-mono">{
   "type": "init",
   "language": "python",
   "version": "*",
@@ -390,39 +404,39 @@ print(result['run']['stdout'])
   "run_timeout": 10000
 }</pre>
         </div>
-        <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
-          <p class="text-xs font-mono font-bold text-gray-700 mb-2">type: "data" — stdin ma'lumoti yuborish</p>
-          <pre class="text-xs text-gray-600 font-mono">{ "type": "data", "stream": "stdin", "data": "Salom\n" }</pre>
+        <div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-4 border border-slate-100 dark:border-slate-700">
+          <p class="text-xs font-mono font-bold text-slate-700 dark:text-slate-300 mb-2">type: "data" — stdin ma'lumoti yuborish</p>
+          <pre class="text-xs text-slate-600 dark:text-slate-400 font-mono">{ "type": "data", "stream": "stdin", "data": "Salom\n" }</pre>
         </div>
-        <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
-          <p class="text-xs font-mono font-bold text-gray-700 mb-2">type: "signal" — Signal yuborish</p>
-          <pre class="text-xs text-gray-600 font-mono">{ "type": "signal", "signal": "SIGKILL" }</pre>
+        <div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-4 border border-slate-100 dark:border-slate-700">
+          <p class="text-xs font-mono font-bold text-slate-700 dark:text-slate-300 mb-2">type: "signal" — Signal yuborish</p>
+          <pre class="text-xs text-slate-600 dark:text-slate-400 font-mono">{ "type": "signal", "signal": "SIGKILL" }</pre>
         </div>
       </div>
 
-      <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Xabar turlari (Server → Client)</h3>
+      <h3 class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">Xabar turlari (Server → Client)</h3>
       <div class="space-y-3 mb-6">
-        <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
-          <p class="text-xs font-mono font-bold text-gray-700 mb-1">type: "runtime" — Runtime tayyor</p>
-          <pre class="text-xs text-gray-600 font-mono">{ "type": "runtime", "language": "python", "version": "3.12.0" }</pre>
+        <div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-4 border border-slate-100 dark:border-slate-700">
+          <p class="text-xs font-mono font-bold text-slate-700 dark:text-slate-300 mb-1">type: "runtime" — Runtime tayyor</p>
+          <pre class="text-xs text-slate-600 dark:text-slate-400 font-mono">{ "type": "runtime", "language": "python", "version": "3.12.0" }</pre>
         </div>
-        <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
-          <p class="text-xs font-mono font-bold text-gray-700 mb-1">type: "data" — stdout/stderr oqimi</p>
-          <pre class="text-xs text-gray-600 font-mono">{ "type": "data", "stream": "stdout", "data": "Chiqish matni\n" }</pre>
+        <div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-4 border border-slate-100 dark:border-slate-700">
+          <p class="text-xs font-mono font-bold text-slate-700 dark:text-slate-300 mb-1">type: "data" — stdout/stderr oqimi</p>
+          <pre class="text-xs text-slate-600 dark:text-slate-400 font-mono">{ "type": "data", "stream": "stdout", "data": "Chiqish matni\n" }</pre>
         </div>
-        <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
-          <p class="text-xs font-mono font-bold text-gray-700 mb-1">type: "stage" — Bosqich o'zgardi (compile → run)</p>
-          <pre class="text-xs text-gray-600 font-mono">{ "type": "stage", "stage": "run" }</pre>
+        <div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-4 border border-slate-100 dark:border-slate-700">
+          <p class="text-xs font-mono font-bold text-slate-700 dark:text-slate-300 mb-1">type: "stage" — Bosqich o'zgardi (compile → run)</p>
+          <pre class="text-xs text-slate-600 dark:text-slate-400 font-mono">{ "type": "stage", "stage": "run" }</pre>
         </div>
-        <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
-          <p class="text-xs font-mono font-bold text-gray-700 mb-1">type: "exit" — Bajarilish tugadi</p>
-          <pre class="text-xs text-gray-600 font-mono">{ "type": "exit", "stage": "run", "code": 0, "signal": null, "status": "ok" }</pre>
+        <div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-4 border border-slate-100 dark:border-slate-700">
+          <p class="text-xs font-mono font-bold text-slate-700 dark:text-slate-300 mb-1">type: "exit" — Bajarilish tugadi</p>
+          <pre class="text-xs text-slate-600 dark:text-slate-400 font-mono">{ "type": "exit", "stage": "run", "code": 0, "signal": null, "status": "ok" }</pre>
         </div>
       </div>
 
-      <div class="flex gap-1 mb-0 border-b border-gray-200">
+      <div class="flex gap-1 mb-0 border-b border-slate-200 dark:border-slate-700">
         <button onclick="switchTab('ws', 'js')" id="ws-tab-js" class="tab-btn-ws px-3 py-2 text-xs font-medium border-b-2 border-sky-500 text-sky-600">JavaScript</button>
-        <button onclick="switchTab('ws', 'python')" id="ws-tab-python" class="tab-btn-ws px-3 py-2 text-xs font-medium border-b-2 border-transparent text-gray-400 hover:text-gray-600">Python</button>
+        <button onclick="switchTab('ws', 'python')" id="ws-tab-python" class="tab-btn-ws px-3 py-2 text-xs font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">Python</button>
       </div>
       <div class="relative bg-gray-950 rounded-b-xl rounded-tr-xl">
         <button onclick="copyCode('ws-js')" class="copy-btn absolute top-3 right-3 text-gray-500 hover:text-gray-200 transition-colors text-xs flex items-center gap-1 bg-gray-800 px-2 py-1 rounded-md"><i class="fa-solid fa-copy"></i></button>
@@ -490,16 +504,16 @@ ws.run_forever()
 
     <!-- ═══════════════ RUNTIMES ═══════════════ -->
     <section id="runtimes" class="nav-link mb-10">
-      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-gray-200">
+      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">
         <span class="method-get text-xs font-bold px-2.5 py-1 rounded-lg">GET</span>
-        <code class="text-base font-mono text-gray-800">/api/v2/runtimes</code>
-        <span class="ml-auto text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-lg">Ochiq</span>
+        <code class="text-base font-mono text-slate-800 dark:text-slate-200">/api/v2/runtimes</code>
+        <span class="ml-auto text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg">Ochiq</span>
       </div>
-      <p class="text-sm text-gray-600 mb-4">O'rnatilgan runtimelar ro'yxatini qaytaradi. Token talab qilinmaydi.</p>
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">O'rnatilgan runtimelar ro'yxatini qaytaradi. Token talab qilinmaydi.</p>
 
-      <div class="flex gap-1 mb-0 border-b border-gray-200">
+      <div class="flex gap-1 mb-0 border-b border-slate-200 dark:border-slate-700">
         <button onclick="switchTab('rt', 'curl')" id="rt-tab-curl" class="tab-btn-rt px-3 py-2 text-xs font-medium border-b-2 border-sky-500 text-sky-600">cURL</button>
-        <button onclick="switchTab('rt', 'response')" id="rt-tab-response" class="tab-btn-rt px-3 py-2 text-xs font-medium border-b-2 border-transparent text-gray-400 hover:text-gray-600">Javob namunasi</button>
+        <button onclick="switchTab('rt', 'response')" id="rt-tab-response" class="tab-btn-rt px-3 py-2 text-xs font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">Javob namunasi</button>
       </div>
       <div class="relative bg-gray-950 rounded-b-xl rounded-tr-xl">
         <button onclick="copyCode('rt-curl')" class="copy-btn absolute top-3 right-3 text-gray-500 hover:text-gray-200 transition-colors text-xs flex items-center gap-1 bg-gray-800 px-2 py-1 rounded-md"><i class="fa-solid fa-copy"></i></button>
@@ -523,12 +537,12 @@ ws.run_forever()
 
     <!-- ═══════════════ PACKAGES ═══════════════ -->
     <section id="pkg-list" class="nav-link mb-6">
-      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-gray-200">
+      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">
         <span class="method-get text-xs font-bold px-2.5 py-1 rounded-lg">GET</span>
-        <code class="text-base font-mono text-gray-800">/api/v2/packages</code>
-        <span class="ml-auto text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-lg">Ochiq</span>
+        <code class="text-base font-mono text-slate-800 dark:text-slate-200">/api/v2/packages</code>
+        <span class="ml-auto text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg">Ochiq</span>
       </div>
-      <p class="text-sm text-gray-600 mb-4">Barcha mavjud paketlar va ularning o'rnatilgan/o'rnatilmagan holati.</p>
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Barcha mavjud paketlar va ularning o'rnatilgan/o'rnatilmagan holati.</p>
       <div class="relative bg-gray-950 rounded-xl">
         <button onclick="copyCode('pkg-list-curl')" class="copy-btn absolute top-3 right-3 text-gray-500 hover:text-gray-200 transition-colors text-xs flex items-center gap-1 bg-gray-800 px-2 py-1 rounded-md"><i class="fa-solid fa-copy"></i></button>
         <pre id="pkg-list-curl" class="text-xs text-gray-200 p-5 font-mono">curl https://your-server:2000/api/v2/packages
@@ -542,12 +556,12 @@ ws.run_forever()
     </section>
 
     <section id="pkg-install" class="nav-link mb-6">
-      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-gray-200">
+      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">
         <span class="method-post text-xs font-bold px-2.5 py-1 rounded-lg">POST</span>
-        <code class="text-base font-mono text-gray-800">/api/v2/packages</code>
-        <span class="ml-auto text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-lg"><i class="fa-solid fa-lock text-xs mr-1"></i>Token kerak</span>
+        <code class="text-base font-mono text-slate-800 dark:text-slate-200">/api/v2/packages</code>
+        <span class="ml-auto text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg"><i class="fa-solid fa-lock text-xs mr-1"></i>Token kerak</span>
       </div>
-      <p class="text-sm text-gray-600 mb-4">Ko'rsatilgan tilni o'rnatadi. <code class="bg-gray-100 px-1 rounded font-mono text-xs">language</code> va <code class="bg-gray-100 px-1 rounded font-mono text-xs">version</code> majburiy.</p>
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Ko'rsatilgan tilni o'rnatadi. <code class="bg-slate-100 dark:bg-slate-800 px-1 rounded font-mono text-xs">language</code> va <code class="bg-slate-100 dark:bg-slate-800 px-1 rounded font-mono text-xs">version</code> majburiy.</p>
       <div class="relative bg-gray-950 rounded-xl">
         <button onclick="copyCode('pkg-install-curl')" class="copy-btn absolute top-3 right-3 text-gray-500 hover:text-gray-200 transition-colors text-xs flex items-center gap-1 bg-gray-800 px-2 py-1 rounded-md"><i class="fa-solid fa-copy"></i></button>
         <pre id="pkg-install-curl" class="text-xs text-gray-200 p-5 font-mono">curl -X POST https://your-server:2000/api/v2/packages \
@@ -558,12 +572,12 @@ ws.run_forever()
     </section>
 
     <section id="pkg-uninstall" class="nav-link mb-10">
-      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-gray-200">
+      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">
         <span class="method-delete text-xs font-bold px-2.5 py-1 rounded-lg">DELETE</span>
-        <code class="text-base font-mono text-gray-800">/api/v2/packages</code>
-        <span class="ml-auto text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-lg"><i class="fa-solid fa-lock text-xs mr-1"></i>Token kerak</span>
+        <code class="text-base font-mono text-slate-800 dark:text-slate-200">/api/v2/packages</code>
+        <span class="ml-auto text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg"><i class="fa-solid fa-lock text-xs mr-1"></i>Token kerak</span>
       </div>
-      <p class="text-sm text-gray-600 mb-4">Ko'rsatilgan tilni o'chiradi.</p>
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Ko'rsatilgan tilni o'chiradi.</p>
       <div class="relative bg-gray-950 rounded-xl">
         <button onclick="copyCode('pkg-del-curl')" class="copy-btn absolute top-3 right-3 text-gray-500 hover:text-gray-200 transition-colors text-xs flex items-center gap-1 bg-gray-800 px-2 py-1 rounded-md"><i class="fa-solid fa-copy"></i></button>
         <pre id="pkg-del-curl" class="text-xs text-gray-200 p-5 font-mono">curl -X DELETE https://your-server:2000/api/v2/packages \
@@ -575,19 +589,19 @@ ws.run_forever()
 
     <!-- ═══════════════ JOBS ═══════════════ -->
     <section id="jobs-list" class="nav-link mb-6">
-      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-gray-200">
+      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">
         <span class="method-get text-xs font-bold px-2.5 py-1 rounded-lg">GET</span>
-        <code class="text-base font-mono text-gray-800">/api/v2/jobs</code>
-        <span class="ml-auto text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-lg"><i class="fa-solid fa-lock text-xs mr-1"></i>Token kerak</span>
+        <code class="text-base font-mono text-slate-800 dark:text-slate-200">/api/v2/jobs</code>
+        <span class="ml-auto text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg"><i class="fa-solid fa-lock text-xs mr-1"></i>Token kerak</span>
       </div>
-      <p class="text-sm text-gray-600 mb-3">Bajarilgan joblar tarixini ko'rsatadi.</p>
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-3">Bajarilgan joblar tarixini ko'rsatadi.</p>
       <div class="overflow-x-auto mb-4">
         <table class="w-full text-xs border-collapse">
-          <thead><tr class="bg-gray-100"><th class="text-left px-3 py-2 rounded-tl-lg font-semibold text-gray-600">Query param</th><th class="text-left px-3 py-2 font-semibold text-gray-600">Default</th><th class="text-left px-3 py-2 rounded-tr-lg font-semibold text-gray-600">Tavsif</th></tr></thead>
-          <tbody class="divide-y divide-gray-100">
-            <tr class="hover:bg-gray-50"><td class="px-3 py-2 font-mono text-blue-600">limit</td><td class="px-3 py-2 text-gray-500">100</td><td class="px-3 py-2 text-gray-600">Qaytariladigan yozuvlar soni (max 500)</td></tr>
-            <tr class="hover:bg-gray-50"><td class="px-3 py-2 font-mono text-blue-600">offset</td><td class="px-3 py-2 text-gray-500">0</td><td class="px-3 py-2 text-gray-600">Sahifalash uchun boshlang'ich pozitsiya</td></tr>
-            <tr class="hover:bg-gray-50"><td class="px-3 py-2 font-mono text-blue-600">language</td><td class="px-3 py-2 text-gray-500">—</td><td class="px-3 py-2 text-gray-600">Tilga ko'ra filtrlash</td></tr>
+          <thead><tr class="bg-slate-100 dark:bg-slate-800"><th class="text-left px-3 py-2 rounded-tl-lg font-semibold text-slate-600 dark:text-slate-300">Query param</th><th class="text-left px-3 py-2 font-semibold text-slate-600 dark:text-slate-300">Default</th><th class="text-left px-3 py-2 rounded-tr-lg font-semibold text-slate-600 dark:text-slate-300">Tavsif</th></tr></thead>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">limit</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">100</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Qaytariladigan yozuvlar soni (max 500)</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">offset</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">0</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Sahifalash uchun boshlang'ich pozitsiya</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">language</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">—</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Tilga ko'ra filtrlash</td></tr>
           </tbody>
         </table>
       </div>
@@ -599,12 +613,12 @@ ws.run_forever()
     </section>
 
     <section id="jobs-detail" class="nav-link mb-10">
-      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-gray-200">
+      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">
         <span class="method-get text-xs font-bold px-2.5 py-1 rounded-lg">GET</span>
-        <code class="text-base font-mono text-gray-800">/api/v2/jobs/:id</code>
-        <span class="ml-auto text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-lg"><i class="fa-solid fa-lock text-xs mr-1"></i>Token kerak</span>
+        <code class="text-base font-mono text-slate-800 dark:text-slate-200">/api/v2/jobs/:id</code>
+        <span class="ml-auto text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg"><i class="fa-solid fa-lock text-xs mr-1"></i>Token kerak</span>
       </div>
-      <p class="text-sm text-gray-600 mb-4">Bitta jobning to'liq ma'lumotlari (stdin, stdout, stderr, vaqt, xotira).</p>
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Bitta jobning to'liq ma'lumotlari (stdin, stdout, stderr, vaqt, xotira).</p>
       <div class="relative bg-gray-950 rounded-xl">
         <button onclick="copyCode('job-detail-curl')" class="copy-btn absolute top-3 right-3 text-gray-500 hover:text-gray-200 transition-colors text-xs flex items-center gap-1 bg-gray-800 px-2 py-1 rounded-md"><i class="fa-solid fa-copy"></i></button>
         <pre id="job-detail-curl" class="text-xs text-gray-200 p-5 font-mono">curl "https://your-server:2000/api/v2/jobs/JOB_UUID" \
@@ -614,12 +628,12 @@ ws.run_forever()
 
     <!-- ═══════════════ AUTH ENDPOINTS ═══════════════ -->
     <section id="auth-login" class="nav-link mb-6">
-      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-gray-200">
+      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">
         <span class="method-post text-xs font-bold px-2.5 py-1 rounded-lg">POST</span>
-        <code class="text-base font-mono text-gray-800">/auth/login</code>
-        <span class="ml-auto text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-lg">Ochiq</span>
+        <code class="text-base font-mono text-slate-800 dark:text-slate-200">/auth/login</code>
+        <span class="ml-auto text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg">Ochiq</span>
       </div>
-      <p class="text-sm text-gray-600 mb-4">Username va parol orqali tizimga kiradi va token qaytaradi.</p>
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Username va parol orqali tizimga kiradi va token qaytaradi.</p>
       <div class="relative bg-gray-950 rounded-xl">
         <button onclick="copyCode('login-curl')" class="copy-btn absolute top-3 right-3 text-gray-500 hover:text-gray-200 transition-colors text-xs flex items-center gap-1 bg-gray-800 px-2 py-1 rounded-md"><i class="fa-solid fa-copy"></i></button>
         <pre id="login-curl" class="text-xs text-gray-200 p-5 font-mono">curl -X POST https://your-server:2000/auth/login \
@@ -636,12 +650,12 @@ ws.run_forever()
     </section>
 
     <section id="auth-logout" class="nav-link mb-6">
-      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-gray-200">
+      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">
         <span class="method-post text-xs font-bold px-2.5 py-1 rounded-lg">POST</span>
-        <code class="text-base font-mono text-gray-800">/auth/logout</code>
-        <span class="ml-auto text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-lg"><i class="fa-solid fa-lock text-xs mr-1"></i>Token kerak</span>
+        <code class="text-base font-mono text-slate-800 dark:text-slate-200">/auth/logout</code>
+        <span class="ml-auto text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg"><i class="fa-solid fa-lock text-xs mr-1"></i>Token kerak</span>
       </div>
-      <p class="text-sm text-gray-600 mb-4">Joriy tokenni bekor qiladi (o'chiradi).</p>
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Joriy tokenni bekor qiladi (o'chiradi).</p>
       <div class="relative bg-gray-950 rounded-xl">
         <button onclick="copyCode('logout-curl')" class="copy-btn absolute top-3 right-3 text-gray-500 hover:text-gray-200 transition-colors text-xs flex items-center gap-1 bg-gray-800 px-2 py-1 rounded-md"><i class="fa-solid fa-copy"></i></button>
         <pre id="logout-curl" class="text-xs text-gray-200 p-5 font-mono">curl -X POST https://your-server:2000/auth/logout \
@@ -650,12 +664,12 @@ ws.run_forever()
     </section>
 
     <section id="auth-me" class="nav-link mb-6">
-      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-gray-200">
+      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">
         <span class="method-get text-xs font-bold px-2.5 py-1 rounded-lg">GET</span>
-        <code class="text-base font-mono text-gray-800">/auth/me</code>
-        <span class="ml-auto text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-lg"><i class="fa-solid fa-lock text-xs mr-1"></i>Token kerak</span>
+        <code class="text-base font-mono text-slate-800 dark:text-slate-200">/auth/me</code>
+        <span class="ml-auto text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg"><i class="fa-solid fa-lock text-xs mr-1"></i>Token kerak</span>
       </div>
-      <p class="text-sm text-gray-600 mb-4">Token haqiqiy ekanini tekshiradi va foydalanuvchi ma'lumotlarini qaytaradi.</p>
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Token haqiqiy ekanini tekshiradi va foydalanuvchi ma'lumotlarini qaytaradi.</p>
       <div class="relative bg-gray-950 rounded-xl">
         <button onclick="copyCode('me-curl')" class="copy-btn absolute top-3 right-3 text-gray-500 hover:text-gray-200 transition-colors text-xs flex items-center gap-1 bg-gray-800 px-2 py-1 rounded-md"><i class="fa-solid fa-copy"></i></button>
         <pre id="me-curl" class="text-xs text-gray-200 p-5 font-mono">curl https://your-server:2000/auth/me \
@@ -667,12 +681,12 @@ ws.run_forever()
     </section>
 
     <section id="tokens-create" class="nav-link mb-6">
-      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-gray-200">
+      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">
         <span class="method-post text-xs font-bold px-2.5 py-1 rounded-lg">POST</span>
-        <code class="text-base font-mono text-gray-800">/auth/tokens</code>
-        <span class="ml-auto text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-lg"><i class="fa-solid fa-lock text-xs mr-1"></i>Token kerak</span>
+        <code class="text-base font-mono text-slate-800 dark:text-slate-200">/auth/tokens</code>
+        <span class="ml-auto text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg"><i class="fa-solid fa-lock text-xs mr-1"></i>Token kerak</span>
       </div>
-      <p class="text-sm text-gray-600 mb-4">Ilovalar uchun yangi API token yaratadi. Login qilmasdan yangi token olish imkonini beradi.</p>
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Ilovalar uchun yangi API token yaratadi. Login qilmasdan yangi token olish imkonini beradi.</p>
       <div class="relative bg-gray-950 rounded-xl">
         <button onclick="copyCode('tok-create-curl')" class="copy-btn absolute top-3 right-3 text-gray-500 hover:text-gray-200 transition-colors text-xs flex items-center gap-1 bg-gray-800 px-2 py-1 rounded-md"><i class="fa-solid fa-copy"></i></button>
         <pre id="tok-create-curl" class="text-xs text-gray-200 p-5 font-mono">curl -X POST https://your-server:2000/auth/tokens \
@@ -692,12 +706,12 @@ ws.run_forever()
     </section>
 
     <section id="tokens-list" class="nav-link mb-6">
-      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-gray-200">
+      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">
         <span class="method-get text-xs font-bold px-2.5 py-1 rounded-lg">GET</span>
-        <code class="text-base font-mono text-gray-800">/auth/tokens</code>
-        <span class="ml-auto text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-lg"><i class="fa-solid fa-lock text-xs mr-1"></i>Token kerak</span>
+        <code class="text-base font-mono text-slate-800 dark:text-slate-200">/auth/tokens</code>
+        <span class="ml-auto text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg"><i class="fa-solid fa-lock text-xs mr-1"></i>Token kerak</span>
       </div>
-      <p class="text-sm text-gray-600 mb-4">Barcha faol (muddati o'tmagan) tokenlar ro'yxatini qaytaradi.</p>
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Barcha faol (muddati o'tmagan) tokenlar ro'yxatini qaytaradi.</p>
       <div class="relative bg-gray-950 rounded-xl">
         <button onclick="copyCode('tok-list-curl')" class="copy-btn absolute top-3 right-3 text-gray-500 hover:text-gray-200 transition-colors text-xs flex items-center gap-1 bg-gray-800 px-2 py-1 rounded-md"><i class="fa-solid fa-copy"></i></button>
         <pre id="tok-list-curl" class="text-xs text-gray-200 p-5 font-mono">curl https://your-server:2000/auth/tokens \
@@ -706,12 +720,12 @@ ws.run_forever()
     </section>
 
     <section id="tokens-delete" class="nav-link mb-10">
-      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-gray-200">
+      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">
         <span class="method-delete text-xs font-bold px-2.5 py-1 rounded-lg">DELETE</span>
-        <code class="text-base font-mono text-gray-800">/auth/tokens/:token</code>
-        <span class="ml-auto text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-lg"><i class="fa-solid fa-lock text-xs mr-1"></i>Token kerak</span>
+        <code class="text-base font-mono text-slate-800 dark:text-slate-200">/auth/tokens/:token</code>
+        <span class="ml-auto text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg"><i class="fa-solid fa-lock text-xs mr-1"></i>Token kerak</span>
       </div>
-      <p class="text-sm text-gray-600 mb-4">Berilgan tokenni o'chiradi (bekor qiladi).</p>
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Berilgan tokenni o'chiradi (bekor qiladi).</p>
       <div class="relative bg-gray-950 rounded-xl">
         <button onclick="copyCode('tok-del-curl')" class="copy-btn absolute top-3 right-3 text-gray-500 hover:text-gray-200 transition-colors text-xs flex items-center gap-1 bg-gray-800 px-2 py-1 rounded-md"><i class="fa-solid fa-copy"></i></button>
         <pre id="tok-del-curl" class="text-xs text-gray-200 p-5 font-mono">curl -X DELETE https://your-server:2000/auth/tokens/TOKEN_VALUE \
@@ -720,12 +734,12 @@ ws.run_forever()
     </section>
 
     <section id="users-list" class="nav-link mb-6">
-      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-gray-200">
+      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">
         <span class="method-get text-xs font-bold px-2.5 py-1 rounded-lg">GET</span>
-        <code class="text-base font-mono text-gray-800">/auth/users</code>
-        <span class="ml-auto text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-lg"><i class="fa-solid fa-lock text-xs mr-1"></i>Token kerak</span>
+        <code class="text-base font-mono text-slate-800 dark:text-slate-200">/auth/users</code>
+        <span class="ml-auto text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg"><i class="fa-solid fa-lock text-xs mr-1"></i>Token kerak</span>
       </div>
-      <p class="text-sm text-gray-600 mb-4">Barcha foydalanuvchilar ro'yxatini qaytaradi.</p>
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Barcha foydalanuvchilar ro'yxatini qaytaradi.</p>
       <div class="relative bg-gray-950 rounded-xl">
         <button onclick="copyCode('users-list-curl')" class="copy-btn absolute top-3 right-3 text-gray-500 hover:text-gray-200 transition-colors text-xs flex items-center gap-1 bg-gray-800 px-2 py-1 rounded-md"><i class="fa-solid fa-copy"></i></button>
         <pre id="users-list-curl" class="text-xs text-gray-200 p-5 font-mono">curl https://your-server:2000/auth/users \
@@ -734,12 +748,12 @@ ws.run_forever()
     </section>
 
     <section id="users-create" class="nav-link mb-6">
-      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-gray-200">
+      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">
         <span class="method-post text-xs font-bold px-2.5 py-1 rounded-lg">POST</span>
-        <code class="text-base font-mono text-gray-800">/auth/users</code>
-        <span class="ml-auto text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-lg"><i class="fa-solid fa-lock text-xs mr-1"></i>Token kerak</span>
+        <code class="text-base font-mono text-slate-800 dark:text-slate-200">/auth/users</code>
+        <span class="ml-auto text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg"><i class="fa-solid fa-lock text-xs mr-1"></i>Token kerak</span>
       </div>
-      <p class="text-sm text-gray-600 mb-4">Yangi foydalanuvchi qo'shadi.</p>
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Yangi foydalanuvchi qo'shadi.</p>
       <div class="relative bg-gray-950 rounded-xl">
         <button onclick="copyCode('users-create-curl')" class="copy-btn absolute top-3 right-3 text-gray-500 hover:text-gray-200 transition-colors text-xs flex items-center gap-1 bg-gray-800 px-2 py-1 rounded-md"><i class="fa-solid fa-copy"></i></button>
         <pre id="users-create-curl" class="text-xs text-gray-200 p-5 font-mono">curl -X POST https://your-server:2000/auth/users \
@@ -750,12 +764,12 @@ ws.run_forever()
     </section>
 
     <section id="users-update" class="nav-link mb-6">
-      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-gray-200">
+      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">
         <span class="method-put text-xs font-bold px-2.5 py-1 rounded-lg">PUT</span>
-        <code class="text-base font-mono text-gray-800">/auth/users/:username</code>
-        <span class="ml-auto text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-lg"><i class="fa-solid fa-lock text-xs mr-1"></i>Token kerak</span>
+        <code class="text-base font-mono text-slate-800 dark:text-slate-200">/auth/users/:username</code>
+        <span class="ml-auto text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg"><i class="fa-solid fa-lock text-xs mr-1"></i>Token kerak</span>
       </div>
-      <p class="text-sm text-gray-600 mb-4">Boshqa foydalanuvchining parolini o'zgartiradi (admin funksiyasi). O'zingizning parolni o'zgartirish uchun <code class="bg-gray-100 px-1 rounded font-mono text-xs">PUT /auth/profile</code> ishlatganingiz ma'qul.</p>
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Boshqa foydalanuvchining parolini o'zgartiradi (admin funksiyasi). O'zingizning parolni o'zgartirish uchun <code class="bg-slate-100 dark:bg-slate-800 px-1 rounded font-mono text-xs">PUT /auth/profile</code> ishlatganingiz ma'qul.</p>
       <div class="relative bg-gray-950 rounded-xl">
         <button onclick="copyCode('users-update-curl')" class="copy-btn absolute top-3 right-3 text-gray-500 hover:text-gray-200 transition-colors text-xs flex items-center gap-1 bg-gray-800 px-2 py-1 rounded-md"><i class="fa-solid fa-copy"></i></button>
         <pre id="users-update-curl" class="text-xs text-gray-200 p-5 font-mono">curl -X PUT https://your-server:2000/auth/users/yangi_user \
@@ -766,12 +780,12 @@ ws.run_forever()
     </section>
 
     <section id="users-delete" class="nav-link mb-10">
-      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-gray-200">
+      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">
         <span class="method-delete text-xs font-bold px-2.5 py-1 rounded-lg">DELETE</span>
-        <code class="text-base font-mono text-gray-800">/auth/users/:username</code>
-        <span class="ml-auto text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-lg"><i class="fa-solid fa-lock text-xs mr-1"></i>Token kerak</span>
+        <code class="text-base font-mono text-slate-800 dark:text-slate-200">/auth/users/:username</code>
+        <span class="ml-auto text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg"><i class="fa-solid fa-lock text-xs mr-1"></i>Token kerak</span>
       </div>
-      <p class="text-sm text-gray-600 mb-4">Foydalanuvchini va uning barcha tokenlarini o'chiradi. O'zingizni o'chira olmaysiz.</p>
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Foydalanuvchini va uning barcha tokenlarini o'chiradi. O'zingizni o'chira olmaysiz.</p>
       <div class="relative bg-gray-950 rounded-xl">
         <button onclick="copyCode('users-del-curl')" class="copy-btn absolute top-3 right-3 text-gray-500 hover:text-gray-200 transition-colors text-xs flex items-center gap-1 bg-gray-800 px-2 py-1 rounded-md"><i class="fa-solid fa-copy"></i></button>
         <pre id="users-del-curl" class="text-xs text-gray-200 p-5 font-mono">curl -X DELETE https://your-server:2000/auth/users/yangi_user \
@@ -780,12 +794,12 @@ ws.run_forever()
     </section>
 
     <section id="profile" class="nav-link mb-10">
-      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-gray-200">
+      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">
         <span class="method-put text-xs font-bold px-2.5 py-1 rounded-lg">PUT</span>
-        <code class="text-base font-mono text-gray-800">/auth/profile</code>
-        <span class="ml-auto text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-lg"><i class="fa-solid fa-lock text-xs mr-1"></i>Token kerak</span>
+        <code class="text-base font-mono text-slate-800 dark:text-slate-200">/auth/profile</code>
+        <span class="ml-auto text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg"><i class="fa-solid fa-lock text-xs mr-1"></i>Token kerak</span>
       </div>
-      <p class="text-sm text-gray-600 mb-4">O'zingizning parolini o'zgartiradi. Joriy parolni tasdiqlash talab etiladi.</p>
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">O'zingizning parolini o'zgartiradi. Joriy parolni tasdiqlash talab etiladi.</p>
       <div class="relative bg-gray-950 rounded-xl">
         <button onclick="copyCode('profile-curl')" class="copy-btn absolute top-3 right-3 text-gray-500 hover:text-gray-200 transition-colors text-xs flex items-center gap-1 bg-gray-800 px-2 py-1 rounded-md"><i class="fa-solid fa-copy"></i></button>
         <pre id="profile-curl" class="text-xs text-gray-200 p-5 font-mono">curl -X PUT https://your-server:2000/auth/profile \
@@ -803,73 +817,73 @@ ws.run_forever()
 
     <!-- ═══════════════ ERRORS ═══════════════ -->
     <section id="errors" class="nav-link mb-16">
-      <h2 class="text-lg font-bold text-gray-900 mb-4 pb-2 border-b border-gray-200">HTTP Xato Kodlar</h2>
+      <h2 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">HTTP Xato Kodlar</h2>
       <div class="overflow-x-auto">
         <table class="w-full text-sm border-collapse">
           <thead>
-            <tr class="bg-gray-100">
-              <th class="text-left px-4 py-2 rounded-tl-xl font-semibold text-gray-600 w-24">Kod</th>
-              <th class="text-left px-4 py-2 font-semibold text-gray-600">Ma'nosi</th>
-              <th class="text-left px-4 py-2 rounded-tr-xl font-semibold text-gray-600">Sabab</th>
+            <tr class="bg-slate-100 dark:bg-slate-800">
+              <th class="text-left px-4 py-2 rounded-tl-xl font-semibold text-slate-600 dark:text-slate-300 w-24">Kod</th>
+              <th class="text-left px-4 py-2 font-semibold text-slate-600 dark:text-slate-300">Ma'nosi</th>
+              <th class="text-left px-4 py-2 rounded-tr-xl font-semibold text-slate-600 dark:text-slate-300">Sabab</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-100">
-            <tr class="hover:bg-gray-50">
-              <td class="px-4 py-3"><span class="text-green-600 font-bold font-mono">200</span></td>
-              <td class="px-4 py-3 text-gray-700 font-medium">OK</td>
-              <td class="px-4 py-3 text-gray-500 text-xs">So'rov muvaffaqiyatli bajarildi</td>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+              <td class="px-4 py-3"><span class="text-green-600 dark:text-green-400 font-bold font-mono">200</span></td>
+              <td class="px-4 py-3 text-slate-700 dark:text-slate-300 font-medium">OK</td>
+              <td class="px-4 py-3 text-slate-500 dark:text-slate-400 text-xs">So'rov muvaffaqiyatli bajarildi</td>
             </tr>
-            <tr class="hover:bg-gray-50">
-              <td class="px-4 py-3"><span class="text-amber-600 font-bold font-mono">400</span></td>
-              <td class="px-4 py-3 text-gray-700 font-medium">Bad Request</td>
-              <td class="px-4 py-3 text-gray-500 text-xs">Noto'g'ri so'rov (majburiy maydon yetishmaydi yoki noto'g'ri tur)</td>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+              <td class="px-4 py-3"><span class="text-amber-600 dark:text-amber-400 font-bold font-mono">400</span></td>
+              <td class="px-4 py-3 text-slate-700 dark:text-slate-300 font-medium">Bad Request</td>
+              <td class="px-4 py-3 text-slate-500 dark:text-slate-400 text-xs">Noto'g'ri so'rov (majburiy maydon yetishmaydi yoki noto'g'ri tur)</td>
             </tr>
-            <tr class="hover:bg-gray-50">
-              <td class="px-4 py-3"><span class="text-red-600 font-bold font-mono">401</span></td>
-              <td class="px-4 py-3 text-gray-700 font-medium">Unauthorized</td>
-              <td class="px-4 py-3 text-gray-500 text-xs">Token yo'q, noto'g'ri, yoki muddati tugagan</td>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+              <td class="px-4 py-3"><span class="text-red-600 dark:text-red-400 font-bold font-mono">401</span></td>
+              <td class="px-4 py-3 text-slate-700 dark:text-slate-300 font-medium">Unauthorized</td>
+              <td class="px-4 py-3 text-slate-500 dark:text-slate-400 text-xs">Token yo'q, noto'g'ri, yoki muddati tugagan</td>
             </tr>
-            <tr class="hover:bg-gray-50">
-              <td class="px-4 py-3"><span class="text-red-600 font-bold font-mono">404</span></td>
-              <td class="px-4 py-3 text-gray-700 font-medium">Not Found</td>
-              <td class="px-4 py-3 text-gray-500 text-xs">So'ralgan resurs topilmadi (paket, job, foydalanuvchi)</td>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+              <td class="px-4 py-3"><span class="text-red-600 dark:text-red-400 font-bold font-mono">404</span></td>
+              <td class="px-4 py-3 text-slate-700 dark:text-slate-300 font-medium">Not Found</td>
+              <td class="px-4 py-3 text-slate-500 dark:text-slate-400 text-xs">So'ralgan resurs topilmadi (paket, job, foydalanuvchi)</td>
             </tr>
-            <tr class="hover:bg-gray-50">
-              <td class="px-4 py-3"><span class="text-amber-600 font-bold font-mono">409</span></td>
-              <td class="px-4 py-3 text-gray-700 font-medium">Conflict</td>
-              <td class="px-4 py-3 text-gray-500 text-xs">Username allaqachon mavjud</td>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+              <td class="px-4 py-3"><span class="text-amber-600 dark:text-amber-400 font-bold font-mono">409</span></td>
+              <td class="px-4 py-3 text-slate-700 dark:text-slate-300 font-medium">Conflict</td>
+              <td class="px-4 py-3 text-slate-500 dark:text-slate-400 text-xs">Username allaqachon mavjud</td>
             </tr>
-            <tr class="hover:bg-gray-50">
-              <td class="px-4 py-3"><span class="text-orange-600 font-bold font-mono">413</span></td>
-              <td class="px-4 py-3 text-gray-700 font-medium">Payload Too Large</td>
-              <td class="px-4 py-3 text-gray-500 text-xs">Yuborilgan ma'lumot hajmi juda katta</td>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+              <td class="px-4 py-3"><span class="text-orange-600 dark:text-orange-400 font-bold font-mono">413</span></td>
+              <td class="px-4 py-3 text-slate-700 dark:text-slate-300 font-medium">Payload Too Large</td>
+              <td class="px-4 py-3 text-slate-500 dark:text-slate-400 text-xs">Yuborilgan ma'lumot hajmi juda katta</td>
             </tr>
-            <tr class="hover:bg-gray-50">
-              <td class="px-4 py-3"><span class="text-orange-600 font-bold font-mono">415</span></td>
-              <td class="px-4 py-3 text-gray-700 font-medium">Unsupported Media Type</td>
-              <td class="px-4 py-3 text-gray-500 text-xs">Content-Type application/json bo'lishi shart</td>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+              <td class="px-4 py-3"><span class="text-orange-600 dark:text-orange-400 font-bold font-mono">415</span></td>
+              <td class="px-4 py-3 text-slate-700 dark:text-slate-300 font-medium">Unsupported Media Type</td>
+              <td class="px-4 py-3 text-slate-500 dark:text-slate-400 text-xs">Content-Type application/json bo'lishi shart</td>
             </tr>
-            <tr class="hover:bg-gray-50">
-              <td class="px-4 py-3"><span class="text-red-700 font-bold font-mono">500</span></td>
-              <td class="px-4 py-3 text-gray-700 font-medium">Internal Server Error</td>
-              <td class="px-4 py-3 text-gray-500 text-xs">Server ichki xatosi (log tekshiring)</td>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+              <td class="px-4 py-3"><span class="text-red-700 dark:text-red-400 font-bold font-mono">500</span></td>
+              <td class="px-4 py-3 text-slate-700 dark:text-slate-300 font-medium">Internal Server Error</td>
+              <td class="px-4 py-3 text-slate-500 dark:text-slate-400 text-xs">Server ichki xatosi (log tekshiring)</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <h3 class="text-sm font-semibold text-gray-700 mt-6 mb-3">WebSocket yopilish kodlari</h3>
+      <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mt-6 mb-3">WebSocket yopilish kodlari</h3>
       <div class="overflow-x-auto">
         <table class="w-full text-xs border-collapse">
-          <thead><tr class="bg-gray-100"><th class="text-left px-3 py-2 rounded-tl-lg font-semibold text-gray-600 w-20">Kod</th><th class="text-left px-3 py-2 rounded-tr-lg font-semibold text-gray-600">Ma'nosi</th></tr></thead>
-          <tbody class="divide-y divide-gray-100">
-            <tr class="hover:bg-gray-50"><td class="px-3 py-2 font-mono text-gray-600">4000</td><td class="px-3 py-2 text-gray-600">Ikkinchi marta "init" yuborildi</td></tr>
-            <tr class="hover:bg-gray-50"><td class="px-3 py-2 font-mono text-gray-600">4001</td><td class="px-3 py-2 text-gray-600">1 sekund ichida "init" yuborilmadi (timeout)</td></tr>
-            <tr class="hover:bg-gray-50"><td class="px-3 py-2 font-mono text-gray-600">4002</td><td class="px-3 py-2 text-gray-600">So'rov qayta ishlashda xato</td></tr>
-            <tr class="hover:bg-gray-50"><td class="px-3 py-2 font-mono text-gray-600">4003</td><td class="px-3 py-2 text-gray-600">Hali "init" yuborilmagan</td></tr>
-            <tr class="hover:bg-gray-50"><td class="px-3 py-2 font-mono text-gray-600">4004</td><td class="px-3 py-2 text-gray-600">Faqat stdin'ga yozish mumkin</td></tr>
-            <tr class="hover:bg-gray-50"><td class="px-3 py-2 font-mono text-gray-600">4005</td><td class="px-3 py-2 text-gray-600">Noto'g'ri signal</td></tr>
-            <tr class="hover:bg-gray-50"><td class="px-3 py-2 font-mono text-gray-600">4999</td><td class="px-3 py-2 text-gray-600">Job muvaffaqiyatli yakunlandi</td></tr>
+          <thead><tr class="bg-slate-100 dark:bg-slate-800"><th class="text-left px-3 py-2 rounded-tl-lg font-semibold text-slate-600 dark:text-slate-300 w-20">Kod</th><th class="text-left px-3 py-2 rounded-tr-lg font-semibold text-slate-600 dark:text-slate-300">Ma'nosi</th></tr></thead>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-slate-600 dark:text-slate-400">4000</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Ikkinchi marta "init" yuborildi</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-slate-600 dark:text-slate-400">4001</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">1 sekund ichida "init" yuborilmadi (timeout)</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-slate-600 dark:text-slate-400">4002</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">So'rov qayta ishlashda xato</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-slate-600 dark:text-slate-400">4003</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Hali "init" yuborilmagan</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-slate-600 dark:text-slate-400">4004</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Faqat stdin'ga yozish mumkin</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-slate-600 dark:text-slate-400">4005</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Noto'g'ri signal</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-slate-600 dark:text-slate-400">4999</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Job muvaffaqiyatli yakunlandi</td></tr>
           </tbody>
         </table>
       </div>
@@ -883,6 +897,21 @@ const authToken = localStorage.getItem('auth_token');
 if (!authToken) window.location.href = '/login';
 document.getElementById('headerUser').textContent = localStorage.getItem('auth_user') || '?';
 document.getElementById('baseUrl').textContent = window.location.origin;
+
+// Theme
+function toggleTheme() {
+  const isDark = document.documentElement.classList.toggle('dark');
+  localStorage.setItem('theme', isDark ? 'dark' : 'light');
+  document.getElementById('themeIcon').className =
+    isDark ? 'fa-solid fa-sun text-xs text-yellow-400'
+           : 'fa-solid fa-moon text-xs text-slate-500';
+}
+(function() {
+  const isDark = document.documentElement.classList.contains('dark');
+  document.getElementById('themeIcon').className =
+    isDark ? 'fa-solid fa-sun text-xs text-yellow-400'
+           : 'fa-solid fa-moon text-xs text-slate-500';
+})();
 
 function authHeaders() {
   return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken };
@@ -933,10 +962,10 @@ async function submitProfileChange() {
 function switchTab(group, tab) {
   document.querySelectorAll(`.tab-btn-${group}`).forEach(btn => {
     btn.classList.remove('border-sky-500', 'text-sky-600');
-    btn.classList.add('border-transparent', 'text-gray-400');
+    btn.classList.add('border-transparent', 'text-slate-400');
   });
   document.getElementById(`${group}-tab-${tab}`).classList.add('border-sky-500', 'text-sky-600');
-  document.getElementById(`${group}-tab-${tab}`).classList.remove('border-transparent', 'text-gray-400');
+  document.getElementById(`${group}-tab-${tab}`).classList.remove('border-transparent', 'text-slate-400');
 
   document.querySelectorAll(`[id^="${group}-"]`).forEach(el => {
     if (el.classList.contains('tab-content')) el.classList.remove('active');

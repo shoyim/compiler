@@ -92,18 +92,18 @@
 
 <!-- Profile modal -->
 <div id="profileModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
-  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+  <div style="background:var(--panel-bg);border-color:var(--border)" class="border rounded-2xl shadow-2xl w-full max-w-sm p-6">
     <div class="flex items-center justify-between mb-4">
-      <h2 class="text-base font-bold text-gray-800"><i class="fa-solid fa-lock text-gray-400 mr-2"></i>Parolni o'zgartirish</h2>
-      <button onclick="closeProfileModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark"></i></button>
+      <h2 class="text-base font-bold th-text"><i class="fa-solid fa-lock th-text-muted mr-2"></i>Parolni o'zgartirish</h2>
+      <button onclick="closeProfileModal()" class="th-text-muted hover:th-text transition-colors"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="space-y-3">
-      <div><label class="block text-xs font-medium text-gray-600 mb-1">Joriy parol</label>
-        <input id="curPass" type="password" placeholder="••••••••" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500 text-gray-800"></div>
-      <div><label class="block text-xs font-medium text-gray-600 mb-1">Yangi parol</label>
-        <input id="newPass1" type="password" placeholder="••••••••" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500 text-gray-800"></div>
-      <div><label class="block text-xs font-medium text-gray-600 mb-1">Yangi parolni tasdiqlang</label>
-        <input id="newPass2" type="password" placeholder="••••••••" class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500 text-gray-800"></div>
+      <div><label class="block text-xs font-medium th-text-dim mb-1">Joriy parol</label>
+        <input id="curPass" type="password" placeholder="••••••••" class="th-inp w-full text-sm border rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500"></div>
+      <div><label class="block text-xs font-medium th-text-dim mb-1">Yangi parol</label>
+        <input id="newPass1" type="password" placeholder="••••••••" class="th-inp w-full text-sm border rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500"></div>
+      <div><label class="block text-xs font-medium th-text-dim mb-1">Yangi parolni tasdiqlang</label>
+        <input id="newPass2" type="password" placeholder="••••••••" class="th-inp w-full text-sm border rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-500"></div>
       <button onclick="submitProfileChange()" class="w-full py-2.5 bg-sky-600 text-white text-sm font-medium rounded-lg hover:bg-sky-500 transition-colors">Saqlash</button>
     </div>
   </div>
