@@ -250,6 +250,49 @@ router.ws('/connect', requireAuth, async (ws, req) => {
     }, 1000);
 });
 
+router.post('/execute/demo', async (req, res) => {
+    let job;
+    try {
+        // Demo: timeout 5s, memory 64MB max
+        const body = {
+            ...req.body,
+            run_timeout: Math.min(req.body.run_timeout || 5000, 5000),
+            compile_timeout: Math.min(req.body.compile_timeout || 8000, 8000),
+            run_memory_limit: Math.min(req.body.run_memory_limit || 67108864, 67108864),
+        };
+        job = await get_job(body);
+    } catch (error) {
+        return res.status(400).json(error);
+    }
+    try {
+        const box = await job.prime();
+        let result = await job.execute(box);
+
+        if (result.run === undefined) {
+            result.run = result.compile;
+        }
+
+        const response = {
+            language: result.language,
+            version: result.version,
+            run: format_stage(result.run),
+        };
+
+        if (result.compile) {
+            response.compile = format_stage(result.compile);
+        }
+
+        return res.status(200).send(response);
+    } catch (error) {
+        logger.error(`Error executing demo job: ${job.uuid}:\n${error}`);
+        return res.status(500).send({ message: 'Demo job bajarishda xato: ' + error.message });
+    } finally {
+        job.cleanup().catch(error => {
+            logger.error(`Error cleaning up demo job: ${job.uuid}:\n${error}`);
+        });
+    }
+});
+
 router.post('/execute', requireAuth, async (req, res) => {
     let job;
     try {
