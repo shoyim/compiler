@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+# Run jar file
+shift
+java -XX:TieredStopAtLevel=1 -XX:+UseSerialGC -jar code.jar "$@"
