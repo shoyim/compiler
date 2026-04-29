@@ -9,10 +9,11 @@ curl -L "https://downloads.python.org/pypy/pypy3.10-v7.3.12-linux64.tar.bz2" -o 
 tar xjf pypy.tar.bz2 --strip-components=1
 rm pypy.tar.bz2
 
-cp -r bin lib include "$PREFIX/"
+cp -r bin lib lib-python "$PREFIX/"
+[ -d include ] && cp -r include "$PREFIX/"
 
 cd ..
 rm -rf build
 
 bin/pypy3 -m ensurepip
-bin/pip3 install numpy scipy pandas pycryptodome sympy
+bin/pypy3 -m pip install numpy scipy pandas pycryptodome sympy
