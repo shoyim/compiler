@@ -572,8 +572,8 @@ const EXAMPLES = {
   basic:        { ext:'vb',     stdin:'7\n',  code:'Imports System\nModule Program\n    Sub Main()\n        Dim n As Integer = Integer.Parse(Console.ReadLine())\n        Console.WriteLine(n * n)\n    End Sub\nEnd Module\n' },
   fsi:          { ext:'fsx',    stdin:'7\n',  code:'let n = System.Console.ReadLine() |> int\nprintfn "%d" (n * n)\n' },
   // ── JavaScript family ──────────────────────────────────
-  javascript:   { ext:'js',     stdin:'7\n',  code:'const lines = require("fs").readFileSync("/dev/stdin","utf8").trim().split("\\n");\nconst n = parseInt(lines[0]);\nconsole.log(n * n);\n' },
-  node:         { ext:'js',     stdin:'7\n',  code:'const lines = require("fs").readFileSync("/dev/stdin","utf8").trim().split("\\n");\nconst n = parseInt(lines[0]);\nconsole.log(n * n);\n' },
+  javascript:   { ext:'js',     stdin:'7\n',  code:'process.stdin.resume();\nprocess.stdin.setEncoding(\'utf8\');\nlet _in = \'\';\nprocess.stdin.on(\'data\', d => _in += d);\nprocess.stdin.on(\'end\', () => {\n    const lines = _in.trim().split(\'\\n\');\n    const n = parseInt(lines[0]);\n    console.log(n * n);\n});\n' },
+  node:         { ext:'js',     stdin:'7\n',  code:'process.stdin.resume();\nprocess.stdin.setEncoding(\'utf8\');\nlet _in = \'\';\nprocess.stdin.on(\'data\', d => _in += d);\nprocess.stdin.on(\'end\', () => {\n    const lines = _in.trim().split(\'\\n\');\n    const n = parseInt(lines[0]);\n    console.log(n * n);\n});\n' },
   typescript:   { ext:'ts',     stdin:'7\n',  code:'import * as fs from "fs";\nconst n = parseInt(fs.readFileSync("/dev/stdin","utf8").trim());\nconsole.log(n * n);\n' },
   deno:         { ext:'ts',     stdin:'7\n',  code:'const text = new TextDecoder().decode(Deno.readAllSync(Deno.stdin));\nconst n = parseInt(text.trim());\nconsole.log(n * n);\n' },
   coffeescript: { ext:'coffee', stdin:'7\n',  code:"n = parseInt require('fs').readFileSync('/dev/stdin','utf8').trim()\nconsole.log n * n\n" },
