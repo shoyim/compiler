@@ -281,6 +281,34 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/go/go.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/shell/shell.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/fortran/fortran.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/haskell/haskell.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/mllike/mllike.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/ruby/ruby.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/lua/lua.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/perl/perl.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/php/php.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/pascal/pascal.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/erlang/erlang.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/clojure/clojure.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/scheme/scheme.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/sql/sql.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/julia/julia.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/r/r.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/powershell/powershell.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/cobol/cobol.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/swift/swift.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/dart/dart.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/brainfuck/brainfuck.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/smalltalk/smalltalk.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/coffeescript/coffeescript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/vb/vb.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/commonlisp/commonlisp.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/gas/gas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/octave/octave.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/factor/factor.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/forth/forth.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/verilog/verilog.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/crystal/crystal.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/selection/active-line.min.js"></script>
@@ -354,23 +382,70 @@ function toggleTheme() {
 // color: CSS accent color shown on the editor tab bar
 // label: border-left accent style
 const LANG_THEMES = {
-  'python':     { dark:'material',    light:'idea',    color:'#3776AB', label:'Python'     },
-  'c':          { dark:'dracula',     light:'eclipse', color:'#A8B9CC', label:'C'          },
-  'c++':        { dark:'dracula',     light:'eclipse', color:'#00599C', label:'C++'        },
-  'java':       { dark:'darcula',     light:'idea',    color:'#ED8B00', label:'Java'       },
-  'kotlin':     { dark:'darcula',     light:'idea',    color:'#7F52FF', label:'Kotlin'     },
-  'scala':      { dark:'darcula',     light:'idea',    color:'#DC322F', label:'Scala'      },
-  'groovy':     { dark:'darcula',     light:'idea',    color:'#4298B8', label:'Groovy'     },
-  'javascript': { dark:'monokai',     light:'mdn-like',color:'#F7DF1E', label:'JavaScript' },
-  'typescript': { dark:'monokai',     light:'mdn-like',color:'#3178C6', label:'TypeScript' },
-  'node':       { dark:'monokai',     light:'mdn-like',color:'#339933', label:'Node.js'    },
-  'rust':       { dark:'gruvbox-dark',light:'idea',    color:'#CE422B', label:'Rust'       },
-  'go':         { dark:'nord',        light:'neat',    color:'#00ACD7', label:'Go'         },
-  'bash':       { dark:'3024-night',  light:'eclipse', color:'#4EAA25', label:'Bash'       },
-  'shell':      { dark:'3024-night',  light:'eclipse', color:'#4EAA25', label:'Shell'      },
-  'fortran':    { dark:'oceanic-next',light:'idea',    color:'#4E8CA5', label:'Fortran'    },
-  'd':          { dark:'oceanic-next',light:'idea',    color:'#BA595E', label:'D'          },
-  'default':    { dark:'monokai',     light:'idea',    color:'#6B7280', label:''           },
+  python:       { dark:'material',     light:'idea',    color:'#3776AB', label:'Python'      },
+  python2:      { dark:'material',     light:'idea',    color:'#3776AB', label:'Python 2'    },
+  pypy:         { dark:'material',     light:'idea',    color:'#3776AB', label:'PyPy'        },
+  c:            { dark:'dracula',      light:'eclipse', color:'#A8B9CC', label:'C'           },
+  'c++':        { dark:'dracula',      light:'eclipse', color:'#00599C', label:'C++'         },
+  java:         { dark:'darcula',      light:'idea',    color:'#ED8B00', label:'Java'        },
+  kotlin:       { dark:'darcula',      light:'idea',    color:'#7F52FF', label:'Kotlin'      },
+  scala:        { dark:'darcula',      light:'idea',    color:'#DC322F', label:'Scala'       },
+  groovy:       { dark:'darcula',      light:'idea',    color:'#4298B8', label:'Groovy'      },
+  javascript:   { dark:'monokai',      light:'mdn-like',color:'#F7DF1E', label:'JavaScript'  },
+  typescript:   { dark:'monokai',      light:'mdn-like',color:'#3178C6', label:'TypeScript'  },
+  node:         { dark:'monokai',      light:'mdn-like',color:'#339933', label:'Node.js'     },
+  deno:         { dark:'monokai',      light:'mdn-like',color:'#070707', label:'Deno'        },
+  coffeescript: { dark:'monokai',      light:'mdn-like',color:'#2F2A2B', label:'CoffeeScript'},
+  rust:         { dark:'gruvbox-dark', light:'idea',    color:'#CE422B', label:'Rust'        },
+  go:           { dark:'nord',         light:'neat',    color:'#00ACD7', label:'Go'          },
+  bash:         { dark:'3024-night',   light:'eclipse', color:'#4EAA25', label:'Bash'        },
+  dash:         { dark:'3024-night',   light:'eclipse', color:'#4EAA25', label:'Dash'        },
+  awk:          { dark:'3024-night',   light:'eclipse', color:'#4EAA25', label:'AWK'         },
+  gawk:         { dark:'3024-night',   light:'eclipse', color:'#4EAA25', label:'Gawk'        },
+  fortran:      { dark:'oceanic-next', light:'idea',    color:'#4E8CA5', label:'Fortran'     },
+  d:            { dark:'oceanic-next', light:'idea',    color:'#BA595E', label:'D'           },
+  haskell:      { dark:'dracula',      light:'eclipse', color:'#5D4F85', label:'Haskell'     },
+  ocaml:        { dark:'darcula',      light:'idea',    color:'#EC6813', label:'OCaml'       },
+  ruby:         { dark:'dracula',      light:'eclipse', color:'#CC342D', label:'Ruby'        },
+  crystal:      { dark:'dracula',      light:'eclipse', color:'#000100', label:'Crystal'     },
+  lua:          { dark:'dracula',      light:'eclipse', color:'#000080', label:'Lua'         },
+  perl:         { dark:'darcula',      light:'idea',    color:'#39457E', label:'Perl'        },
+  php:          { dark:'darcula',      light:'idea',    color:'#8892BF', label:'PHP'         },
+  pascal:       { dark:'darcula',      light:'idea',    color:'#E3F171', label:'Pascal'      },
+  csharp:       { dark:'darcula',      light:'idea',    color:'#178600', label:'C# (Mono)'   },
+  'csharp.net': { dark:'darcula',      light:'idea',    color:'#178600', label:'C# (.NET)'   },
+  'fsharp.net': { dark:'darcula',      light:'idea',    color:'#B845FC', label:'F#'          },
+  'basic.net':  { dark:'darcula',      light:'idea',    color:'#945DB7', label:'VB.NET'      },
+  basic:        { dark:'darcula',      light:'idea',    color:'#945DB7', label:'VB (Mono)'   },
+  fsi:          { dark:'darcula',      light:'idea',    color:'#B845FC', label:'F# (fsi)'    },
+  swift:        { dark:'nord',         light:'neat',    color:'#F05138', label:'Swift'       },
+  dart:         { dark:'darcula',      light:'idea',    color:'#00B4AB', label:'Dart'        },
+  julia:        { dark:'dracula',      light:'eclipse', color:'#9558B2', label:'Julia'       },
+  elixir:       { dark:'dracula',      light:'eclipse', color:'#6E4A7E', label:'Elixir'      },
+  erlang:       { dark:'dracula',      light:'eclipse', color:'#B83998', label:'Erlang'      },
+  nim:          { dark:'nord',         light:'neat',    color:'#FFE953', label:'Nim'         },
+  zig:          { dark:'gruvbox-dark', light:'idea',    color:'#F7A41D', label:'Zig'         },
+  vlang:        { dark:'nord',         light:'neat',    color:'#5D87BF', label:'V'           },
+  clojure:      { dark:'darcula',      light:'idea',    color:'#5881D8', label:'Clojure'     },
+  racket:       { dark:'darcula',      light:'idea',    color:'#22228F', label:'Racket'      },
+  lisp:         { dark:'darcula',      light:'idea',    color:'#3FB68B', label:'Lisp'        },
+  prolog:       { dark:'dracula',      light:'eclipse', color:'#74283C', label:'Prolog'      },
+  cobol:        { dark:'darcula',      light:'idea',    color:'#0061A8', label:'COBOL'       },
+  rscript:      { dark:'darcula',      light:'idea',    color:'#276DC3', label:'R'           },
+  powershell:   { dark:'darcula',      light:'idea',    color:'#012456', label:'PowerShell'  },
+  pwsh:         { dark:'darcula',      light:'idea',    color:'#012456', label:'PowerShell'  },
+  nasm:         { dark:'3024-night',   light:'eclipse', color:'#6E4A7E', label:'NASM'        },
+  nasm64:       { dark:'3024-night',   light:'eclipse', color:'#6E4A7E', label:'NASM64'      },
+  sqlite3:      { dark:'darcula',      light:'idea',    color:'#003B57', label:'SQLite'      },
+  brainfuck:    { dark:'monokai',      light:'mdn-like',color:'#2F2A2B', label:'Brainfuck'   },
+  befunge93:    { dark:'monokai',      light:'mdn-like',color:'#FF6B6B', label:'Befunge'     },
+  lolcode:      { dark:'monokai',      light:'mdn-like',color:'#FFB347', label:'LOLCODE'     },
+  smalltalk:    { dark:'darcula',      light:'idea',    color:'#596706', label:'Smalltalk'   },
+  forth:        { dark:'darcula',      light:'idea',    color:'#341708', label:'Forth'       },
+  forte:        { dark:'darcula',      light:'idea',    color:'#7B7B7B', label:'Factor'      },
+  freebasic:    { dark:'darcula',      light:'idea',    color:'#867DB1', label:'FreeBasic'   },
+  octave:       { dark:'darcula',      light:'idea',    color:'#DA252C', label:'Octave'      },
+  default:      { dark:'monokai',      light:'idea',    color:'#6B7280', label:''            },
 };
 
 function getLangTheme(lang) {
@@ -393,22 +468,61 @@ function applyLangStyle(lang) {
 
 // ── Language → CodeMirror mode ────────────────────────────────────────────
 const LANG_MODES = {
-  'c':          'text/x-csrc',
+  c:            'text/x-csrc',
   'c++':        'text/x-c++src',
-  'java':       'text/x-java',
-  'kotlin':     'text/x-kotlin',
-  'scala':      'text/x-scala',
-  'groovy':     'text/x-groovy',
-  'python':     'text/x-python',
-  'javascript': 'text/javascript',
-  'typescript': 'text/typescript',
-  'node':       'text/javascript',
-  'rust':       'text/x-rustsrc',
-  'go':         'text/x-go',
-  'bash':       'text/x-sh',
-  'shell':      'text/x-sh',
-  'fortran':    'text/x-fortran',
-  'd':          'text/x-csrc',
+  java:         'text/x-java',
+  kotlin:       'text/x-kotlin',
+  scala:        'text/x-scala',
+  groovy:       'text/x-groovy',
+  python:       'text/x-python',
+  python2:      'text/x-python',
+  pypy:         'text/x-python',
+  javascript:   'text/javascript',
+  typescript:   'text/typescript',
+  node:         'text/javascript',
+  deno:         'text/typescript',
+  coffeescript: 'text/x-coffeescript',
+  rust:         'text/x-rustsrc',
+  go:           'text/x-go',
+  bash:         'text/x-sh',
+  dash:         'text/x-sh',
+  awk:          'text/x-sh',
+  gawk:         'text/x-sh',
+  fortran:      'text/x-fortran',
+  d:            'text/x-d',
+  haskell:      'text/x-haskell',
+  ocaml:        'text/x-ocaml',
+  'fsharp.net': 'text/x-fsharp',
+  fsi:          'text/x-fsharp',
+  ruby:         'text/x-ruby',
+  crystal:      'text/x-crystal',
+  lua:          'text/x-lua',
+  perl:         'text/x-perl',
+  php:          'text/x-php',
+  pascal:       'text/x-pascal',
+  csharp:       'text/x-csharp',
+  'csharp.net': 'text/x-csharp',
+  'basic.net':  'text/x-vb',
+  basic:        'text/x-vb',
+  erlang:       'text/x-erlang',
+  clojure:      'text/x-clojure',
+  racket:       'text/x-scheme',
+  lisp:         'text/x-common-lisp',
+  sqlite3:      'text/x-sqlite',
+  julia:        'text/x-julia',
+  rscript:      'text/x-rsrc',
+  powershell:   'text/x-powershell',
+  pwsh:         'text/x-powershell',
+  cobol:        'text/x-cobol',
+  swift:        'text/x-swift',
+  dart:         'text/x-dart',
+  brainfuck:    'text/x-brainfuck',
+  smalltalk:    'text/x-stsrc',
+  forth:        'text/x-forth',
+  forte:        'text/x-factor',
+  nasm:         'text/x-gas',
+  nasm64:       'text/x-gas',
+  octave:       'text/x-octave',
 };
 
 // ── CodeMirror editor ─────────────────────────────────────────────────────
@@ -437,16 +551,82 @@ let runtimes = [];
 let currentEditorLang = '';
 
 const EXAMPLES = {
-  python:     { ext:'py',   code:'def solve():\n    n = int(input())\n    print(n * n)\n\nsolve()\n', stdin:'7\n' },
-  javascript: { ext:'js',   code:'const lines = require("fs").readFileSync("/dev/stdin","utf8").trim().split("\\n");\nconst n = parseInt(lines[0]);\nconsole.log(n * n);\n', stdin:'7\n' },
-  node:       { ext:'js',   code:'const lines = require("fs").readFileSync("/dev/stdin","utf8").trim().split("\\n");\nconst n = parseInt(lines[0]);\nconsole.log(n * n);\n', stdin:'7\n' },
-  java:       { ext:'java', code:'import java.util.Scanner;\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        System.out.println(n * n);\n    }\n}\n', stdin:'7\n' },
-  c:          { ext:'c',    code:'#include <stdio.h>\nint main() {\n    int n;\n    scanf("%d", &n);\n    printf("%d\\n", n * n);\n    return 0;\n}\n', stdin:'7\n' },
-  'c++':      { ext:'cpp',  code:'#include <iostream>\nusing namespace std;\nint main() {\n    int n;\n    cin >> n;\n    cout << n * n << endl;\n    return 0;\n}\n', stdin:'7\n' },
-  rust:       { ext:'rs',   code:'use std::io;\nfn main() {\n    let mut s = String::new();\n    io::stdin().read_line(&mut s).unwrap();\n    let n: i64 = s.trim().parse().unwrap();\n    println!("{}", n * n);\n}\n', stdin:'7\n' },
-  go:         { ext:'go',   code:'package main\nimport "fmt"\nfunc main() {\n    var n int\n    fmt.Scan(&n)\n    fmt.Println(n * n)\n}\n', stdin:'7\n' },
-  bash:       { ext:'sh',   code:'read n\necho $((n * n))\n', stdin:'7\n' },
-  default:    { ext:'txt',  code:'', stdin:'' },
+  // ── Python family ──────────────────────────────────────
+  python:       { ext:'py',     stdin:'7\n',  code:'n = int(input())\nprint(n * n)\n' },
+  python2:      { ext:'py',     stdin:'7\n',  code:'n = int(raw_input())\nprint n * n\n' },
+  pypy:         { ext:'py',     stdin:'7\n',  code:'n = int(input())\nprint(n * n)\n' },
+  // ── C family ───────────────────────────────────────────
+  c:            { ext:'c',      stdin:'7\n',  code:'#include <stdio.h>\nint main() {\n    int n;\n    scanf("%d", &n);\n    printf("%d\\n", n * n);\n    return 0;\n}\n' },
+  'c++':        { ext:'cpp',    stdin:'7\n',  code:'#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n    int n;\n    cin >> n;\n    cout << n * n << "\\n";\n    return 0;\n}\n' },
+  d:            { ext:'d',      stdin:'7\n',  code:'import std.stdio;\nimport std.conv;\nvoid main() {\n    int n = readln().strip().to!int;\n    writeln(n * n);\n}\n' },
+  // ── JVM family ─────────────────────────────────────────
+  java:         { ext:'java',   stdin:'7\n',  code:'import java.util.Scanner;\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        System.out.println(n * n);\n    }\n}\n' },
+  kotlin:       { ext:'kt',     stdin:'7\n',  code:'fun main() {\n    val n = readLine()!!.trim().toInt()\n    println(n * n)\n}\n' },
+  scala:        { ext:'scala',  stdin:'7\n',  code:'object Main extends App {\n  val n = scala.io.StdIn.readInt()\n  println(n * n)\n}\n' },
+  groovy:       { ext:'groovy', stdin:'7\n',  code:'def n = new Scanner(System.in).nextInt()\nprintln n * n\n' },
+  // ── .NET family ────────────────────────────────────────
+  csharp:       { ext:'cs',     stdin:'7\n',  code:'using System;\nclass Program {\n    static void Main() {\n        int n = int.Parse(Console.ReadLine());\n        Console.WriteLine(n * n);\n    }\n}\n' },
+  'csharp.net': { ext:'cs',     stdin:'7\n',  code:'using System;\nclass Program {\n    static void Main() {\n        int n = int.Parse(Console.ReadLine());\n        Console.WriteLine(n * n);\n    }\n}\n' },
+  'fsharp.net': { ext:'fs',     stdin:'7\n',  code:'open System\nlet n = Console.ReadLine() |> int\nprintfn "%d" (n * n)\n' },
+  'basic.net':  { ext:'vb',     stdin:'7\n',  code:'Imports System\nModule Program\n    Sub Main()\n        Dim n As Integer = Integer.Parse(Console.ReadLine())\n        Console.WriteLine(n * n)\n    End Sub\nEnd Module\n' },
+  basic:        { ext:'vb',     stdin:'7\n',  code:'Imports System\nModule Program\n    Sub Main()\n        Dim n As Integer = Integer.Parse(Console.ReadLine())\n        Console.WriteLine(n * n)\n    End Sub\nEnd Module\n' },
+  fsi:          { ext:'fsx',    stdin:'7\n',  code:'let n = System.Console.ReadLine() |> int\nprintfn "%d" (n * n)\n' },
+  // ── JavaScript family ──────────────────────────────────
+  javascript:   { ext:'js',     stdin:'7\n',  code:'const lines = require("fs").readFileSync("/dev/stdin","utf8").trim().split("\\n");\nconst n = parseInt(lines[0]);\nconsole.log(n * n);\n' },
+  node:         { ext:'js',     stdin:'7\n',  code:'const lines = require("fs").readFileSync("/dev/stdin","utf8").trim().split("\\n");\nconst n = parseInt(lines[0]);\nconsole.log(n * n);\n' },
+  typescript:   { ext:'ts',     stdin:'7\n',  code:'import * as fs from "fs";\nconst n = parseInt(fs.readFileSync("/dev/stdin","utf8").trim());\nconsole.log(n * n);\n' },
+  deno:         { ext:'ts',     stdin:'7\n',  code:'const text = new TextDecoder().decode(Deno.readAllSync(Deno.stdin));\nconst n = parseInt(text.trim());\nconsole.log(n * n);\n' },
+  coffeescript: { ext:'coffee', stdin:'7\n',  code:"n = parseInt require('fs').readFileSync('/dev/stdin','utf8').trim()\nconsole.log n * n\n" },
+  // ── Systems languages ──────────────────────────────────
+  rust:         { ext:'rs',     stdin:'7\n',  code:'use std::io::{self, BufRead};\nfn main() {\n    let stdin = io::stdin();\n    let n: i64 = stdin.lock().lines().next().unwrap().unwrap()\n        .trim().parse().unwrap();\n    println!("{}", n * n);\n}\n' },
+  go:           { ext:'go',     stdin:'7\n',  code:'package main\nimport "fmt"\nfunc main() {\n    var n int\n    fmt.Scan(&n)\n    fmt.Println(n * n)\n}\n' },
+  zig:          { ext:'zig',    stdin:'7\n',  code:'const std = @import("std");\npub fn main() !void {\n    const stdin = std.io.getStdIn().reader();\n    var buf: [64]u8 = undefined;\n    const line = try stdin.readUntilDelimiter(&buf, \'\\n\');\n    const n = try std.fmt.parseInt(i64, std.mem.trim(u8, line, "\\r\\n "), 10);\n    const out = std.io.getStdOut().writer();\n    try out.print("{}\\n", .{n * n});\n}\n' },
+  vlang:        { ext:'v',      stdin:'7\n',  code:'import os\nfn main() {\n    n := os.get_line().trim_space().int()\n    println(n * n)\n}\n' },
+  nim:          { ext:'nim',    stdin:'7\n',  code:'import strutils\nlet n = parseInt(readLine(stdin))\necho n * n\n' },
+  // ── Functional ─────────────────────────────────────────
+  haskell:      { ext:'hs',     stdin:'7\n',  code:'main :: IO ()\nmain = do\n    n <- readLn :: IO Int\n    print (n * n)\n' },
+  ocaml:        { ext:'ml',     stdin:'7\n',  code:'let () =\n  let n = Scanf.scanf " %d" (fun x -> x) in\n  Printf.printf "%d\\n" (n * n)\n' },
+  clojure:      { ext:'clj',    stdin:'7\n',  code:'(let [n (Integer/parseInt (read-line))]\n  (println (* n n)))\n' },
+  racket:       { ext:'rkt',    stdin:'7\n',  code:'#lang racket\n(define n (read))\n(displayln (* n n))\n' },
+  lisp:         { ext:'lisp',   stdin:'7\n',  code:'(let ((n (read)))\n  (format t "~a~%" (* n n)))\n' },
+  elixir:       { ext:'ex',     stdin:'7\n',  code:'n = IO.read(:line) |> String.trim() |> String.to_integer()\nIO.puts(n * n)\n' },
+  erlang:       { ext:'erl',    stdin:'7\n',  code:'-module(main).\n-export([main/0]).\nmain() ->\n    {ok, [N]} = io:fread("", "~d"),\n    io:format("~w~n", [N * N]).\n' },
+  // ── Scripting ──────────────────────────────────────────
+  ruby:         { ext:'rb',     stdin:'7\n',  code:'n = gets.chomp.to_i\nputs n * n\n' },
+  crystal:      { ext:'cr',     stdin:'7\n',  code:'n = gets.not_nil!.chomp.to_i\nputs n * n\n' },
+  lua:          { ext:'lua',    stdin:'7\n',  code:'local n = tonumber(io.read())\nprint(n * n)\n' },
+  perl:         { ext:'pl',     stdin:'7\n',  code:'my $n = <STDIN>;\nchomp $n;\nprint $n * $n, "\\n";\n' },
+  php:          { ext:'php',    stdin:'7\n',  code:'<?php\n$n = intval(trim(fgets(STDIN)));\necho $n * $n . "\\n";\n' },
+  // ── Compiled ───────────────────────────────────────────
+  swift:        { ext:'swift',  stdin:'7\n',  code:'import Foundation\nif let line = readLine(), let n = Int(line.trimmingCharacters(in: .whitespaces)) {\n    print(n * n)\n}\n' },
+  dart:         { ext:'dart',   stdin:'7\n',  code:"import 'dart:io';\nvoid main() {\n  final n = int.parse(stdin.readLineSync()!);\n  print(n * n);\n}\n" },
+  julia:        { ext:'jl',     stdin:'7\n',  code:'n = parse(Int, readline())\nprintln(n * n)\n' },
+  pascal:       { ext:'pas',    stdin:'7\n',  code:'var n: Integer;\nbegin\n  readln(n);\n  writeln(n * n);\nend.\n' },
+  fortran:      { ext:'f90',    stdin:'7\n',  code:'program main\n  implicit none\n  integer :: n\n  read(*,*) n\n  write(*,*) n * n\nend program main\n' },
+  // ── Shell & Text processing ────────────────────────────
+  bash:         { ext:'sh',     stdin:'7\n',  code:'read n\necho $((n * n))\n' },
+  dash:         { ext:'sh',     stdin:'7\n',  code:'read n\necho $((n * n))\n' },
+  awk:          { ext:'awk',    stdin:'7\n',  code:'{ print $1 * $1 }' },
+  gawk:         { ext:'awk',    stdin:'7\n',  code:'{ print $1 * $1 }' },
+  rscript:      { ext:'r',      stdin:'7\n',  code:'n <- as.integer(readLines("stdin", 1))\ncat(n * n, "\\n")\n' },
+  powershell:   { ext:'ps1',    stdin:'7\n',  code:'$n = [int][Console]::ReadLine()\nWrite-Output ($n * $n)\n' },
+  pwsh:         { ext:'ps1',    stdin:'7\n',  code:'$n = [int][Console]::ReadLine()\nWrite-Output ($n * $n)\n' },
+  // ── Assembly & Low-level ───────────────────────────────
+  nasm:         { ext:'asm',    stdin:'7\n',  code:'; NASM x86-64 hello world\nsection .data\n    msg db "Hello, NASM!", 10\n    len equ $ - msg\nsection .text\n    global _start\n_start:\n    mov rax, 1\n    mov rdi, 1\n    mov rsi, msg\n    mov rdx, len\n    syscall\n    mov rax, 60\n    xor rdi, rdi\n    syscall\n' },
+  nasm64:       { ext:'asm',    stdin:'7\n',  code:'; NASM x86-64 hello world\nsection .data\n    msg db "Hello, NASM64!", 10\n    len equ $ - msg\nsection .text\n    global _start\n_start:\n    mov rax, 1\n    mov rdi, 1\n    mov rsi, msg\n    mov rdx, len\n    syscall\n    mov rax, 60\n    xor rdi, rdi\n    syscall\n' },
+  // ── Other ──────────────────────────────────────────────
+  sqlite3:      { ext:'sql',    stdin:'',     code:'SELECT 7 * 7 AS result;\n' },
+  prolog:       { ext:'pl',     stdin:'7.\n', code:':- initialization main.\nmain :-\n    read(N),\n    R is N * N,\n    write(R), nl.\n' },
+  cobol:        { ext:'cob',    stdin:'7\n',  code:'IDENTIFICATION DIVISION.\nPROGRAM-ID. MAIN.\nDATA DIVISION.\nWORKING-STORAGE SECTION.\n01 N PIC 9(9).\n01 R PIC 9(18).\nPROCEDURE DIVISION.\n    ACCEPT N\n    COMPUTE R = N * N\n    DISPLAY R\n    STOP RUN.\n' },
+  smalltalk:    { ext:'st',     stdin:'7\n',  code:'| n |\nn := stdin nextLine trimSeparators asInteger.\nTranscript showCr: (n * n) printString.\n' },
+  forth:        { ext:'forth',  stdin:'',     code:': sq dup * . CR ;\n7 sq\nBYE\n' },
+  forte:        { ext:'factor', stdin:'7\n',  code:'USE: io\nUSE: kernel\nUSE: math\nUSE: prettyprint\n: main ( -- )\n    readln string>number drop dup * . ;\nmain\n' },
+  freebasic:    { ext:'bas',    stdin:'7\n',  code:'dim n as integer\ninput n\nprint n * n\n' },
+  octave:       { ext:'m',      stdin:'7\n',  code:"n = str2num(input('', 's'));\ndisp(n * n)\n" },
+  brainfuck:    { ext:'bf',     stdin:'',     code:'++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.\n' },
+  befunge93:    { ext:'b93',    stdin:'7\n',  code:'&:*.\n' },
+  lolcode:      { ext:'lol',    stdin:'7\n',  code:'HAI 1.2\nI HAS A N ITZ A NUMBR\nGIMMEH N\nI HAS A R ITZ N PRODUKT N\nVISIBLE R\nKTHXBYE\n' },
+  default:      { ext:'txt',    stdin:'',     code:'' },
 };
 
 async function loadRuntimes() {

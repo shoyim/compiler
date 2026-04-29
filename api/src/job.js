@@ -453,15 +453,22 @@ class Job {
             compile_errored = compile.code !== 0 || compile.status !== null;
 
             if (!compile_errored) {
-                // Defense-in-depth: verify the compiled binary actually exists.
-                // Catches cases where the compile script exits 0 but g++ silently failed
-                // (e.g., missing set -e or suppressed error output).
-                const aout = path.join(box.dir, 'submission', 'a.out');
-                const aout_missing = await fs.access(aout).then(() => false).catch(() => true);
-                if (aout_missing) {
+                // Defense-in-depth: verify a compiled output actually exists.
+                // Different languages produce different output files:
+                //   a.out  → C, C++, Pascal, Haskell, ...
+                //   code.jar → Kotlin, Scala, Groovy
+                //   binary → Rust
+                const submission_dir = path.join(box.dir, 'submission');
+                const known_outputs = ['a.out', 'code.jar', 'binary'];
+                const any_output = await Promise.all(
+                    known_outputs.map(f =>
+                        fs.access(path.join(submission_dir, f)).then(() => true).catch(() => false)
+                    )
+                ).then(r => r.some(Boolean));
+                if (!any_output) {
                     compile_errored = true;
                     compile.stderr = (compile.stderr || '') +
-                        '\n[internal] a.out not found after compilation — compile script may have failed silently';
+                        '\n[internal] compiled output not found after compilation — compile script may have failed silently';
                 }
             }
         }
