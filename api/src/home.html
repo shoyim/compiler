@@ -7,51 +7,48 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
-    @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:none; } }
-    .fade-up  { animation: fadeUp .45s ease both; }
-    .fade-up2 { animation: fadeUp .45s .08s ease both; }
-    .fade-up3 { animation: fadeUp .45s .16s ease both; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:none; } }
+    .fade-up  { animation: fadeUp .5s ease both; }
+    .fade-up2 { animation: fadeUp .5s .1s ease both; }
+    .fade-up3 { animation: fadeUp .5s .2s ease both; }
+    .fade-up4 { animation: fadeUp .5s .3s ease both; }
 
-    .lang-btn { transition: all .15s ease; }
-    .lang-btn:hover { transform: translateY(-1px); }
-    .lang-btn.active {
-      border-color: rgb(14 165 233) !important;
-      background: rgb(14 165 233 / 0.12) !important;
-      box-shadow: 0 0 0 1px rgb(14 165 233 / 0.4);
+    .glow-sky { box-shadow: 0 0 80px -20px rgb(14 165 233 / 0.35); }
+
+    .feature-card {
+      background: linear-gradient(135deg, rgb(15 23 42) 0%, rgb(15 23 42) 100%);
+      border: 1px solid rgb(30 41 59);
+      transition: border-color .2s, transform .2s;
+    }
+    .feature-card:hover {
+      border-color: rgb(14 165 233 / 0.4);
+      transform: translateY(-2px);
     }
 
-    #codeArea {
-      font-family: 'Fira Mono', 'Cascadia Code', 'Consolas', monospace;
-      font-size: 13px;
-      line-height: 1.6;
-      resize: vertical;
-      min-height: 140px;
+    .stat-card {
+      background: linear-gradient(135deg, rgb(15 23 42) 0%, rgb(15 23 42) 100%);
+      border: 1px solid rgb(30 41 59);
     }
-    #output {
-      font-family: 'Fira Mono', 'Cascadia Code', 'Consolas', monospace;
-      font-size: 13px;
-      white-space: pre-wrap;
-      word-break: break-all;
-    }
-    .spin { animation: spin 1s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @keyframes count { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+    .count-anim { animation: count .6s ease both; }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
 
 <!-- Header -->
-<header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
-  <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+<header class="border-b border-slate-800/60 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between gap-3">
     <div class="flex items-center gap-3">
-      <div class="w-9 h-9 bg-sky-500 rounded-xl flex items-center justify-center shadow-lg shadow-sky-500/30">
+      <div class="w-9 h-9 bg-gradient-to-br from-sky-400 to-sky-600 rounded-xl flex items-center justify-center shadow-lg shadow-sky-500/30">
         <i class="fa-solid fa-code text-white text-sm"></i>
       </div>
-      <span class="font-bold text-white text-base tracking-tight">Tekshirish Tizimi</span>
+      <span class="font-bold text-white tracking-tight">Tekshirish Tizimi</span>
     </div>
     <div id="headerActions" class="flex items-center gap-2">
-      <a href="/login" id="loginBtn"
+      <a href="/login"
         class="flex items-center gap-2 bg-sky-500 hover:bg-sky-400 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors shadow-lg shadow-sky-500/20">
-        <i class="fa-solid fa-right-to-bracket"></i>
+        <i class="fa-solid fa-right-to-bracket text-xs"></i>
         Kirish
       </a>
     </div>
@@ -59,164 +56,221 @@
 </header>
 
 <!-- Hero -->
-<section class="max-w-6xl mx-auto px-4 pt-16 pb-10 text-center fade-up">
-  <div class="inline-flex items-center gap-2 bg-sky-500/10 border border-sky-500/20 text-sky-400 text-xs font-medium px-3 py-1.5 rounded-full mb-5">
-    <span class="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse"></span>
-    Onlayn dasturlash masalalari tekshiruv tizimi
+<section class="relative overflow-hidden">
+  <!-- Background glow -->
+  <div class="absolute inset-0 pointer-events-none">
+    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-sky-500/8 rounded-full blur-3xl"></div>
   </div>
-  <h1 class="text-4xl sm:text-5xl font-extrabold text-white leading-tight mb-4">
-    Kodingizni yuboring —<br>
-    <span class="text-sky-400">tizim tekshirsin</span>
-  </h1>
-  <p class="text-slate-400 text-base max-w-lg mx-auto">
-    Bir nechta dasturlash tillarida kod yozing, ishga tushiring va natijani bir zumda ko'ring.
-  </p>
+
+  <div class="relative max-w-6xl mx-auto px-4 sm:px-6 pt-20 pb-16 text-center fade-up">
+    <!-- Badge -->
+    <div class="inline-flex items-center gap-2 bg-sky-500/10 border border-sky-500/20 text-sky-400 text-xs font-medium px-4 py-1.5 rounded-full mb-7">
+      <span class="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse"></span>
+      Onlayn dasturlash masalalari tekshiruv tizimi
+    </div>
+
+    <!-- Heading -->
+    <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-tight mb-5 tracking-tight">
+      Kodingizni yuboring —<br>
+      <span class="bg-gradient-to-r from-sky-400 to-blue-400 bg-clip-text text-transparent">tizim tekshirsin</span>
+    </h1>
+
+    <p class="text-slate-400 text-base sm:text-lg max-w-xl mx-auto mb-9 leading-relaxed">
+      Ko'p sonli dasturlash tillarini qo'llab-quvvatlovchi online judge tizimi.
+      Kodingizni yuboring, natijani real vaqtda oling.
+    </p>
+
+    <!-- CTA buttons -->
+    <div class="flex flex-wrap items-center justify-center gap-3">
+      <a href="/login"
+        class="flex items-center gap-2 bg-sky-500 hover:bg-sky-400 text-white font-semibold px-6 py-3 rounded-xl transition-all shadow-xl shadow-sky-500/25 hover:shadow-sky-500/40 hover:-translate-y-0.5">
+        <i class="fa-solid fa-right-to-bracket text-sm"></i>
+        Tizimga kirish
+      </a>
+      <a href="/api/docs"
+        class="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 text-slate-300 hover:text-white font-semibold px-6 py-3 rounded-xl transition-all hover:-translate-y-0.5">
+        <i class="fa-solid fa-book text-sm"></i>
+        API hujjatlari
+      </a>
+    </div>
+  </div>
 </section>
 
-<!-- Demo Tester -->
-<section class="max-w-6xl mx-auto px-4 pb-12 fade-up2 flex-1">
-  <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+<!-- Feature cards -->
+<section class="max-w-6xl mx-auto px-4 sm:px-6 pb-16 fade-up2">
+  <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
 
-    <!-- Top bar -->
-    <div class="border-b border-slate-800 px-5 py-3 flex items-center justify-between gap-3 flex-wrap">
-      <div class="flex items-center gap-2">
-        <i class="fa-solid fa-terminal text-sky-400 text-xs"></i>
-        <span class="text-white text-sm font-semibold">Sinab ko'rish</span>
-        <span id="runtimeBadge" class="hidden text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full"></span>
+    <div class="feature-card rounded-2xl p-6">
+      <div class="w-10 h-10 bg-sky-500/15 rounded-xl flex items-center justify-center mb-4">
+        <i class="fa-solid fa-bolt text-sky-400"></i>
       </div>
-      <div class="flex items-center gap-2">
-        <div class="relative">
-          <i class="fa-solid fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs pointer-events-none"></i>
-          <input id="langSearch" type="text" placeholder="Til qidirish..."
-            class="bg-slate-800 border border-slate-700 text-white text-xs rounded-lg pl-7 pr-3 py-1.5 w-36 focus:outline-none focus:ring-1 focus:ring-sky-500 placeholder-slate-500">
-        </div>
-      </div>
-    </div>
-
-    <!-- Language list -->
-    <div class="border-b border-slate-800 px-4 py-3">
-      <div id="langList" class="flex flex-wrap gap-2 min-h-[2.5rem] items-center">
-        <span class="text-slate-500 text-xs">Tillar yuklanmoqda...</span>
-      </div>
-    </div>
-
-    <!-- Editor + stdin -->
-    <div class="grid sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-800">
-      <div class="p-4 flex flex-col gap-2">
-        <div class="flex items-center justify-between mb-1">
-          <label class="text-xs text-slate-400 font-medium">
-            <i class="fa-solid fa-code mr-1"></i>Kod
-          </label>
-          <button onclick="clearCode()" class="text-xs text-slate-500 hover:text-slate-300 transition-colors">
-            <i class="fa-solid fa-trash-can mr-1"></i>Tozalash
-          </button>
-        </div>
-        <textarea id="codeArea" rows="10" spellcheck="false"
-          class="w-full bg-slate-950 border border-slate-700 text-slate-100 rounded-xl px-4 py-3 focus:outline-none focus:ring-1 focus:ring-sky-500"
-          placeholder="Kodingizni shu yerga yozing..."></textarea>
-      </div>
-      <div class="p-4 flex flex-col gap-2">
-        <label class="text-xs text-slate-400 font-medium mb-1">
-          <i class="fa-solid fa-keyboard mr-1"></i>Kirish (stdin)
-        </label>
-        <textarea id="stdinArea" rows="4" spellcheck="false"
-          class="w-full bg-slate-950 border border-slate-700 text-slate-100 rounded-xl px-4 py-3 focus:outline-none focus:ring-1 focus:ring-sky-500 font-mono text-xs"
-          placeholder="Dastur uchun kirish ma'lumotlari (ixtiyoriy)..."></textarea>
-
-        <div class="flex items-center gap-2 mt-1">
-          <button id="runBtn" onclick="runCode()"
-            class="flex-1 flex items-center justify-center gap-2 bg-sky-500 hover:bg-sky-400 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold py-2.5 rounded-xl transition-colors">
-            <i id="runIcon" class="fa-solid fa-play text-xs"></i>
-            <span id="runText">Ishga tushirish</span>
-          </button>
-        </div>
-
-        <!-- Output -->
-        <div id="outputBox" class="hidden mt-2">
-          <div class="flex items-center justify-between mb-1.5">
-            <label class="text-xs text-slate-400 font-medium">
-              <i class="fa-solid fa-square-terminal mr-1"></i>Natija
-            </label>
-            <div id="statusBadge" class="text-xs px-2 py-0.5 rounded-full"></div>
-          </div>
-          <div id="output"
-            class="bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm min-h-[80px] max-h-[240px] overflow-y-auto text-slate-100"></div>
-          <div id="stats" class="flex gap-3 mt-1.5 text-xs text-slate-500"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Eslatma -->
-    <div class="border-t border-slate-800 px-5 py-3 flex items-start gap-2">
-      <i class="fa-solid fa-circle-info text-sky-500 text-xs mt-0.5 flex-shrink-0"></i>
-      <p class="text-slate-500 text-xs">
-        Barcha masalalarni standart kiritish-chiqarish oqimlari orqali yechish mumkin (klaviatura orqali kiritish hamda ekranga chiqarish). Demo: maks 5 soniya, 64 MB.
+      <h3 class="font-bold text-white mb-2">Real vaqtda bajarish</h3>
+      <p class="text-slate-500 text-sm leading-relaxed">
+        Kod yuborilishi bilanoq izolyatsiyalangan muhitda ishga tushiriladi va natija soniyalar ichida qaytariladi.
       </p>
     </div>
+
+    <div class="feature-card rounded-2xl p-6">
+      <div class="w-10 h-10 bg-emerald-500/15 rounded-xl flex items-center justify-center mb-4">
+        <i class="fa-solid fa-shield-halved text-emerald-400"></i>
+      </div>
+      <h3 class="font-bold text-white mb-2">Xavfsiz sandbox</h3>
+      <p class="text-slate-500 text-sm leading-relaxed">
+        Har bir bajarish isolate sandboxi orqali to'liq izolyatsiyada amalga oshiriladi. CPU va xotira cheklovlari qo'llaniladi.
+      </p>
+    </div>
+
+    <div class="feature-card rounded-2xl p-6">
+      <div class="w-10 h-10 bg-violet-500/15 rounded-xl flex items-center justify-center mb-4">
+        <i class="fa-solid fa-code-branch text-violet-400"></i>
+      </div>
+      <h3 class="font-bold text-white mb-2">Ko'p tilli qo'llab-quvvatlash</h3>
+      <p class="text-slate-500 text-sm leading-relaxed">
+        Python, C++, Java, Rust, Go va boshqa o'nlab tillarda ishlaydi. Har bir til uchun bir necha versiya mavjud.
+      </p>
+    </div>
+
+    <div class="feature-card rounded-2xl p-6">
+      <div class="w-10 h-10 bg-amber-500/15 rounded-xl flex items-center justify-center mb-4">
+        <i class="fa-solid fa-gavel text-amber-400"></i>
+      </div>
+      <h3 class="font-bold text-white mb-2">Avtomatik tekshirish</h3>
+      <p class="text-slate-500 text-sm leading-relaxed">
+        AC, WA, PE, TL, RE, CE — barcha judge verdiktlarini qo'llab-quvvatlaydi. Maxsus checker ham yozish mumkin.
+      </p>
+    </div>
+
+    <div class="feature-card rounded-2xl p-6">
+      <div class="w-10 h-10 bg-sky-500/15 rounded-xl flex items-center justify-center mb-4">
+        <i class="fa-solid fa-terminal text-sky-400"></i>
+      </div>
+      <h3 class="font-bold text-white mb-2">stdin / stdout</h3>
+      <p class="text-slate-500 text-sm leading-relaxed">
+        Standart kiritish-chiqarish hamda fayl orqali ishlash ikkalasi ham to'liq qo'llab-quvvatlanadi.
+      </p>
+    </div>
+
+    <div class="feature-card rounded-2xl p-6">
+      <div class="w-10 h-10 bg-rose-500/15 rounded-xl flex items-center justify-center mb-4">
+        <i class="fa-solid fa-plug text-rose-400"></i>
+      </div>
+      <h3 class="font-bold text-white mb-2">REST API</h3>
+      <p class="text-slate-500 text-sm leading-relaxed">
+        To'liq hujjatlashtirilgan REST API orqali istalgan platformaga integratsiya qilish mumkin. Token asosida autentifikatsiya.
+      </p>
+    </div>
+
   </div>
 </section>
 
-<!-- Info cards -->
-<section class="max-w-6xl mx-auto px-4 pb-14 fade-up3">
-  <div class="grid sm:grid-cols-2 gap-5">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-      <h3 class="font-bold text-white mb-1 flex items-center gap-2 text-sm">
-        <i class="fa-solid fa-terminal text-sky-400"></i>Matnli oqim
-      </h3>
-      <p class="text-slate-500 text-xs mb-3">Standart stdin/stdout orqali ishlaydi</p>
-      <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5 font-mono text-xs text-emerald-400">
+<!-- Statistics -->
+<section class="max-w-6xl mx-auto px-4 sm:px-6 pb-20 fade-up3">
+  <div class="relative rounded-2xl overflow-hidden border border-slate-800 bg-slate-900/50 p-8 sm:p-10 glow-sky">
+    <!-- Top accent line -->
+    <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-sky-500/50 to-transparent"></div>
+
+    <div class="text-center mb-8">
+      <h2 class="text-2xl sm:text-3xl font-bold text-white mb-2">Tizim ko'rsatkichlari</h2>
+      <p class="text-slate-500 text-sm">Real vaqtda yangilanadigan statistika</p>
+    </div>
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+
+      <div class="stat-card rounded-xl p-5 text-center">
+        <div class="text-3xl sm:text-4xl font-extrabold text-sky-400 mb-1">
+          <span id="statLangs">—</span>
+        </div>
+        <div class="text-slate-400 text-xs sm:text-sm font-medium">Dasturlash tillari</div>
+        <div class="text-slate-600 text-xs mt-1">versiyalar bilan</div>
+      </div>
+
+      <div class="stat-card rounded-xl p-5 text-center">
+        <div class="text-3xl sm:text-4xl font-extrabold text-emerald-400 mb-1">
+          <span id="statJobs">—</span>
+        </div>
+        <div class="text-slate-400 text-xs sm:text-sm font-medium">Jami tekshirishlar</div>
+        <div class="text-slate-600 text-xs mt-1">hozircha</div>
+      </div>
+
+      <div class="stat-card rounded-xl p-5 text-center">
+        <div class="text-3xl sm:text-4xl font-extrabold text-violet-400 mb-1">10s</div>
+        <div class="text-slate-400 text-xs sm:text-sm font-medium">Maks. vaqt limiti</div>
+        <div class="text-slate-600 text-xs mt-1">har bir masala uchun</div>
+      </div>
+
+      <div class="stat-card rounded-xl p-5 text-center">
+        <div class="text-3xl sm:text-4xl font-extrabold text-amber-400 mb-1">256MB</div>
+        <div class="text-slate-400 text-xs sm:text-sm font-medium">Maks. xotira</div>
+        <div class="text-slate-600 text-xs mt-1">har bir bajarish uchun</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- Code example -->
+<section class="max-w-6xl mx-auto px-4 sm:px-6 pb-20 fade-up4">
+  <div class="grid sm:grid-cols-2 gap-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+      <div class="flex items-center gap-2 mb-3">
+        <div class="w-8 h-8 bg-sky-500/15 rounded-lg flex items-center justify-center">
+          <i class="fa-solid fa-terminal text-sky-400 text-xs"></i>
+        </div>
+        <div>
+          <div class="text-white text-sm font-semibold">Matnli oqim</div>
+          <div class="text-slate-500 text-xs">stdin / stdout</div>
+        </div>
+      </div>
+      <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 font-mono text-xs text-emerald-400 leading-relaxed">
         print(sum(map(int, input().split())))
       </div>
     </div>
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-      <h3 class="font-bold text-white mb-1 flex items-center gap-2 text-sm">
-        <i class="fa-solid fa-file-lines text-sky-400"></i>Faylli oqim
-      </h3>
-      <p class="text-slate-500 text-xs mb-3">input.txt / output.txt orqali ishlaydi</p>
-      <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5 font-mono text-xs leading-relaxed text-emerald-400">
+
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+      <div class="flex items-center gap-2 mb-3">
+        <div class="w-8 h-8 bg-amber-500/15 rounded-lg flex items-center justify-center">
+          <i class="fa-solid fa-file-lines text-amber-400 text-xs"></i>
+        </div>
+        <div>
+          <div class="text-white text-sm font-semibold">Faylli oqim</div>
+          <div class="text-slate-500 text-xs">input.txt / output.txt</div>
+        </div>
+      </div>
+      <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 font-mono text-xs text-emerald-400 leading-relaxed">
         fin  = open("input.txt",  "r")<br>
         fout = open("output.txt", "w")<br>
         a, b = map(int, fin.readline().split())<br>
-        fout.write(str(a + b) + "\n")<br>
-        fin.close()<br>
-        fout.close()
+        fout.write(str(a + b) + "\n")
       </div>
     </div>
   </div>
 </section>
 
-<footer class="border-t border-slate-800 py-5">
-  <div class="max-w-6xl mx-auto px-4 text-center text-slate-600 text-xs">
-    Tekshirish tizimi &mdash; barcha huquqlar himoyalangan
+<footer class="border-t border-slate-800 mt-auto py-6">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-slate-600 text-xs">
+    <div class="flex items-center gap-2">
+      <div class="w-5 h-5 bg-sky-500/20 rounded flex items-center justify-center">
+        <i class="fa-solid fa-code text-sky-500 text-[9px]"></i>
+      </div>
+      <span>Tekshirish tizimi &copy; 2025</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <a href="https://t.me/shoyimobloqulov" target="_blank" rel="noopener"
+        class="flex items-center gap-1.5 text-slate-500 hover:text-sky-400 transition-colors">
+        <i class="fa-brands fa-telegram"></i>
+        Shoyim Obloqulov
+      </a>
+      <a href="https://github.com/shoyim/compiler" target="_blank" rel="noopener"
+        class="flex items-center gap-1.5 text-slate-500 hover:text-slate-300 transition-colors">
+        <i class="fa-brands fa-github"></i>
+        GitHub
+      </a>
+    </div>
   </div>
 </footer>
 
 <script>
-// --- Default code snippets per language ---
-const snippets = {
-  python:     'print(sum(map(int, input().split())))',
-  python3:    'print(sum(map(int, input().split())))',
-  pypy:       'print(sum(map(int, input().split())))',
-  'c':        '#include <stdio.h>\nint main() {\n    int a, b;\n    scanf("%d %d", &a, &b);\n    printf("%d\\n", a + b);\n    return 0;\n}',
-  'c++':      '#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int a, b;\n    cin >> a >> b;\n    cout << a + b << endl;\n    return 0;\n}',
-  java:       'import java.util.Scanner;\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int a = sc.nextInt(), b = sc.nextInt();\n        System.out.println(a + b);\n    }\n}',
-  javascript: 'const [a, b] = require("fs").readFileSync("/dev/stdin","utf8").trim().split(" ").map(Number);\nconsole.log(a + b);',
-  rust:       'use std::io::{self, BufRead};\nfn main() {\n    let stdin = io::stdin();\n    let line = stdin.lock().lines().next().unwrap().unwrap();\n    let nums: Vec<i64> = line.split_whitespace().map(|x| x.parse().unwrap()).collect();\n    println!("{}", nums[0] + nums[1]);\n}',
-  go:         'package main\nimport "fmt"\nfunc main() {\n    var a, b int\n    fmt.Scan(&a, &b)\n    fmt.Println(a + b)\n}',
-  pascal:     'var a, b: integer;\nbegin\n  read(a, b);\n  writeln(a + b);\nend.',
-  kotlin:     'fun main() {\n    val (a, b) = readLine()!!.trim().split(" ").map { it.toLong() }\n    println(a + b)\n}',
-  csharp:     'using System;\nclass Program {\n    static void Main() {\n        var p = Console.ReadLine().Split();\n        Console.WriteLine(long.Parse(p[0]) + long.Parse(p[1]));\n    }\n}',
-};
-
-function getSnippet(lang) {
-  return snippets[lang.toLowerCase()] || '# Kod yozing...\n';
-}
-
-// --- State ---
-let selected = null;
-let allRuntimes = [];
-
-// --- Header: logged in? ---
+// Header: logged-in state
 const token = localStorage.getItem('auth_token');
 const user  = localStorage.getItem('auth_user');
 if (token && user) {
@@ -228,184 +282,65 @@ if (token && user) {
     </a>`;
 }
 
-// --- Load runtimes ---
-async function loadRuntimes() {
+// Animated counter
+function animateCount(el, target, suffix = '') {
+  const duration = 1200;
+  const start = performance.now();
+  const step = (now) => {
+    const t = Math.min((now - start) / duration, 1);
+    const ease = 1 - Math.pow(1 - t, 3);
+    el.textContent = Math.round(ease * target) + suffix;
+    if (t < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+// Load stats
+async function loadStats() {
+  // Language count
   try {
     const res = await fetch('/api/v2/runtimes');
-    if (!res.ok) throw new Error();
-    allRuntimes = await res.json();
-    // Deduplicate by language (take latest version)
-    const seen = new Map();
-    allRuntimes.forEach(rt => {
-      if (!seen.has(rt.language)) seen.set(rt.language, rt);
-    });
-    allRuntimes = [...seen.values()].sort((a, b) => a.language.localeCompare(b.language));
-    renderLangs(allRuntimes);
-    // Auto-select python or first
-    const def = allRuntimes.find(r => r.language === 'python') || allRuntimes[0];
-    if (def) selectLang(def);
-  } catch {
-    document.getElementById('langList').innerHTML =
-      '<span class="text-red-400 text-xs">Tillarni yuklashda xato</span>';
-  }
-}
+    if (res.ok) {
+      const rts = await res.json();
+      const unique = new Set(rts.map(r => r.language)).size;
+      animateCount(document.getElementById('statLangs'), unique, '+');
+    }
+  } catch {}
 
-function renderLangs(list) {
-  const el = document.getElementById('langList');
-  if (!list.length) {
-    el.innerHTML = '<span class="text-slate-500 text-xs">Hech qanday til topilmadi</span>';
-    return;
-  }
-  el.innerHTML = list.map(rt => `
-    <button onclick="selectLang(${JSON.stringify(JSON.stringify(rt))})"
-      data-lang="${rt.language}"
-      class="lang-btn px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:border-slate-500 hover:text-white">
-      ${rt.language} <span class="text-slate-500 ml-1">${rt.version}</span>
-    </button>`).join('');
-  // re-apply active state
-  if (selected) highlightBtn(selected.language);
-}
-
-function selectLang(rtOrJson) {
-  const rt = typeof rtOrJson === 'string' ? JSON.parse(rtOrJson) : rtOrJson;
-  selected = rt;
-  highlightBtn(rt.language);
-  document.getElementById('runtimeBadge').textContent = `${rt.language} ${rt.version}`;
-  document.getElementById('runtimeBadge').classList.remove('hidden');
-  // Set snippet only if editor is empty or had previous snippet
-  const area = document.getElementById('codeArea');
-  const isBlank = !area.value.trim() || area.dataset.autoFilled === '1';
-  if (isBlank) {
-    area.value = getSnippet(rt.language);
-    area.dataset.autoFilled = '1';
-  }
-  hideOutput();
-}
-
-function highlightBtn(lang) {
-  document.querySelectorAll('.lang-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.lang === lang);
-  });
-}
-
-// --- Search ---
-document.getElementById('langSearch').addEventListener('input', function() {
-  const q = this.value.toLowerCase();
-  const filtered = q
-    ? allRuntimes.filter(r =>
-        r.language.includes(q) ||
-        (r.aliases || []).some(a => a.includes(q)) ||
-        r.version.includes(q))
-    : allRuntimes;
-  renderLangs(filtered);
-});
-
-// --- Code editor: mark as user-edited ---
-document.getElementById('codeArea').addEventListener('input', function() {
-  this.dataset.autoFilled = '0';
-});
-
-function clearCode() {
-  const area = document.getElementById('codeArea');
-  area.value = '';
-  area.dataset.autoFilled = '0';
-  hideOutput();
-}
-
-// --- Run ---
-async function runCode() {
-  if (!selected) { alert("Avval dasturlash tilini tanlang!"); return; }
-  const code  = document.getElementById('codeArea').value;
-  const stdin = document.getElementById('stdinArea').value;
-  if (!code.trim()) { alert("Kod bo'sh!"); return; }
-
-  const btn  = document.getElementById('runBtn');
-  const icon = document.getElementById('runIcon');
-  const txt  = document.getElementById('runText');
-  btn.disabled = true;
-  icon.className = 'fa-solid fa-circle-notch spin text-xs';
-  txt.textContent = 'Bajarilmoqda...';
-
+  // Jobs count
   try {
-    const res = await fetch('/api/v2/execute/demo', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        language: selected.language,
-        version:  selected.version,
-        stdin,
-        files: [{ name: 'main.code', content: code }],
-      }),
+    const res = await fetch('/api/v2/jobs?page=1&limit=1', {
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}` }
     });
-    const data = await res.json();
-    showOutput(data, res.ok);
-  } catch (e) {
-    showError('Server bilan bog\'lanishda xato');
-  } finally {
-    btn.disabled = false;
-    icon.className = 'fa-solid fa-play text-xs';
-    txt.textContent = 'Ishga tushirish';
+    if (res.ok) {
+      const data = await res.json();
+      const total = data.total ?? data.length;
+      if (total != null && total > 0) {
+        animateCount(document.getElementById('statJobs'), total, '+');
+      } else {
+        document.getElementById('statJobs').textContent = '∞';
+      }
+    } else {
+      document.getElementById('statJobs').textContent = '∞';
+    }
+  } catch {
+    document.getElementById('statJobs').textContent = '∞';
   }
 }
 
-function showOutput(data, ok) {
-  const box    = document.getElementById('outputBox');
-  const out    = document.getElementById('output');
-  const badge  = document.getElementById('statusBadge');
-  const stats  = document.getElementById('stats');
-  box.classList.remove('hidden');
-
-  const run     = data.run || data.compile || {};
-  const compile = data.compile;
-
-  // Status
-  const exitCode = run.code;
-  const success  = ok && exitCode === 0 && !run.signal && run.status !== 'TLE' && run.status !== 'MLE';
-  badge.textContent = success ? 'OK' : (run.status || (exitCode !== null ? `Exit ${exitCode}` : 'Xato'));
-  badge.className = `text-xs px-2 py-0.5 rounded-full font-medium ${success ? 'bg-emerald-500/15 text-emerald-400' : 'bg-red-500/15 text-red-400'}`;
-
-  // Output text
-  let text = '';
-  if (compile && compile.stderr && compile.code !== 0) {
-    text = '[Kompilyatsiya xatosi]\n' + compile.stderr;
-    out.className = 'bg-slate-950 border border-red-500/30 rounded-xl px-4 py-3 text-sm min-h-[80px] max-h-[240px] overflow-y-auto text-red-400';
-  } else {
-    text = run.stdout || run.stderr || run.output || '(chiqish yo\'q)';
-    if (run.stderr && run.stderr !== run.stdout) text += (text ? '\n[stderr]\n' : '') + run.stderr;
-    out.className = `bg-slate-950 border rounded-xl px-4 py-3 text-sm min-h-[80px] max-h-[240px] overflow-y-auto ${success ? 'border-slate-700 text-slate-100' : 'border-red-500/30 text-red-300'}`;
-  }
-  out.textContent = text;
-
-  // Stats
-  const parts = [];
-  if (run.time != null) parts.push(`<i class="fa-regular fa-clock"></i> ${run.time} ms`);
-  if (run.memory != null) parts.push(`<i class="fa-solid fa-microchip"></i> ${(run.memory/1024).toFixed(0)} MB`);
-  if (compile?.time != null) parts.push(`<i class="fa-solid fa-gear"></i> compile ${compile.time} ms`);
-  stats.innerHTML = parts.join('<span class="mx-1 text-slate-700">·</span>');
+// Intersection Observer to trigger stats animation when visible
+const statsEl = document.querySelector('#statLangs')?.closest('section');
+if (statsEl) {
+  const obs = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting) {
+      loadStats();
+      obs.disconnect();
+    }
+  }, { threshold: 0.3 });
+  obs.observe(statsEl);
+} else {
+  loadStats();
 }
-
-function showError(msg) {
-  const box   = document.getElementById('outputBox');
-  const out   = document.getElementById('output');
-  const badge = document.getElementById('statusBadge');
-  box.classList.remove('hidden');
-  badge.textContent = 'Xato';
-  badge.className = 'text-xs px-2 py-0.5 rounded-full font-medium bg-red-500/15 text-red-400';
-  out.textContent = msg;
-  out.className = 'bg-slate-950 border border-red-500/30 rounded-xl px-4 py-3 text-sm min-h-[80px] max-h-[240px] overflow-y-auto text-red-400';
-  document.getElementById('stats').innerHTML = '';
-}
-
-function hideOutput() {
-  document.getElementById('outputBox').classList.add('hidden');
-}
-
-// Enter shortcut: Ctrl+Enter yoki Cmd+Enter
-document.getElementById('codeArea').addEventListener('keydown', e => {
-  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); runCode(); }
-});
-
-loadRuntimes();
 </script>
 </body>
 </html>
