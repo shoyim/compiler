@@ -558,6 +558,12 @@ router.get('/runtimes', (req, res) => {
     return res.status(200).send(runtimes);
 });
 
+router.get('/packages/index', (req, res) => {
+    res.set('Cache-Control', 'no-store');
+    res.type('text/plain');
+    res.sendFile(require('path').join(__dirname, '..', 'packages_index'));
+});
+
 router.get('/packages', async (req, res) => {
     logger.debug('Request to list packages');
     res.set('Cache-Control', 'no-store');

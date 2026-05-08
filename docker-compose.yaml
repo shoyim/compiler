@@ -65,5 +65,8 @@ services:
       - DB_USER=compiler
       - DB_PASSWORD=compiler_pass
 
+      # Local packages index (embedded in Docker image)
+      - COMPILER_REPO_URL=http://localhost:2000/api/v2/packages/index
+
 volumes:
   compiler_db_data:
