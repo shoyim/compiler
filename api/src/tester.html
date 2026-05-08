@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="uz" id="root">
+<html lang="uz" id="root" class="h-full">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -86,7 +86,7 @@
     @keyframes slideIn { from { transform:translateX(110%); } to { transform:none; } }
   </style>
 </head>
-<body class="min-h-screen font-sans">
+<body class="h-full flex flex-col font-sans">
 
 <div id="toasts" class="fixed top-4 right-4 z-50 flex flex-col gap-2 w-80 pointer-events-none"></div>
 
@@ -191,11 +191,23 @@
   </div>
 </header>
 
+<!-- Mobile tab bar (visible only on < lg) -->
+<div id="mobileTabs" class="lg:hidden flex-shrink-0 th-panel border-b th-border flex">
+  <button id="mt-editor" onclick="mobilePanelSwitch('editor')"
+    class="flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-semibold bg-green-600 text-white transition-colors">
+    <i class="fa-solid fa-code text-[11px]"></i>Kod
+  </button>
+  <button id="mt-output" onclick="mobilePanelSwitch('output')"
+    class="flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-semibold th-tab-i transition-colors">
+    <i class="fa-solid fa-terminal text-[11px]"></i>Natija
+  </button>
+</div>
+
 <!-- Main layout -->
-<div class="flex flex-col lg:flex-row" style="height:calc(100vh - 49px)">
+<div class="flex flex-col lg:flex-row flex-1 min-h-0" id="mainLayout">
 
   <!-- ── Left: Editor ─────────────────────────────────────── -->
-  <div class="flex flex-col lg:w-1/2 xl:w-3/5 border-r th-border min-h-0">
+  <div id="editorPane" class="flex flex-col lg:w-1/2 xl:w-3/5 border-r th-border min-h-0">
 
     <!-- Editor tab bar -->
     <div id="editorTabBar" class="flex items-center gap-1 px-3 py-1.5 th-panel border-b th-border flex-shrink-0 transition-colors">
@@ -232,7 +244,7 @@
   </div>
 
   <!-- ── Right: Output ────────────────────────────────────── -->
-  <div class="flex flex-col lg:w-1/2 xl:w-2/5 min-h-0">
+  <div id="outputPane" class="flex flex-col lg:w-1/2 xl:w-2/5 min-h-0">
 
     <!-- Output tab bar -->
     <div class="flex items-center gap-1 px-3 py-1.5 th-panel border-b th-border flex-shrink-0">
@@ -782,6 +794,7 @@ function renderOutput(data, clientMs) {
   document.getElementById('outputPanel').innerHTML = buildOutputHtml(run);
   document.getElementById('compilePanel').innerHTML = hasCompile ? buildOutputHtml(compile) : '';
   switchOutputTab('output');
+  if (window.innerWidth < 1024) mobilePanelSwitch('output');
 }
 
 function buildOutputHtml(stage) {
@@ -859,8 +872,40 @@ function toast(msg, type = 'info') {
   setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(),300); }, 3500);
 }
 
+// ── Mobile panel switching ─────────────────────────────────────────────────
+function mobilePanelSwitch(panel) {
+  if (window.innerWidth >= 1024) return;
+  const ep = document.getElementById('editorPane');
+  const op = document.getElementById('outputPane');
+  const be = document.getElementById('mt-editor');
+  const bo = document.getElementById('mt-output');
+  if (panel === 'editor') {
+    ep.style.display = 'flex';
+    op.style.display = 'none';
+    be.className = 'flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-semibold bg-green-600 text-white transition-colors';
+    bo.className = 'flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-semibold th-tab-i transition-colors';
+    setTimeout(() => editor.refresh(), 50);
+  } else {
+    ep.style.display = 'none';
+    op.style.display = 'flex';
+    be.className = 'flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-semibold th-tab-i transition-colors';
+    bo.className = 'flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-semibold bg-green-600 text-white transition-colors';
+  }
+}
+
+window.addEventListener('resize', () => {
+  if (window.innerWidth >= 1024) {
+    document.getElementById('editorPane').style.display = '';
+    document.getElementById('outputPane').style.display = '';
+  }
+});
+
 // ── Init ──────────────────────────────────────────────────────────────────
 applyTheme();
+// Initialize mobile: hide output pane
+if (window.innerWidth < 1024) {
+  document.getElementById('outputPane').style.display = 'none';
+}
 loadRuntimes();
 editor.focus();
 </script>
