@@ -68,7 +68,7 @@
 <!-- Detail panel -->
 <div id="detailPanel" class="hidden fixed inset-0 z-40 flex">
   <div class="flex-1 bg-black/40" onclick="closeDetail()"></div>
-  <div class="w-full max-w-2xl bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden">
+  <div class="w-full sm:max-w-2xl bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden">
     <div class="flex items-center gap-3 px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex-shrink-0">
       <button onclick="closeDetail()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 flex items-center gap-1 text-xs transition-colors">
         <i class="fa-solid fa-chevron-left"></i> Orqaga
@@ -167,7 +167,7 @@
       <option value="timed_out">Timeout</option>
       <option value="memory_limit">Memory limit</option>
     </select>
-    <div class="flex items-center gap-2 ml-auto text-xs text-slate-500 dark:text-slate-400">
+    <div class="flex items-center gap-2 sm:ml-auto text-xs text-slate-500 dark:text-slate-400">
       Jami: <span id="totalCount" class="font-semibold text-slate-700 dark:text-slate-200">—</span>
     </div>
   </div>
@@ -183,11 +183,11 @@
                 class="w-3.5 h-3.5 rounded border-slate-300 dark:border-slate-600 text-sky-600 focus:ring-sky-500 cursor-pointer">
             </th>
             <th class="px-4 py-3 font-semibold">Til</th>
-            <th class="px-4 py-3 font-semibold">Foydalanuvchi</th>
+            <th class="px-4 py-3 font-semibold hidden md:table-cell">Foydalanuvchi</th>
             <th class="px-4 py-3 font-semibold">Compile</th>
             <th class="px-4 py-3 font-semibold">Run</th>
-            <th class="px-4 py-3 font-semibold">Vaqt</th>
-            <th class="px-4 py-3 font-semibold">Xotira</th>
+            <th class="px-4 py-3 font-semibold hidden sm:table-cell">Vaqt</th>
+            <th class="px-4 py-3 font-semibold hidden sm:table-cell">Xotira</th>
             <th class="px-4 py-3 font-semibold">Sana</th>
             <th class="px-4 py-3"></th>
           </tr>
@@ -490,11 +490,11 @@ function renderJobs(jobs) {
           </div>
         </div>
       </td>
-      <td class="px-4 py-3 text-xs text-slate-500 dark:text-slate-400 cursor-pointer" onclick="showDetail('${j.id}')">${j.username || '<span class="text-slate-300 dark:text-slate-600">—</span>'}</td>
+      <td class="px-4 py-3 text-xs text-slate-500 dark:text-slate-400 cursor-pointer hidden md:table-cell" onclick="showDetail('${j.id}')">${j.username || '<span class="text-slate-300 dark:text-slate-600">—</span>'}</td>
       <td class="px-4 py-3 cursor-pointer" onclick="showDetail('${j.id}')">${j.compile_exit !== null && j.compile_exit !== undefined ? badge(j.compile_exit, j.compile_status) : '<span class="text-[10px] text-slate-300 dark:text-slate-600">—</span>'}</td>
       <td class="px-4 py-3 cursor-pointer" onclick="showDetail('${j.id}')">${badge(j.run_exit, j.run_status)}</td>
-      <td class="px-4 py-3 text-xs text-slate-500 dark:text-slate-400 font-mono cursor-pointer" onclick="showDetail('${j.id}')">${runMs}</td>
-      <td class="px-4 py-3 text-xs text-slate-500 dark:text-slate-400 font-mono cursor-pointer" onclick="showDetail('${j.id}')">${runKb}</td>
+      <td class="px-4 py-3 text-xs text-slate-500 dark:text-slate-400 font-mono cursor-pointer hidden sm:table-cell" onclick="showDetail('${j.id}')">${runMs}</td>
+      <td class="px-4 py-3 text-xs text-slate-500 dark:text-slate-400 font-mono cursor-pointer hidden sm:table-cell" onclick="showDetail('${j.id}')">${runKb}</td>
       <td class="px-4 py-3 text-[11px] text-slate-400 dark:text-slate-500 whitespace-nowrap cursor-pointer" onclick="showDetail('${j.id}')">${timeStr}</td>
       <td class="px-4 py-3">
         <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

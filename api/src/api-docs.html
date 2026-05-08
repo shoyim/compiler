@@ -22,7 +22,8 @@
     .dark .method-put    { background:#3d2b00; color:#fbbf24; }
     .dark .method-delete { background:#3b0000; color:#f87171; }
     .dark .method-ws     { background:#2e1065; color:#c084fc; }
-    .nav-link { scroll-margin-top: 70px; }
+    .nav-link { scroll-margin-top: 115px; }
+    @media (min-width: 1024px) { .nav-link { scroll-margin-top: 70px; } }
     .sidebar-link.active { background:#EFF6FF; color:#1D4ED8; font-weight:600; }
     .dark .sidebar-link.active { background:#1e3a5f; color:#60a5fa; }
     .copy-btn:active { transform: scale(0.95); }
@@ -123,6 +124,49 @@
       </button>
     </div>
   </div>
+</div>
+
+<!-- Mobile section nav (shown only below lg breakpoint) -->
+<div class="lg:hidden sticky top-[57px] z-30 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 px-4 py-2.5">
+  <select onchange="if(this.value){window.location.hash=this.value;this.value=''}"
+    class="w-full text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500">
+    <option value="">— Bo'limga o'tish —</option>
+    <optgroup label="Kirish">
+      <option value="#intro">Umumiy ma'lumot</option>
+      <option value="#auth-section">Autentifikatsiya</option>
+      <option value="#base-url">Base URL</option>
+    </optgroup>
+    <optgroup label="Kod bajarish">
+      <option value="#execute">POST /execute</option>
+      <option value="#ws-connect">WS /connect</option>
+      <option value="#runtimes">GET /runtimes</option>
+    </optgroup>
+    <optgroup label="Paketlar">
+      <option value="#pkg-list">GET /packages</option>
+      <option value="#pkg-install">POST /packages</option>
+      <option value="#pkg-uninstall">DELETE /packages</option>
+    </optgroup>
+    <optgroup label="Joblar">
+      <option value="#jobs-list">GET /jobs</option>
+      <option value="#jobs-detail">GET /jobs/:id</option>
+    </optgroup>
+    <optgroup label="Auth">
+      <option value="#auth-login">POST /auth/login</option>
+      <option value="#auth-logout">POST /auth/logout</option>
+      <option value="#auth-me">GET /auth/me</option>
+      <option value="#tokens-create">POST /auth/tokens</option>
+      <option value="#tokens-list">GET /auth/tokens</option>
+      <option value="#tokens-delete">DELETE /auth/tokens/:token</option>
+      <option value="#users-list">GET /auth/users</option>
+      <option value="#users-create">POST /auth/users</option>
+      <option value="#users-update">PUT /auth/users/:username</option>
+      <option value="#users-delete">DELETE /auth/users/:username</option>
+      <option value="#profile">PUT /auth/profile</option>
+    </optgroup>
+    <optgroup label="Xatolar">
+      <option value="#errors">HTTP kodlar</option>
+    </optgroup>
+  </select>
 </div>
 
 <div class="max-w-7xl mx-auto flex">
