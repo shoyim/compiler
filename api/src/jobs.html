@@ -19,10 +19,20 @@
     @keyframes slideIn { from { transform:translateX(110%); } to { transform:none; } }
     .spin   { animation: spin 1s linear infinite; }
     @keyframes spin { to { transform:rotate(360deg); } }
-    .row-in { animation: fadeUp .15s ease; }
-    @keyframes fadeUp { from { opacity:0; transform:translateY(3px); } to { opacity:1; transform:none; } }
+    .row-in { animation: fadeIn .12s ease; }
+    @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
     .sel-bar { animation: slideUp .2s ease; }
     @keyframes slideUp { from { transform:translateY(100%); opacity:0; } to { transform:none; opacity:1; } }
+    .detail-slide { animation: slideLeft .2s ease; }
+    @keyframes slideLeft { from { transform:translateX(100%); } to { transform:none; } }
+    .code-block {
+      font-family: 'Cascadia Code', 'Fira Mono', 'Consolas', monospace;
+      font-size: 12.5px;
+      line-height: 1.65;
+      white-space: pre;
+      overflow-x: auto;
+      tab-size: 4;
+    }
   </style>
 </head>
 <body class="h-full bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans transition-colors">
@@ -35,7 +45,7 @@
   <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl w-full max-w-sm p-6">
     <div class="flex items-center justify-between mb-5">
       <h2 class="text-base font-bold text-slate-800 dark:text-white flex items-center gap-2">
-        <i class="fa-solid fa-lock text-slate-400 dark:text-slate-500"></i>Parolni o'zgartirish
+        <i class="fa-solid fa-lock text-slate-400"></i>Parolni o'zgartirish
       </h2>
       <button onclick="closeProfileModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
         <i class="fa-solid fa-xmark"></i>
@@ -67,19 +77,41 @@
 
 <!-- Detail panel -->
 <div id="detailPanel" class="hidden fixed inset-0 z-40 flex">
-  <div class="flex-1 bg-black/40" onclick="closeDetail()"></div>
-  <div class="w-full sm:max-w-2xl bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col overflow-hidden">
-    <div class="flex items-center gap-3 px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex-shrink-0">
-      <button onclick="closeDetail()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 flex items-center gap-1 text-xs transition-colors">
+  <div class="flex-1 bg-black/40 backdrop-blur-sm" onclick="closeDetail()"></div>
+  <div class="detail-slide w-full sm:max-w-2xl bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col overflow-hidden">
+
+    <!-- Panel header -->
+    <div class="flex items-center gap-3 px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 flex-shrink-0">
+      <button onclick="closeDetail()" class="flex items-center gap-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-xs transition-colors">
         <i class="fa-solid fa-chevron-left"></i> Orqaga
       </button>
       <div id="detailTitle" class="flex-1 min-w-0"></div>
       <button onclick="deleteJobFromPanel()" id="detailDeleteBtn"
-        class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg transition-colors">
-        <i class="fa-solid fa-trash-can"></i> O'chirish
+        class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-lg transition-colors">
+        <i class="fa-solid fa-trash-can"></i>
+        <span class="hidden sm:inline">O'chirish</span>
       </button>
     </div>
-    <div id="detailBody" class="flex-1 overflow-y-auto p-5"></div>
+
+    <!-- Tabs -->
+    <div class="flex border-b border-slate-100 dark:border-slate-800 flex-shrink-0">
+      <button id="tabKod" onclick="switchTab('kod')"
+        class="tab-btn flex items-center gap-2 px-5 py-2.5 text-xs font-semibold border-b-2 transition-colors border-sky-500 text-sky-600 dark:text-sky-400">
+        <i class="fa-solid fa-code"></i> Kod
+      </button>
+      <button id="tabNatija" onclick="switchTab('natija')"
+        class="tab-btn flex items-center gap-2 px-5 py-2.5 text-xs font-semibold border-b-2 transition-colors border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300">
+        <i class="fa-solid fa-square-terminal"></i> Natija
+      </button>
+    </div>
+
+    <!-- Tab: Kod -->
+    <div id="panelKod" class="flex-1 overflow-y-auto flex flex-col min-h-0">
+      <div id="kodContent" class="flex-1 p-4"></div>
+    </div>
+
+    <!-- Tab: Natija -->
+    <div id="panelNatija" class="hidden flex-1 overflow-y-auto p-5 space-y-4"></div>
   </div>
 </div>
 
@@ -94,35 +126,32 @@
         <span class="text-sm font-bold text-slate-800 dark:text-white hidden sm:block">Compiler</span>
       </a>
       <nav class="flex items-center gap-0.5">
-        <a href="/dashboard" class="nav-link flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-white transition-colors">
+        <a href="/dashboard" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-white transition-colors">
           <i class="fa-solid fa-gauge-high"></i><span class="hidden sm:inline">Dashboard</span>
         </a>
-        <a href="/tester" class="nav-link flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-white transition-colors">
+        <a href="/tester" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-white transition-colors">
           <i class="fa-solid fa-play"></i><span class="hidden sm:inline">Tester</span>
         </a>
-        <a href="/jobs" class="nav-link flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-sky-600 text-white">
+        <a href="/jobs" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-sky-600 text-white">
           <i class="fa-solid fa-list-check"></i><span>Joblar</span>
         </a>
-        <a href="/tokens" class="nav-link flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-white transition-colors">
+        <a href="/tokens" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-white transition-colors">
           <i class="fa-solid fa-key"></i><span class="hidden sm:inline">Tokenlar</span>
         </a>
-        <a href="/api-docs" class="nav-link flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-white transition-colors">
+        <a href="/api-docs" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-white transition-colors">
           <i class="fa-solid fa-book"></i><span class="hidden md:inline">API</span>
         </a>
       </nav>
     </div>
     <div class="flex items-center gap-1.5">
-      <!-- Theme toggle -->
       <button onclick="toggleTheme()" title="Mavzu"
         class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
         <i id="themeIcon" class="fa-solid fa-moon text-sm"></i>
       </button>
-      <!-- Refresh -->
       <button onclick="loadJobs()" title="Yangilash"
         class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
         <i id="refreshIcon" class="fa-solid fa-arrows-rotate text-sm"></i>
       </button>
-      <!-- User dropdown -->
       <div class="relative" id="profileDropdown">
         <button onclick="toggleProfileMenu()"
           class="flex items-center gap-2 px-2.5 py-1.5 bg-sky-50 dark:bg-sky-900/30 border border-sky-200 dark:border-sky-800 rounded-lg hover:bg-sky-100 dark:hover:bg-sky-900/50 transition-colors">
@@ -148,52 +177,52 @@
 
 <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
 
-  <!-- Filters row -->
-  <div class="flex flex-col sm:flex-row gap-3 mb-5">
-    <div class="relative flex-1 max-w-xs">
+  <!-- Filters -->
+  <div class="flex flex-wrap gap-2.5 mb-5">
+    <div class="relative flex-1 min-w-[180px] max-w-xs">
       <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
       <input id="searchInput" type="text" placeholder="Username yoki til..."
-        class="w-full pl-8 pr-4 py-2 text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500">
+        class="w-full pl-8 pr-4 py-2 text-sm border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-shadow">
     </div>
     <select id="langFilter"
-      class="text-sm border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500">
+      class="text-sm border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500">
       <option value="">Barcha tillar</option>
     </select>
     <select id="statusFilter"
-      class="text-sm border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500">
+      class="text-sm border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500">
       <option value="">Barcha holatlar</option>
-      <option value="ok">Muvaffaqiyat</option>
+      <option value="ok">OK</option>
       <option value="error">Xato</option>
-      <option value="timed_out">Timeout</option>
-      <option value="memory_limit">Memory limit</option>
+      <option value="timed_out">TLE</option>
+      <option value="memory_limit">MLE</option>
     </select>
-    <div class="flex items-center gap-2 sm:ml-auto text-xs text-slate-500 dark:text-slate-400">
-      Jami: <span id="totalCount" class="font-semibold text-slate-700 dark:text-slate-200">—</span>
+    <div class="flex items-center gap-1.5 ml-auto text-xs text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2">
+      Jami: <span id="totalCount" class="font-bold text-slate-700 dark:text-slate-200 ml-1">—</span>
     </div>
   </div>
 
-  <!-- Table -->
-  <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+  <!-- Table card -->
+  <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
     <div class="overflow-x-auto">
       <table class="w-full">
-        <thead class="border-b border-slate-100 dark:border-slate-800">
-          <tr class="text-left text-[11px] text-slate-400 dark:text-slate-500 uppercase tracking-wide">
+        <thead>
+          <tr class="border-b border-slate-100 dark:border-slate-800 text-left text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
             <th class="px-4 py-3 w-10">
               <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)"
                 class="w-3.5 h-3.5 rounded border-slate-300 dark:border-slate-600 text-sky-600 focus:ring-sky-500 cursor-pointer">
             </th>
-            <th class="px-4 py-3 font-semibold">Til</th>
-            <th class="px-4 py-3 font-semibold hidden md:table-cell">Foydalanuvchi</th>
-            <th class="px-4 py-3 font-semibold">Compile</th>
-            <th class="px-4 py-3 font-semibold">Run</th>
-            <th class="px-4 py-3 font-semibold hidden sm:table-cell">Vaqt</th>
-            <th class="px-4 py-3 font-semibold hidden sm:table-cell">Xotira</th>
-            <th class="px-4 py-3 font-semibold">Sana</th>
-            <th class="px-4 py-3"></th>
+            <th class="px-4 py-3">Til</th>
+            <th class="px-4 py-3 hidden md:table-cell">Foydalanuvchi</th>
+            <th class="px-4 py-3">Compile</th>
+            <th class="px-4 py-3">Run</th>
+            <th class="px-4 py-3 hidden sm:table-cell">Vaqt</th>
+            <th class="px-4 py-3 hidden sm:table-cell">Xotira</th>
+            <th class="px-4 py-3">Sana</th>
+            <th class="px-4 py-3 w-12"></th>
           </tr>
         </thead>
-        <tbody id="jobsBody" class="divide-y divide-slate-50 dark:divide-slate-800">
-          <tr><td colspan="9" class="py-16 text-center text-slate-400 text-sm">
+        <tbody id="jobsBody" class="divide-y divide-slate-50 dark:divide-slate-800/60">
+          <tr><td colspan="9" class="py-20 text-center text-slate-400 text-sm">
             <i class="fa-solid fa-circle-notch spin text-2xl mb-3 text-sky-500 block"></i>Yuklanmoqda...
           </td></tr>
         </tbody>
@@ -201,15 +230,15 @@
     </div>
 
     <!-- Pagination -->
-    <div id="pagination" class="hidden px-4 py-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+    <div id="pagination" class="hidden px-5 py-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
       <button id="prevBtn" onclick="changePage(-1)"
         class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-        <i class="fa-solid fa-chevron-left"></i> Oldingi
+        <i class="fa-solid fa-chevron-left text-[10px]"></i> Oldingi
       </button>
       <span id="pageInfo" class="text-xs text-slate-500 dark:text-slate-400"></span>
       <button id="nextBtn" onclick="changePage(1)"
         class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-        Keyingi <i class="fa-solid fa-chevron-right"></i>
+        Keyingi <i class="fa-solid fa-chevron-right text-[10px]"></i>
       </button>
     </div>
   </div>
@@ -232,20 +261,19 @@
 </div>
 
 <script>
-// ── Theme ─────────────────────────────────────────────────────
+// ── Theme ──────────────────────────────────────────────────────
 function updateThemeIcon() {
   const dark = document.documentElement.classList.contains('dark');
-  document.getElementById('themeIcon').className = dark
-    ? 'fa-solid fa-sun text-sm' : 'fa-solid fa-moon text-sm';
+  document.getElementById('themeIcon').className = dark ? 'fa-solid fa-sun text-sm' : 'fa-solid fa-moon text-sm';
 }
 function toggleTheme() {
-  const dark = document.documentElement.classList.toggle('dark');
-  localStorage.setItem('theme', dark ? 'dark' : 'light');
+  document.documentElement.classList.toggle('dark');
+  localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
   updateThemeIcon();
 }
 updateThemeIcon();
 
-// ── Auth ──────────────────────────────────────────────────────
+// ── Auth ───────────────────────────────────────────────────────
 const authToken = localStorage.getItem('auth_token');
 if (!authToken) window.location.href = '/login';
 document.getElementById('headerUser').textContent = localStorage.getItem('auth_user') || '?';
@@ -291,7 +319,7 @@ async function submitProfileChange() {
   } catch(e) { toast(e.message, 'error'); }
 }
 
-// ── Lang icons ────────────────────────────────────────────────
+// ── Lang meta ──────────────────────────────────────────────────
 const LANG_META = {
   python:     { icon:'fa-brands fa-python',   color:'#3776AB' },
   node:       { icon:'fa-brands fa-node-js',  color:'#339933' },
@@ -311,13 +339,13 @@ const LANG_META = {
   pascal:     { icon:'fa-solid fa-p',         color:'#3b82f6' },
   default:    { icon:'fa-solid fa-code',      color:'#6B7280' },
 };
-function getMeta(lang) { return LANG_META[lang.toLowerCase()] || LANG_META.default; }
+function getMeta(lang) { return LANG_META[(lang||'').toLowerCase()] || LANG_META.default; }
 
 function badge(exit, status) {
-  if (status === 'timed_out')    return '<span class="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400">⏱ TLE</span>';
-  if (status === 'memory_limit') return '<span class="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400">⚡ MLE</span>';
-  if (exit === 0 || status === 'ok') return '<span class="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400">✓ OK</span>';
-  if (exit !== null && exit !== undefined) return `<span class="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400">✗ ${exit}</span>`;
+  if (status === 'timed_out')    return '<span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400">TLE</span>';
+  if (status === 'memory_limit') return '<span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400">MLE</span>';
+  if (exit === 0 || status === 'ok') return '<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400"><i class="fa-solid fa-check text-[8px]"></i>OK</span>';
+  if (exit !== null && exit !== undefined) return `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400"><i class="fa-solid fa-xmark text-[8px]"></i>${exit}</span>`;
   return '<span class="text-[10px] text-slate-300 dark:text-slate-600">—</span>';
 }
 
@@ -325,39 +353,50 @@ function escHtml(s) {
   return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-function preBlock(label, content) {
-  if (!content) return `<p class="text-xs text-slate-400 dark:text-slate-500 italic">${label}: bo'sh</p>`;
-  return `<div class="mt-3">
-    <p class="text-[10px] font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500 mb-1">${label}</p>
-    <pre class="text-xs bg-slate-950 dark:bg-black text-green-400 rounded-xl p-4 overflow-auto max-h-52 font-mono whitespace-pre-wrap break-all">${escHtml(content)}</pre>
-  </div>`;
+// ── Tab management ─────────────────────────────────────────────
+let activeTab = 'kod';
+function switchTab(tab) {
+  activeTab = tab;
+  ['kod','natija'].forEach(t => {
+    const btn = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
+    const panel = document.getElementById('panel' + t.charAt(0).toUpperCase() + t.slice(1));
+    if (t === tab) {
+      btn.classList.add('border-sky-500','text-sky-600','dark:text-sky-400');
+      btn.classList.remove('border-transparent','text-slate-400','dark:text-slate-500');
+      panel.classList.remove('hidden');
+      panel.classList.add('flex','flex-col');
+    } else {
+      btn.classList.remove('border-sky-500','text-sky-600','dark:text-sky-400');
+      btn.classList.add('border-transparent','text-slate-400','dark:text-slate-500');
+      panel.classList.add('hidden');
+      panel.classList.remove('flex','flex-col');
+    }
+  });
 }
 
-// ── State ─────────────────────────────────────────────────────
+// ── State ──────────────────────────────────────────────────────
 const PAGE_SIZE = 50;
 let currentOffset = 0;
 let allLoaded = [];
 let selected = new Set();
 let currentDetailId = null;
 
-// ── Selection ─────────────────────────────────────────────────
+// ── Selection ──────────────────────────────────────────────────
 function toggleSelectAll(cb) {
   document.querySelectorAll('.row-cb').forEach(c => {
     c.checked = cb.checked;
-    const id = c.dataset.id;
-    if (cb.checked) selected.add(id); else selected.delete(id);
+    if (cb.checked) selected.add(c.dataset.id);
+    else selected.delete(c.dataset.id);
   });
   updateSelBar();
 }
-
 function toggleRow(cb) {
-  const id = cb.dataset.id;
-  if (cb.checked) selected.add(id); else selected.delete(id);
+  if (cb.checked) selected.add(cb.dataset.id);
+  else selected.delete(cb.dataset.id);
   const all = document.querySelectorAll('.row-cb');
   document.getElementById('selectAll').checked = all.length > 0 && [...all].every(c => c.checked);
   updateSelBar();
 }
-
 function updateSelBar() {
   const bar = document.getElementById('selBar');
   if (selected.size > 0) {
@@ -367,7 +406,6 @@ function updateSelBar() {
     bar.classList.add('hidden');
   }
 }
-
 function clearSelection() {
   selected.clear();
   document.querySelectorAll('.row-cb').forEach(c => c.checked = false);
@@ -380,16 +418,13 @@ async function deleteSelected() {
   if (!confirm(`${selected.size} ta jobni o'chirishni tasdiqlaysizmi?`)) return;
   try {
     const res = await fetch('/api/v2/jobs', {
-      method: 'DELETE',
-      headers: authHeaders(),
+      method: 'DELETE', headers: authHeaders(),
       body: JSON.stringify({ ids: [...selected] }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message);
     toast(data.message, 'success');
-    selected.clear();
-    updateSelBar();
-    await loadJobs();
+    selected.clear(); updateSelBar(); await loadJobs();
   } catch(e) { toast(e.message, 'error'); }
 }
 
@@ -401,9 +436,7 @@ async function deleteJobById(id, e) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.message);
     toast(data.message, 'success');
-    selected.delete(id);
-    updateSelBar();
-    await loadJobs();
+    selected.delete(id); updateSelBar(); await loadJobs();
   } catch(e) { toast(e.message, 'error'); }
 }
 
@@ -413,7 +446,7 @@ async function deleteJobFromPanel() {
   closeDetail();
 }
 
-// ── Load / Render ─────────────────────────────────────────────
+// ── Load / Render ──────────────────────────────────────────────
 async function loadJobs() {
   document.getElementById('refreshIcon').classList.add('spin');
   const lang = document.getElementById('langFilter').value;
@@ -422,7 +455,7 @@ async function loadJobs() {
   try {
     const res = await fetch('/api/v2/jobs?' + params, { headers: authHeaders() });
     if (res.status === 401) { logout(); return; }
-    if (!res.ok) { const e = await res.json().catch(() => ({})); toast(e.message || 'Xato', 'error'); renderEmpty(); return; }
+    if (!res.ok) { const e = await res.json().catch(()=>({})); toast(e.message||'Xato','error'); renderEmpty(); return; }
     const data = await res.json();
     allLoaded = data.jobs;
     renderJobs(data.jobs);
@@ -430,7 +463,7 @@ async function loadJobs() {
     populateLangFilter(data.jobs);
     document.getElementById('totalCount').textContent = data.total;
   } catch(e) {
-    toast('Serverga ulanib bo\'lmadi', 'error'); renderEmpty();
+    toast('Serverga ulanib bo\'lmadi','error'); renderEmpty();
   } finally {
     document.getElementById('refreshIcon').classList.remove('spin');
   }
@@ -438,8 +471,8 @@ async function loadJobs() {
 
 function renderEmpty() {
   document.getElementById('jobsBody').innerHTML = `
-    <tr><td colspan="9" class="py-16 text-center text-slate-400 dark:text-slate-500 text-sm">
-      <i class="fa-solid fa-inbox text-3xl mb-3 block opacity-40"></i>Joblar topilmadi
+    <tr><td colspan="9" class="py-20 text-center text-slate-400 dark:text-slate-500 text-sm">
+      <i class="fa-solid fa-inbox text-3xl mb-3 block opacity-30"></i>Joblar topilmadi
     </td></tr>`;
 }
 
@@ -451,8 +484,8 @@ function applyFilters() {
     let matchS = true;
     if (status === 'ok')           matchS = j.run_exit === 0;
     else if (status === 'error')   matchS = j.run_exit !== 0 && j.run_status !== 'timed_out' && j.run_status !== 'memory_limit';
-    else if (status === 'timed_out')    matchS = j.run_status === 'timed_out';
-    else if (status === 'memory_limit') matchS = j.run_status === 'memory_limit';
+    else if (status === 'timed_out')     matchS = j.run_status === 'timed_out';
+    else if (status === 'memory_limit')  matchS = j.run_status === 'memory_limit';
     return matchQ && matchS;
   });
   renderJobs(filtered);
@@ -464,42 +497,41 @@ document.getElementById('statusFilter').addEventListener('change', applyFilters)
 document.getElementById('langFilter').addEventListener('change', () => { currentOffset = 0; loadJobs(); });
 
 function renderJobs(jobs) {
-  document.getElementById('totalCount').textContent = jobs.length;
   if (!jobs.length) { renderEmpty(); return; }
   document.getElementById('jobsBody').innerHTML = jobs.map(j => {
     const m = getMeta(j.language);
     const dt = new Date(j.created_at);
     const timeStr = dt.toLocaleString('uz', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
-    const runMs = j.run_time != null ? j.run_time + ' ms' : '—';
-    const runKb = j.run_memory != null ? (j.run_memory/1024).toFixed(0) + ' KB' : '—';
-    const isSel = selected.has(j.id);
+    const runMs  = j.run_time   != null ? j.run_time + ' ms' : '—';
+    const runKb  = j.run_memory != null ? (j.run_memory/1024).toFixed(0) + ' KB' : '—';
+    const isSel  = selected.has(j.id);
     return `
-    <tr class="row-in hover:bg-sky-50/40 dark:hover:bg-sky-900/10 transition-colors group ${isSel ? 'bg-sky-50/60 dark:bg-sky-900/20' : ''}">
-      <td class="px-4 py-3" onclick="event.stopPropagation()">
+    <tr class="row-in hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors cursor-pointer group ${isSel ? 'bg-sky-50/70 dark:bg-sky-900/15' : ''}">
+      <td class="px-4 py-3.5 w-10" onclick="event.stopPropagation()">
         <input type="checkbox" class="row-cb w-3.5 h-3.5 rounded border-slate-300 dark:border-slate-600 text-sky-600 focus:ring-sky-500 cursor-pointer"
-          data-id="${j.id}" onchange="toggleRow(this)" ${isSel ? 'checked' : ''}>
+          data-id="${j.id}" onchange="toggleRow(this)" ${isSel?'checked':''}>
       </td>
-      <td class="px-4 py-3 cursor-pointer" onclick="showDetail('${j.id}')">
-        <div class="flex items-center gap-2">
+      <td class="px-4 py-3.5" onclick="showDetail('${j.id}')">
+        <div class="flex items-center gap-2.5">
           <div class="w-7 h-7 rounded-lg flex items-center justify-center text-xs flex-shrink-0 bg-slate-100 dark:bg-slate-800" style="color:${m.color}">
             <i class="${m.icon}"></i>
           </div>
           <div>
             <div class="text-xs font-semibold text-slate-700 dark:text-slate-200 capitalize">${j.language}</div>
-            <div class="text-[10px] text-slate-400 dark:text-slate-500 font-mono">v${j.version}</div>
+            <div class="text-[10px] text-slate-400 font-mono">v${j.version}</div>
           </div>
         </div>
       </td>
-      <td class="px-4 py-3 text-xs text-slate-500 dark:text-slate-400 cursor-pointer hidden md:table-cell" onclick="showDetail('${j.id}')">${j.username || '<span class="text-slate-300 dark:text-slate-600">—</span>'}</td>
-      <td class="px-4 py-3 cursor-pointer" onclick="showDetail('${j.id}')">${j.compile_exit !== null && j.compile_exit !== undefined ? badge(j.compile_exit, j.compile_status) : '<span class="text-[10px] text-slate-300 dark:text-slate-600">—</span>'}</td>
-      <td class="px-4 py-3 cursor-pointer" onclick="showDetail('${j.id}')">${badge(j.run_exit, j.run_status)}</td>
-      <td class="px-4 py-3 text-xs text-slate-500 dark:text-slate-400 font-mono cursor-pointer hidden sm:table-cell" onclick="showDetail('${j.id}')">${runMs}</td>
-      <td class="px-4 py-3 text-xs text-slate-500 dark:text-slate-400 font-mono cursor-pointer hidden sm:table-cell" onclick="showDetail('${j.id}')">${runKb}</td>
-      <td class="px-4 py-3 text-[11px] text-slate-400 dark:text-slate-500 whitespace-nowrap cursor-pointer" onclick="showDetail('${j.id}')">${timeStr}</td>
-      <td class="px-4 py-3">
-        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button onclick="deleteJobById('${j.id}', event)"
-            class="w-7 h-7 flex items-center justify-center text-red-400 hover:text-red-600 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+      <td class="px-4 py-3.5 text-xs text-slate-500 dark:text-slate-400 hidden md:table-cell" onclick="showDetail('${j.id}')">${j.username || '<span class="text-slate-300 dark:text-slate-600">—</span>'}</td>
+      <td class="px-4 py-3.5" onclick="showDetail('${j.id}')">${j.compile_exit !== null && j.compile_exit !== undefined ? badge(j.compile_exit, j.compile_status) : '<span class="text-[10px] text-slate-300 dark:text-slate-600">—</span>'}</td>
+      <td class="px-4 py-3.5" onclick="showDetail('${j.id}')">${badge(j.run_exit, j.run_status)}</td>
+      <td class="px-4 py-3.5 text-xs text-slate-500 font-mono hidden sm:table-cell" onclick="showDetail('${j.id}')">${runMs}</td>
+      <td class="px-4 py-3.5 text-xs text-slate-500 font-mono hidden sm:table-cell" onclick="showDetail('${j.id}')">${runKb}</td>
+      <td class="px-4 py-3.5 text-[11px] text-slate-400 whitespace-nowrap" onclick="showDetail('${j.id}')">${timeStr}</td>
+      <td class="px-4 py-3.5">
+        <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button onclick="deleteJobById('${j.id}',event)"
+            class="w-7 h-7 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
             <i class="fa-solid fa-trash-can text-xs"></i>
           </button>
           <i class="fa-solid fa-chevron-right text-slate-300 dark:text-slate-600 text-xs"></i>
@@ -523,83 +555,140 @@ function updatePagination(count, total) {
   pg.classList.remove('hidden');
   const page = Math.floor(currentOffset / PAGE_SIZE) + 1;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  document.getElementById('pageInfo').textContent = `Sahifa ${page}/${totalPages} · Jami: ${total}`;
+  document.getElementById('pageInfo').textContent = `Sahifa ${page} / ${totalPages}`;
   document.getElementById('prevBtn').disabled = currentOffset === 0;
   document.getElementById('nextBtn').disabled = currentOffset + count >= total;
 }
 
 function changePage(dir) {
   currentOffset = Math.max(0, currentOffset + dir * PAGE_SIZE);
-  clearSelection();
-  loadJobs();
+  clearSelection(); loadJobs();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// ── Detail panel ──────────────────────────────────────────────
+// ── Detail panel ───────────────────────────────────────────────
 async function showDetail(id) {
   currentDetailId = id;
+  activeTab = 'kod';
+  switchTab('kod');
   document.getElementById('detailPanel').classList.remove('hidden');
-  document.getElementById('detailBody').innerHTML = `
-    <div class="py-12 text-center text-slate-400 dark:text-slate-500 text-sm">
-      <i class="fa-solid fa-circle-notch spin text-xl mb-2 block text-sky-500"></i>Yuklanmoqda...
-    </div>`;
+  const loadingHtml = `<div class="p-8 text-center text-slate-400 text-sm">
+    <i class="fa-solid fa-circle-notch spin text-xl mb-2 block text-sky-500"></i>Yuklanmoqda...</div>`;
+  document.getElementById('kodContent').innerHTML = loadingHtml;
+  document.getElementById('panelNatija').innerHTML = loadingHtml;
+
   try {
     const res = await fetch(`/api/v2/jobs/${id}`, { headers: authHeaders() });
-    if (!res.ok) { document.getElementById('detailBody').innerHTML = `<p class="text-red-500 text-sm">Xato: ${(await res.json()).message}</p>`; return; }
+    if (!res.ok) {
+      const err = (await res.json().catch(()=>({}))).message || 'Xato';
+      document.getElementById('kodContent').innerHTML = `<p class="p-5 text-red-500 text-sm">${err}</p>`;
+      return;
+    }
     const j = await res.json();
     const m = getMeta(j.language);
-    const dt = new Date(j.created_at).toLocaleString();
+
+    // Header title
     document.getElementById('detailTitle').innerHTML = `
-      <div class="flex items-center gap-2 min-w-0">
-        <div class="w-6 h-6 rounded-md flex items-center justify-center text-xs flex-shrink-0 bg-slate-100 dark:bg-slate-800" style="color:${m.color}"><i class="${m.icon}"></i></div>
+      <div class="flex items-center gap-2 min-w-0 flex-wrap">
+        <div class="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 bg-slate-100 dark:bg-slate-800" style="color:${m.color}">
+          <i class="${m.icon} text-xs"></i>
+        </div>
         <span class="text-sm font-bold text-slate-800 dark:text-white capitalize">${j.language}</span>
-        <span class="text-xs text-slate-400 dark:text-slate-500 font-mono">v${j.version}</span>
-        <span class="text-xs text-slate-400 dark:text-slate-500 ml-1">${j.username || '—'}</span>
+        <span class="text-xs text-slate-400 font-mono">v${j.version}</span>
+        ${j.username ? `<span class="text-xs text-slate-400">· ${j.username}</span>` : ''}
+        <span class="text-xs text-slate-300 dark:text-slate-600 font-mono hidden sm:inline">${new Date(j.created_at).toLocaleString()}</span>
       </div>`;
 
+    // ── Kod tab ──
+    const hasCode = j.code && j.code.trim();
+    document.getElementById('kodContent').innerHTML = hasCode
+      ? `<div class="relative group/code h-full">
+          <div class="flex items-center justify-between px-4 py-2.5 bg-slate-800 dark:bg-slate-950 rounded-t-xl border border-slate-700 border-b-0">
+            <div class="flex items-center gap-2">
+              <div class="flex gap-1.5">
+                <div class="w-2.5 h-2.5 rounded-full bg-red-500/70"></div>
+                <div class="w-2.5 h-2.5 rounded-full bg-yellow-500/70"></div>
+                <div class="w-2.5 h-2.5 rounded-full bg-green-500/70"></div>
+              </div>
+              <span class="text-xs text-slate-400 font-mono ml-1 capitalize">${j.language}</span>
+            </div>
+            <button onclick="copyCode()" title="Nusxa olish"
+              class="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors px-2 py-1 rounded-md hover:bg-slate-700">
+              <i class="fa-regular fa-copy"></i>
+              <span id="copyLabel">Nusxa</span>
+            </button>
+          </div>
+          <pre id="codeDisplay" class="code-block bg-slate-900 dark:bg-slate-950 text-slate-100 border border-slate-700 border-t-0 rounded-b-xl p-4 max-h-[calc(100vh-220px)] overflow-auto">${escHtml(j.code)}</pre>
+        </div>`
+      : `<div class="flex flex-col items-center justify-center h-full py-16 text-slate-400 dark:text-slate-600">
+          <i class="fa-solid fa-file-slash text-3xl mb-3 opacity-50"></i>
+          <p class="text-sm">Kod saqlanmagan</p>
+          <p class="text-xs mt-1 opacity-70">Eski joblar uchun kod mavjud emas</p>
+        </div>`;
+
+    // ── Natija tab ──
     let html = '';
     if (j.compile_exit !== null && j.compile_exit !== undefined) {
-      html += `<div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-4 mb-4">
-        <div class="flex items-center gap-3 mb-2 flex-wrap">
-          <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Compile</span>
-          ${badge(j.compile_exit, j.compile_status)}
-          ${j.compile_time != null ? `<span class="text-xs text-slate-400 font-mono">${j.compile_time}ms</span>` : ''}
-          ${j.compile_memory != null ? `<span class="text-xs text-slate-400 font-mono">${(j.compile_memory/1024).toFixed(0)}KB</span>` : ''}
-        </div>
-        ${preBlock('stdout', j.compile_stdout)}
-        ${preBlock('stderr', j.compile_stderr)}
-      </div>`;
+      html += buildStageBlock('Compile', j.compile_exit, j.compile_status, j.compile_time, j.compile_memory, j.compile_stdout, j.compile_stderr);
     }
-    html += `<div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-4">
-      <div class="flex items-center gap-3 mb-2 flex-wrap">
-        <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Run</span>
-        ${badge(j.run_exit, j.run_status)}
-        ${j.run_time != null ? `<span class="text-xs text-slate-400 font-mono">${j.run_time}ms</span>` : ''}
-        ${j.run_memory != null ? `<span class="text-xs text-slate-400 font-mono">${(j.run_memory/1024).toFixed(0)}KB</span>` : ''}
-      </div>
-      ${preBlock('stdout', j.run_stdout)}
-      ${preBlock('stderr', j.run_stderr)}
-    </div>
-    <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-      <p class="text-[10px] text-slate-400 dark:text-slate-500 font-mono break-all">ID: ${j.id}</p>
-      <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">${dt}</p>
+    html += buildStageBlock('Run', j.run_exit, j.run_status, j.run_time, j.run_memory, j.run_stdout, j.run_stderr);
+    html += `<div class="text-[10px] text-slate-400 dark:text-slate-600 font-mono pt-2 border-t border-slate-100 dark:border-slate-800">
+      ID: ${j.id}
     </div>`;
-    document.getElementById('detailBody').innerHTML = html;
+    document.getElementById('panelNatija').innerHTML = html;
+
+    // Store code for copy
+    window._detailCode = j.code || '';
   } catch(e) {
-    document.getElementById('detailBody').innerHTML = `<p class="text-red-500 text-sm">Xato: ${e.message}</p>`;
+    document.getElementById('kodContent').innerHTML = `<p class="p-5 text-red-500 text-sm">${e.message}</p>`;
   }
+}
+
+function buildStageBlock(label, exit, status, time, memory, stdout, stderr) {
+  const isCompile = label === 'Compile';
+  const ok = exit === 0 && !status;
+  return `
+  <div class="rounded-xl border ${ok ? 'border-emerald-200 dark:border-emerald-900/40' : 'border-slate-200 dark:border-slate-700'} overflow-hidden">
+    <div class="flex items-center gap-3 px-4 py-2.5 ${ok ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'bg-slate-50 dark:bg-slate-800/60'} flex-wrap gap-y-1">
+      <span class="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">${label}</span>
+      ${badge(exit, status)}
+      ${time   != null ? `<span class="text-xs text-slate-400 font-mono ml-auto">${time}ms</span>` : ''}
+      ${memory != null ? `<span class="text-xs text-slate-400 font-mono">${(memory/1024).toFixed(0)}KB</span>` : ''}
+    </div>
+    <div class="p-3 space-y-2">
+      ${outputBlock('stdout', stdout)}
+      ${outputBlock('stderr', stderr)}
+    </div>
+  </div>`;
+}
+
+function outputBlock(label, content) {
+  if (!content || !content.trim()) return `<p class="text-xs text-slate-400 dark:text-slate-600 italic">${label}: bo'sh</p>`;
+  return `<div>
+    <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">${label}</p>
+    <pre class="text-xs bg-slate-950 text-emerald-400 rounded-lg p-3 overflow-auto max-h-48 font-mono whitespace-pre-wrap break-all">${escHtml(content)}</pre>
+  </div>`;
+}
+
+function copyCode() {
+  if (!window._detailCode) return;
+  navigator.clipboard.writeText(window._detailCode).then(() => {
+    const lbl = document.getElementById('copyLabel');
+    if (lbl) { lbl.textContent = 'Nusxalandi!'; setTimeout(() => lbl.textContent = 'Nusxa', 2000); }
+  }).catch(() => toast('Nusxa olishda xato', 'error'));
 }
 
 function closeDetail() {
   document.getElementById('detailPanel').classList.add('hidden');
   currentDetailId = null;
+  window._detailCode = '';
 }
 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(); });
 
-// ── Toast ─────────────────────────────────────────────────────
+// ── Toast ──────────────────────────────────────────────────────
 function toast(msg, type = 'info') {
-  const c = { success:'bg-green-600', error:'bg-red-600', info:'bg-sky-600' };
+  const c = { success:'bg-emerald-600', error:'bg-red-600', info:'bg-sky-600' };
   const i = { success:'fa-circle-check', error:'fa-circle-xmark', info:'fa-circle-info' };
   const el = document.createElement('div');
   el.className = `toast pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl text-white text-sm shadow-xl ${c[type]}`;

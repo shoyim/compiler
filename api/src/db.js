@@ -46,6 +46,7 @@ async function connect() {
             username        VARCHAR(64),
             language        VARCHAR(64) NOT NULL,
             version         VARCHAR(64) NOT NULL,
+            code            MEDIUMTEXT,
             compile_exit    INT,
             compile_time    INT,
             compile_memory  INT,
@@ -64,6 +65,7 @@ async function connect() {
             INDEX idx_language   (language)
         ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
     `);
+    try { await pool.execute(`ALTER TABLE jobs ADD COLUMN code MEDIUMTEXT AFTER version`); } catch (_) {}
 
     // Default admin user (only if table is empty)
     const [rows] = await pool.execute('SELECT COUNT(*) as c FROM users');
