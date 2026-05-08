@@ -560,10 +560,11 @@ router.get('/runtimes', (req, res) => {
 
 router.get('/packages', async (req, res) => {
     logger.debug('Request to list packages');
+    res.set('Cache-Control', 'no-store');
     let packages = await package.get_package_list();
     packages = packages.map(pkg => ({
         language: pkg.language,
-        language_version: pkg.version?.raw ?? "unknown",        
+        language_version: pkg.version?.raw ?? "unknown",
         installed: pkg.installed,
     }));
     return res.status(200).send(packages);
