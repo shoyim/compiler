@@ -20,7 +20,8 @@ jobs:
             set -e
             cd /var/www/compiler
             git remote set-url origin https://shoyim:${{ secrets.DEPLOY_GIT_TOKEN }}@github.com/shoyim/compiler.git
-            git pull origin main
+            git fetch origin main
+            git reset --hard origin/main
             docker compose build --pull
             docker compose up -d
             docker image prune -f
