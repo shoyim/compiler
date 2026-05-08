@@ -460,7 +460,6 @@ async function loadJobs() {
     allLoaded = data.jobs;
     renderJobs(data.jobs);
     updatePagination(data.jobs.length, data.total);
-    populateLangFilter(data.jobs);
     document.getElementById('totalCount').textContent = data.total;
   } catch(e) {
     toast('Serverga ulanib bo\'lmadi','error'); renderEmpty();
@@ -541,12 +540,17 @@ function renderJobs(jobs) {
   }).join('');
 }
 
-function populateLangFilter(jobs) {
-  const langs = [...new Set(jobs.map(j => j.language))].sort();
-  const sel = document.getElementById('langFilter');
-  const cur = sel.value;
-  sel.innerHTML = '<option value="">Barcha tillar</option>' +
-    langs.map(l => `<option value="${l}" ${l===cur?'selected':''}>${l}</option>`).join('');
+async function populateLangFilter() {
+  try {
+    const res = await fetch('/api/v2/runtimes');
+    if (!res.ok) return;
+    const runtimes = await res.json();
+    const langs = [...new Set(runtimes.map(r => r.language))].sort();
+    const sel = document.getElementById('langFilter');
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">Barcha tillar</option>' +
+      langs.map(l => `<option value="${l}" ${l===cur?'selected':''}>${l}</option>`).join('');
+  } catch {}
 }
 
 function updatePagination(count, total) {
@@ -697,6 +701,7 @@ function toast(msg, type = 'info') {
   setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(),300); }, 4000);
 }
 
+populateLangFilter();
 loadJobs();
 </script>
 </body>
