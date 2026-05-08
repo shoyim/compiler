@@ -102,7 +102,7 @@ expressWs(app);
     async function cleanOldJobs() {
         try {
             const [result] = await db.getPool().execute(
-                'DELETE FROM jobs WHERE created_at < DATE_SUB(NOW(), INTERVAL 30 DAY)'
+                'DELETE FROM jobs WHERE created_at < DATE_SUB(NOW(), INTERVAL 7 DAY)'
             );
             logger.info(`Job cleanup: ${result.affectedRows} eski yozuv o'chirildi`);
         } catch (e) {
