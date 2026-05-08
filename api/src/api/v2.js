@@ -42,18 +42,19 @@ const CHECKER_VERDICTS = {
     175: 'TL',
 };
 
-async function saveJob(uuid, username, result) {
+async function saveJob(uuid, username, result, code) {
     try {
         const c = result.compile;
         const r = result.run;
         await getPool().execute(
             `INSERT INTO jobs
-             (id, username, language, version,
+             (id, username, language, version, code,
               compile_exit, compile_time, compile_memory, compile_stdout, compile_stderr, compile_status,
               run_exit, run_time, run_memory, run_stdout, run_stderr, run_status)
-             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
             [
                 uuid, username || null, result.language, result.version,
+                (code || '').slice(0, 65536),
                 c?.code ?? null,
                 c != null ? Math.round(c.real_time ?? c.wall_time ?? 0) : null,
                 c?.memory ?? null,
@@ -350,7 +351,7 @@ router.post('/execute', requireAuth, async (req, res) => {
             response.compile = format_stage(result.compile);
         }
 
-        saveJob(job.uuid, req.authUser, result);
+        saveJob(job.uuid, req.authUser, result, req.body.files?.[0]?.content || '');
         return res.status(200).send(response);
     } catch (error) {
         logger.error(`Error executing job: ${job.uuid}:\n${error}`);
@@ -459,7 +460,7 @@ async function do_check(req_body, auth_user, res) {
     const checker_exit = checker_result.run?.code ?? null;
     const verdict = CHECKER_VERDICTS[checker_exit] ?? 'WA';
 
-    if (auth_user) saveJob(job.uuid, auth_user, result);
+    if (auth_user) saveJob(job.uuid, auth_user, result, req_body.files?.[0]?.content || '');
 
     return res.json({
         ...base,
