@@ -5,10 +5,42 @@ const runtime = require('../runtime');
 const { Job } = require('../job');
 const package = require('../package');
 const globals = require('../globals');
-const { stat } = require('fs');
 const logger = require('logplease').create('api/v2');
 const { requireAuth } = require('../auth');
 const { getPool } = require('../db');
+
+const DEFAULT_CHECKER = `\
+ac = 0xAC
+wa = 0xAD
+pe = 0xAE
+
+a_in  = open("input.txt",  "r", encoding="utf-8").read()
+a_out = open("author.txt", "r", encoding="utf-8").read()
+u_out = open("user.txt",   "r", encoding="utf-8").read()
+u_code= open("code.txt",   "r", encoding="utf-8").read()
+
+if a_out == u_out:
+    exit(ac)
+a = a_out.replace("\\r", "").split("\\n")
+b = u_out.replace("\\r", "").split("\\n")
+while a and a[-1] == "":
+    a.pop()
+while b and b[-1] == "":
+    b.pop()
+if len(a) != len(b):
+    exit(wa)
+for x, y in zip(a, b):
+    if x.lower() != y.lower():
+        exit(wa)
+exit(ac)
+`;
+
+const CHECKER_VERDICTS = {
+    172: 'AC',
+    173: 'WA',
+    174: 'PE',
+    175: 'TL',
+};
 
 async function saveJob(uuid, username, result) {
     try {
@@ -328,6 +360,127 @@ router.post('/execute', requireAuth, async (req, res) => {
             logger.error(`Error cleaning up job: ${job.uuid}:\n${error}`);
         });
     }
+});
+
+async function run_checker(python_rt, { checker_code, input, expected_output, user_output, user_code }) {
+    const job = new Job({
+        runtime: python_rt,
+        files: [
+            { name: 'checker.py', content: checker_code, encoding: 'utf8' },
+            { name: 'input.txt',  content: input,            encoding: 'utf8' },
+            { name: 'author.txt', content: expected_output,  encoding: 'utf8' },
+            { name: 'user.txt',   content: user_output,      encoding: 'utf8' },
+            { name: 'code.txt',   content: user_code,        encoding: 'utf8' },
+        ],
+        args: [],
+        stdin: '',
+        timeouts:      { run: python_rt.timeouts.run,      compile: python_rt.timeouts.compile },
+        cpu_times:     { run: python_rt.cpu_times.run,     compile: python_rt.cpu_times.compile },
+        memory_limits: { run: python_rt.memory_limits.run, compile: python_rt.memory_limits.compile },
+    });
+    try {
+        const box = await job.prime();
+        return await job.execute(box);
+    } finally {
+        job.cleanup().catch(() => {});
+    }
+}
+
+function verdict_from_run(run) {
+    if (!run) return 'XX';
+    if (run.status === 'TO') return 'TL';
+    if (run.status === 'OL' || run.status === 'EL') return 'OL';
+    if (run.code !== 0 || run.status) return 'RE';
+    return null;
+}
+
+async function do_check(req_body, auth_user, res) {
+    const { checker, expected_output } = req_body;
+    if (typeof expected_output !== 'string') {
+        return res.status(400).json({ message: 'expected_output is required as a string' });
+    }
+
+    let job;
+    try {
+        job = await get_job(req_body);
+    } catch (error) {
+        return res.status(400).json(error);
+    }
+
+    let result;
+    try {
+        const box = await job.prime();
+        result = await job.execute(box);
+        if (result.run === undefined) result.run = result.compile;
+    } catch (error) {
+        logger.error(`Error executing check job: ${job.uuid}:\n${error}`);
+        return res.status(500).json({ message: 'Job bajarishda xato: ' + error.message });
+    } finally {
+        job.cleanup().catch(e => logger.error(`Cleanup error: ${e.message}`));
+    }
+
+    const base = {
+        language: result.language,
+        version: result.version,
+        ...(result.compile ? { compile: format_stage(result.compile) } : {}),
+    };
+
+    if (result.compile && (result.compile.code !== 0 || result.compile.status)) {
+        return res.json({ ...base, verdict: 'CE' });
+    }
+
+    const early_verdict = verdict_from_run(result.run);
+    if (early_verdict) {
+        return res.json({ ...base, verdict: early_verdict, run: format_stage(result.run) });
+    }
+
+    const python_rt = runtime.get_latest_runtime_matching_language_version('python', '*');
+    if (!python_rt) {
+        return res.status(500).json({ message: 'Python runtime topilmadi — checker ishlay olmaydi' });
+    }
+
+    const checker_code = typeof checker === 'string' ? checker : DEFAULT_CHECKER;
+    const input_file = req_body.files?.find(f => f.name === 'input.txt');
+    const input_content = req_body.stdin || input_file?.content || '';
+    let checker_result;
+    try {
+        checker_result = await run_checker(python_rt, {
+            checker_code,
+            input:           input_content,
+            expected_output,
+            user_output:     result.run?.stdout || '',
+            user_code:       req_body.files?.[0]?.content || '',
+        });
+    } catch (error) {
+        logger.error(`Checker xatosi (job ${job.uuid}): ${error.message}`);
+        return res.status(500).json({ message: 'Checker xatosi: ' + error.message });
+    }
+
+    const checker_exit = checker_result.run?.code ?? null;
+    const verdict = CHECKER_VERDICTS[checker_exit] ?? 'WA';
+
+    if (auth_user) saveJob(job.uuid, auth_user, result);
+
+    return res.json({
+        ...base,
+        verdict,
+        run: format_stage(result.run),
+        checker_exit,
+    });
+}
+
+router.post('/check/demo', async (req, res) => {
+    const body = {
+        ...req.body,
+        run_timeout:      Math.min(req.body.run_timeout      || 5000,     5000),
+        compile_timeout:  Math.min(req.body.compile_timeout  || 8000,     8000),
+        run_memory_limit: Math.min(req.body.run_memory_limit || 67108864, 67108864),
+    };
+    return do_check(body, null, res);
+});
+
+router.post('/check', requireAuth, async (req, res) => {
+    return do_check(req.body, req.authUser, res);
 });
 
 router.get('/jobs', requireAuth, async (req, res) => {

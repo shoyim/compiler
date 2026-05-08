@@ -15,12 +15,14 @@ const util = require('util');
 class Package {
     constructor({ language, version, download, checksum }) {
         this.language = language;
+        this._raw_version = version;
         this.version = semver.parse(version);
         this.checksum = checksum;
         this.download = download;
     }
 
     get installed() {
+        if (!this.version) return false;
         return fss.exists_sync(
             path.join(this.install_path, globals.pkg_installed_file)
         );
@@ -31,7 +33,7 @@ class Package {
             config.data_directory,
             globals.data_directories.packages,
             this.language,
-            this.version.raw
+            this.version?.raw ?? this._raw_version
         );
     }
 
