@@ -88,13 +88,18 @@ jobs:
         if: needs.build-pkg.outputs.has_packages == 'true'
         steps:
             - name: 'Download all release assets'
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: |
-                  URLS=$(curl -s https://api.github.com/repos/shoyim/compiler/releases/latest | jq -r '.assets[]? | .browser_download_url')
-                  if [ -z "$URLS" ]; then
-                    echo "No release assets found"
-                    exit 1
+                  URLS=$(curl -s -H "Authorization: token $GH_TOKEN" \
+                    https://api.github.com/repos/shoyim/compiler/releases/tags/pkgs \
+                    | jq -r '.assets[]? | select(.name | endswith(".pkg.tar.gz")) | .browser_download_url')
+                  if [ -n "$URLS" ]; then
+                    echo "Downloading existing packages..."
+                    echo "$URLS" | xargs -r -L 1 curl -sLO
+                  else
+                    echo "No existing packages in pkgs release, creating fresh index"
                   fi
-                  echo "$URLS" | xargs -r -L 1 curl -sLO
             - name: 'Generate index file'
               run: |
                   echo "" > index
