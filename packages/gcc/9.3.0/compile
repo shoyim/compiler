@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+LANG=$(echo "${COMPILER_LANGUAGE}" | tr '[:upper:]' '[:lower:]')
+
+case "${LANG}" in
+    c|gcc)
+        rename 's/$/\.c/' "$@" 2>/dev/null || true
+        gcc -pipe -O2 -std=c11 *.c -lm
+        ;;
+    c++|cpp|g++)
+        rename 's/$/\.cpp/' "$@" 2>/dev/null || true
+        g++ -pipe -O2 -std=c++17 *.cpp -lm
+        ;;
+    d|gdc)
+        rename 's/.code$/\.d/' "$@" 2>/dev/null || true
+        gdc *.d
+        ;;
+    fortran|f90|gfortran)
+        rename 's/.code$/\.f90/' "$@" 2>/dev/null || true
+        gfortran *.f90
+        ;;
+    *)
+        echo "How did you get here? (${COMPILER_LANGUAGE})"
+        exit 1
+        ;;
+esac
+
+if [ -f a.out ]; then
+    chmod +x a.out
+fi
