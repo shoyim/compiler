@@ -141,6 +141,11 @@
       <option value="#ws-connect">WS /connect</option>
       <option value="#runtimes">GET /runtimes</option>
     </optgroup>
+    <optgroup label="Checker">
+      <option value="#check">POST /check</option>
+      <option value="#check-demo">POST /check/demo</option>
+      <option value="#checker-guide">Checker yozish</option>
+    </optgroup>
     <optgroup label="Paketlar">
       <option value="#pkg-list">GET /packages</option>
       <option value="#pkg-install">POST /packages</option>
@@ -149,6 +154,8 @@
     <optgroup label="Joblar">
       <option value="#jobs-list">GET /jobs</option>
       <option value="#jobs-detail">GET /jobs/:id</option>
+      <option value="#jobs-delete">DELETE /jobs/:id</option>
+      <option value="#jobs-delete-bulk">DELETE /jobs (bulk)</option>
     </optgroup>
     <optgroup label="Auth">
       <option value="#auth-login">POST /auth/login</option>
@@ -185,6 +192,12 @@
       <a href="#ws-connect" class="sidebar-link block px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs">WS /connect</a>
       <a href="#runtimes" class="sidebar-link block px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs">GET /runtimes</a>
     </nav>
+    <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mt-5 mb-3 px-2">Checker</p>
+    <nav class="space-y-0.5 text-sm">
+      <a href="#check" class="sidebar-link block px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs">POST /check</a>
+      <a href="#check-demo" class="sidebar-link block px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs">POST /check/demo</a>
+      <a href="#checker-guide" class="sidebar-link block px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs">Checker yozish</a>
+    </nav>
     <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mt-5 mb-3 px-2">Paketlar</p>
     <nav class="space-y-0.5 text-sm">
       <a href="#pkg-list" class="sidebar-link block px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs">GET /packages</a>
@@ -195,6 +208,8 @@
     <nav class="space-y-0.5 text-sm">
       <a href="#jobs-list" class="sidebar-link block px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs">GET /jobs</a>
       <a href="#jobs-detail" class="sidebar-link block px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs">GET /jobs/:id</a>
+      <a href="#jobs-delete" class="sidebar-link block px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs">DELETE /jobs/:id</a>
+      <a href="#jobs-delete-bulk" class="sidebar-link block px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs">DELETE /jobs (bulk)</a>
     </nav>
     <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mt-5 mb-3 px-2">Auth</p>
     <nav class="space-y-0.5 text-sm">
@@ -579,6 +594,406 @@ ws.run_forever()
       </div>
     </section>
 
+    <!-- ═══════════════ CHECK ═══════════════ -->
+    <section id="check" class="nav-link mb-10">
+      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">
+        <span class="method-post text-xs font-bold px-2.5 py-1 rounded-lg">POST</span>
+        <code class="text-base font-mono text-slate-800 dark:text-slate-200">/api/v2/check</code>
+        <span class="ml-auto text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg"><i class="fa-solid fa-lock text-xs mr-1"></i>Token kerak</span>
+      </div>
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-6">Kodni bajaradi, natijani checker orqali tekshiradi va hukm (verdict) qaytaradi. Online Judge tizimlarida test caseni baholash uchun ishlatiladi.</p>
+
+      <h3 class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">So'rov tanasi (Request Body)</h3>
+      <div class="overflow-x-auto mb-6">
+        <table class="w-full text-xs border-collapse">
+          <thead>
+            <tr class="bg-slate-100 dark:bg-slate-800">
+              <th class="text-left px-3 py-2 rounded-tl-lg font-semibold text-slate-600 dark:text-slate-300">Maydon</th>
+              <th class="text-left px-3 py-2 font-semibold text-slate-600 dark:text-slate-300">Tur</th>
+              <th class="text-left px-3 py-2 font-semibold text-slate-600 dark:text-slate-300">Majburiy</th>
+              <th class="text-left px-3 py-2 rounded-tr-lg font-semibold text-slate-600 dark:text-slate-300">Tavsif</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">language</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">string</td><td class="px-3 py-2 text-red-500 font-medium">Ha</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Tekshiriladigan koding dasturlash tili</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">version</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">string</td><td class="px-3 py-2 text-red-500 font-medium">Ha</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Til versiyasi. Wildcard: <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">"*"</code></td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">files</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">array</td><td class="px-3 py-2 text-red-500 font-medium">Ha</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Foydalanuvchi kodi (kamida bitta fayl, <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">content</code> maydoni bilan)</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">expected_output</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">string</td><td class="px-3 py-2 text-red-500 font-medium">Ha</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Muallif javobi — checker <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">answer.txt</code> sifatida o'qiydi</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">stdin</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">string</td><td class="px-3 py-2 text-slate-400">Yo'q</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Kiruvchi ma'lumot (stdin). Checker <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">input.txt</code> sifatida o'qiydi</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">comparator</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">string</td><td class="px-3 py-2 text-slate-400">Yo'q</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Taqqoslash usuli: <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">case_insensitive</code> (default) · <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">default</code> · <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">any_of</code> · <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">program</code></td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">checker_type</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">string</td><td class="px-3 py-2 text-slate-400">Yo'q</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Checker turi: <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">default</code> (oddiy) · <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">interactive</code> (real vaqtli suhbat)</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">checker</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">string</td><td class="px-3 py-2 text-slate-400">Yo'q</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Python checker kodi (<code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">comparator=program</code> yoki <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">checker_type=interactive</code> bilan)</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">validator</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">object</td><td class="px-3 py-2 text-slate-400">Yo'q</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Kod matni tahlili: <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">ban_loops</code>, <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">ban_keywords</code>, <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">max_chars</code>, <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">max_lines</code>, <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">ban_operators</code>, <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">require_operators</code>, <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">custom_code</code></td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">run_timeout</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">number</td><td class="px-3 py-2 text-slate-400">Yo'q</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Bajarish vaqt chegarasi (millisekund)</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">run_memory_limit</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">number</td><td class="px-3 py-2 text-slate-400">Yo'q</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Xotira chegarasi (bayt)</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">compile_timeout</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">number</td><td class="px-3 py-2 text-slate-400">Yo'q</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Kompilyatsiya vaqt chegarasi (millisekund)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">Javob (Response)</h3>
+      <div class="overflow-x-auto mb-6">
+        <table class="w-full text-xs border-collapse">
+          <thead>
+            <tr class="bg-slate-100 dark:bg-slate-800">
+              <th class="text-left px-3 py-2 rounded-tl-lg font-semibold text-slate-600 dark:text-slate-300">Maydon</th>
+              <th class="text-left px-3 py-2 rounded-tr-lg font-semibold text-slate-600 dark:text-slate-300">Tavsif</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">language</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Bajarilgan til</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">version</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Bajarilgan versiya</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">verdict</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400"><code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">AC</code> · <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">WA</code> · <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">PE</code> · <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">TL</code> · <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">ML</code> · <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">CE</code> · <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">RE</code> · <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">OL</code></td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">checker_exit</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Checker dasturining chiqish kodi (raqam); CE/TL/RE holatda <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">null</code></td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">validator_failed</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Validator shartlari bajarilmasa <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">true</code>; aks holda mavjud emas</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">run</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Foydalanuvchi kodining bajarilish ma'lumotlari (stdout, stderr, time, memory…)</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">compile</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Kompilyatsiya bosqichi (agar til kompilyatsiya talab qilsa)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">Verdict qiymatlari</h3>
+      <div class="overflow-x-auto mb-6">
+        <table class="w-full text-xs border-collapse">
+          <thead>
+            <tr class="bg-slate-100 dark:bg-slate-800">
+              <th class="text-left px-3 py-2 rounded-tl-lg font-semibold text-slate-600 dark:text-slate-300 w-20">Verdict</th>
+              <th class="text-left px-3 py-2 font-semibold text-slate-600 dark:text-slate-300">To'liq nomi</th>
+              <th class="text-left px-3 py-2 rounded-tr-lg font-semibold text-slate-600 dark:text-slate-300">Sabab</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono font-bold text-green-600 dark:text-green-400">AC</td><td class="px-3 py-2 text-slate-700 dark:text-slate-300">Accepted</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">Checker <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">exit(0xAC)</code> (172) qaytardi — javob to'g'ri</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono font-bold text-red-500 dark:text-red-400">WA</td><td class="px-3 py-2 text-slate-700 dark:text-slate-300">Wrong Answer</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">Checker <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">exit(0xAD)</code> (173) qaytardi yoki noma'lum kod</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono font-bold text-amber-500 dark:text-amber-400">PE</td><td class="px-3 py-2 text-slate-700 dark:text-slate-300">Presentation Error</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">Checker <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">exit(0xAE)</code> (174) qaytardi — format xatosi</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono font-bold text-orange-500 dark:text-orange-400">TL</td><td class="px-3 py-2 text-slate-700 dark:text-slate-300">Time Limit</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">Kod vaqt limitidan oshdi <em>yoki</em> checker <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">exit(0xAF)</code> (175) qaytardi</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono font-bold text-blue-500 dark:text-blue-400">ML</td><td class="px-3 py-2 text-slate-700 dark:text-slate-300">Memory Limit</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">Checker <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">exit(0xB0)</code> (176) qaytardi — xotira chegarasi</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono font-bold text-red-600 dark:text-red-400">CE</td><td class="px-3 py-2 text-slate-700 dark:text-slate-300">Compile Error</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">Kompilyatsiya muvaffaqiyatsiz tugadi</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono font-bold text-red-500 dark:text-red-400">RE</td><td class="px-3 py-2 text-slate-700 dark:text-slate-300">Runtime Error</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">Kod bajarilishda xatolik (segfault, exception, nol bo'lmagan chiqish kodi)</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono font-bold text-purple-500 dark:text-purple-400">OL</td><td class="px-3 py-2 text-slate-700 dark:text-slate-300">Output Limit</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">Chiqish hajmi limitidan oshdi</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="flex gap-1 mb-0 border-b border-slate-200 dark:border-slate-700">
+        <button onclick="switchTab('chk', 'curl')" id="chk-tab-curl" class="tab-btn-chk px-3 py-2 text-xs font-medium border-b-2 border-sky-500 text-sky-600">cURL</button>
+        <button onclick="switchTab('chk', 'js')" id="chk-tab-js" class="tab-btn-chk px-3 py-2 text-xs font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">JavaScript</button>
+        <button onclick="switchTab('chk', 'python')" id="chk-tab-python" class="tab-btn-chk px-3 py-2 text-xs font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">Python</button>
+        <button onclick="switchTab('chk', 'response')" id="chk-tab-response" class="tab-btn-chk px-3 py-2 text-xs font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">Javob namunasi</button>
+      </div>
+      <div class="relative bg-gray-950 rounded-b-xl rounded-tr-xl">
+        <button onclick="copyCode('chk-curl')" class="copy-btn absolute top-3 right-3 text-gray-500 hover:text-gray-200 transition-colors text-xs flex items-center gap-1 bg-gray-800 px-2 py-1 rounded-md"><i class="fa-solid fa-copy"></i></button>
+        <pre id="chk-curl" class="tab-content active text-xs text-gray-200 p-5 font-mono overflow-x-auto">curl -X POST https://your-server:2000/api/v2/check \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "language": "python",
+    "version": "*",
+    "files": [
+      { "content": "a, b = map(int, input().split())\nprint(a + b)" }
+    ],
+    "stdin": "3 5",
+    "expected_output": "8\n"
+  }'</pre>
+        <pre id="chk-js" class="tab-content text-xs text-gray-200 p-5 font-mono overflow-x-auto">const response = await fetch('https://your-server:2000/api/v2/check', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_TOKEN',
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    language: 'python',
+    version: '*',
+    files: [{ content: 'a, b = map(int, input().split())\nprint(a + b)' }],
+    stdin: '3 5',
+    expected_output: '8\n',
+  }),
+});
+
+const result = await response.json();
+console.log(result.verdict); // "AC"
+</pre>
+        <pre id="chk-python" class="tab-content text-xs text-gray-200 p-5 font-mono overflow-x-auto">import requests
+
+response = requests.post(
+    'https://your-server:2000/api/v2/check',
+    headers={
+        'Authorization': 'Bearer YOUR_TOKEN',
+        'Content-Type': 'application/json',
+    },
+    json={
+        'language': 'python',
+        'version': '*',
+        'files': [{'content': 'a, b = map(int, input().split())\nprint(a + b)'}],
+        'stdin': '3 5',
+        'expected_output': '8\n',
+    }
+)
+
+result = response.json()
+print(result['verdict'])  # AC
+</pre>
+        <pre id="chk-response" class="tab-content text-xs text-green-300 p-5 font-mono overflow-x-auto">{
+  "language": "python",
+  "version": "3.12.0",
+  "verdict": "AC",
+  "checker_exit": 172,
+  "run": {
+    "stdout": "8\n",
+    "stderr": "",
+    "code": 0,
+    "signal": null,
+    "status": null,
+    "time": "42",
+    "memory": "9"
+  }
+}</pre>
+      </div>
+    </section>
+
+    <!-- ═══════════════ CHECK/DEMO ═══════════════ -->
+    <section id="check-demo" class="nav-link mb-10">
+      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">
+        <span class="method-post text-xs font-bold px-2.5 py-1 rounded-lg">POST</span>
+        <code class="text-base font-mono text-slate-800 dark:text-slate-200">/api/v2/check/demo</code>
+        <span class="ml-auto text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg">Ochiq</span>
+      </div>
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-4"><code class="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-xs font-mono">/check</code> bilan bir xil, lekin token talab qilinmaydi. Resurs cheklovi avtomatik qo'llanadi:</p>
+      <div class="bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700 rounded-xl px-4 py-3 mb-4 text-xs text-slate-600 dark:text-slate-400 font-mono space-y-1">
+        <div><span class="text-slate-400">run_timeout</span>      ≤ <span class="text-amber-500">5 000</span> ms</div>
+        <div><span class="text-slate-400">compile_timeout</span>  ≤ <span class="text-amber-500">8 000</span> ms</div>
+        <div><span class="text-slate-400">run_memory_limit</span> ≤ <span class="text-amber-500">67 108 864</span> bayt (64 MB)</div>
+      </div>
+      <div class="relative bg-gray-950 rounded-xl">
+        <button onclick="copyCode('chkdemo-curl')" class="copy-btn absolute top-3 right-3 text-gray-500 hover:text-gray-200 transition-colors text-xs flex items-center gap-1 bg-gray-800 px-2 py-1 rounded-md"><i class="fa-solid fa-copy"></i></button>
+        <pre id="chkdemo-curl" class="text-xs text-gray-200 p-5 font-mono overflow-x-auto">curl -X POST https://your-server:2000/api/v2/check/demo \
+  -H "Content-Type: application/json" \
+  -d '{
+    "language": "cpp",
+    "version": "*",
+    "files": [
+      { "content": "#include&lt;bits/stdc++.h&gt;\nusing namespace std;\nint main(){int a,b;cin>>a>>b;cout<<a+b;}" }
+    ],
+    "stdin": "3 5",
+    "expected_output": "8"
+  }'</pre>
+      </div>
+    </section>
+
+    <!-- ═══════════════ CHECKER GUIDE ═══════════════ -->
+    <section id="checker-guide" class="nav-link mb-10">
+      <h2 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">Checker yozish qo'llanmasi</h2>
+
+      <!-- Files table -->
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Checker yoki validator kodi bajarilganda quyidagi fayllar avtomatik taqdim etiladi:</p>
+      <div class="overflow-x-auto mb-6">
+        <table class="w-full text-xs border-collapse">
+          <thead>
+            <tr class="bg-slate-100 dark:bg-slate-800">
+              <th class="text-left px-3 py-2 rounded-tl-lg font-semibold text-slate-600 dark:text-slate-300">Fayl</th>
+              <th class="text-left px-3 py-2 rounded-tr-lg font-semibold text-slate-600 dark:text-slate-300">Tarkibi</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">input.txt</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">So'rovdagi <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">stdin</code> maydoni (masalaning kiruvchi ma'lumoti)</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">answer.txt</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">So'rovdagi <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">expected_output</code> maydoni (muallif to'g'ri javobi)</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">user.txt</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Foydalanuvchi dasturining stdout chiqishi</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">solution.txt</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Foydalanuvchi yuborgan manba kodi (<code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">files[0].content</code>)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Exit codes -->
+      <h3 class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">Chiqish kodlari (Exit codes)</h3>
+      <div class="overflow-x-auto mb-6">
+        <table class="w-full text-xs border-collapse">
+          <thead>
+            <tr class="bg-slate-100 dark:bg-slate-800">
+              <th class="text-left px-3 py-2 rounded-tl-lg font-semibold text-slate-600 dark:text-slate-300">Konstanta</th>
+              <th class="text-left px-3 py-2 font-semibold text-slate-600 dark:text-slate-300">Hex / Dec</th>
+              <th class="text-left px-3 py-2 font-semibold text-slate-600 dark:text-slate-300">Verdict</th>
+              <th class="text-left px-3 py-2 rounded-tr-lg font-semibold text-slate-600 dark:text-slate-300">Ma'nosi</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-green-600 dark:text-green-400">exit(0xAC)</td><td class="px-3 py-2 font-mono text-slate-500 dark:text-slate-400">172</td><td class="px-3 py-2 font-bold text-green-600 dark:text-green-400">AC</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Accepted — javob to'g'ri</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-red-500 dark:text-red-400">exit(0xAD)</td><td class="px-3 py-2 font-mono text-slate-500 dark:text-slate-400">173</td><td class="px-3 py-2 font-bold text-red-500 dark:text-red-400">WA</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Wrong Answer — natija noto'g'ri</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-amber-500 dark:text-amber-400">exit(0xAE)</td><td class="px-3 py-2 font-mono text-slate-500 dark:text-slate-400">174</td><td class="px-3 py-2 font-bold text-amber-500 dark:text-amber-400">PE</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Presentation Error — format xatosi (ortiqcha bo'sh joy)</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-orange-500 dark:text-orange-400">exit(0xAF)</td><td class="px-3 py-2 font-mono text-slate-500 dark:text-slate-400">175</td><td class="px-3 py-2 font-bold text-orange-500 dark:text-orange-400">TL</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Time Limit — checker vaqt chegarasini belgiladi</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-500 dark:text-blue-400">exit(0xB0)</td><td class="px-3 py-2 font-mono text-slate-500 dark:text-slate-400">176</td><td class="px-3 py-2 font-bold text-blue-500 dark:text-blue-400">ML</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Memory Limit — checker xotira chegarasini belgiladi</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Comparator types -->
+      <h3 class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">Comparator turlari (<code class="normal-case font-mono">comparator</code> parametri)</h3>
+      <div class="overflow-x-auto mb-4">
+        <table class="w-full text-xs border-collapse">
+          <thead><tr class="bg-slate-100 dark:bg-slate-800"><th class="text-left px-3 py-2 rounded-tl-lg font-semibold text-slate-600 dark:text-slate-300">Qiymat</th><th class="text-left px-3 py-2 rounded-tr-lg font-semibold text-slate-600 dark:text-slate-300">Tavsif</th></tr></thead>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">case_insensitive</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400"><strong>Default.</strong> Harf katta-kichikligini hisobga olmay solishtiradi (YES = yes = Yes)</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">default</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Aynan solishtirish — trailing whitespace normallanadi, katta-kichik muhim</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">any_of</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Ko'p to'g'ri javob — <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">expected_output</code> da javoblar <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">\n---\n</code> bilan ajratiladi</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">program</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Maxsus Python checker kodi (<code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">checker</code> maydonida beriladi)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Default checker code -->
+      <h3 class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">case_insensitive comparator kodi (default)</h3>
+      <div class="relative bg-gray-950 rounded-xl mb-6">
+        <button onclick="copyCode('chk-default')" class="copy-btn absolute top-3 right-3 text-gray-500 hover:text-gray-200 transition-colors text-xs flex items-center gap-1 bg-gray-800 px-2 py-1 rounded-md"><i class="fa-solid fa-copy"></i></button>
+        <pre id="chk-default" class="text-xs text-gray-200 p-5 font-mono overflow-x-auto">ac = 0xAC
+wa = 0xAD
+
+a_in  = open("input.txt",   "r", encoding="utf-8").read()
+a_out = open("answer.txt",  "r", encoding="utf-8").read()
+u_out = open("user.txt",    "r", encoding="utf-8").read()
+u_code= open("solution.txt","r", encoding="utf-8").read()
+
+if a_out == u_out:
+    exit(ac)
+a = a_out.replace("\r", "").split("\n")
+b = u_out.replace("\r", "").split("\n")
+while a and a[-1] == "": a.pop()
+while b and b[-1] == "": b.pop()
+if len(a) != len(b):
+    exit(wa)
+for x, y in zip(a, b):
+    if x.lower() != y.lower():
+        exit(wa)
+exit(ac)</pre>
+      </div>
+
+      <!-- Checker examples tabs -->
+      <h3 class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">Program comparator misollari</h3>
+      <div class="flex gap-1 mb-0 border-b border-slate-200 dark:border-slate-700 flex-wrap">
+        <button onclick="switchTab('chkex', 'exact')" id="chkex-tab-exact" class="tab-btn-chkex px-3 py-2 text-xs font-medium border-b-2 border-sky-500 text-sky-600">Aynan solishtirish</button>
+        <button onclick="switchTab('chkex', 'float')" id="chkex-tab-float" class="tab-btn-chkex px-3 py-2 text-xs font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">Float (±1e-6)</button>
+        <button onclick="switchTab('chkex', 'anyof')" id="chkex-tab-anyof" class="tab-btn-chkex px-3 py-2 text-xs font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">AnyOf (program)</button>
+        <button onclick="switchTab('chkex', 'interactive')" id="chkex-tab-interactive" class="tab-btn-chkex px-3 py-2 text-xs font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">Interactive</button>
+      </div>
+      <div class="relative bg-gray-950 rounded-b-xl rounded-tr-xl mb-6">
+        <button onclick="copyCode('chkex-exact')" class="copy-btn absolute top-3 right-3 text-gray-500 hover:text-gray-200 transition-colors text-xs flex items-center gap-1 bg-gray-800 px-2 py-1 rounded-md"><i class="fa-solid fa-copy"></i></button>
+        <pre id="chkex-exact" class="tab-content active text-xs text-gray-200 p-5 font-mono overflow-x-auto"># comparator=program, case-sensitive aynan solishtirish
+a_out = open("answer.txt", "r").read().strip()
+u_out = open("user.txt",   "r").read().strip()
+
+if a_out == u_out:
+    exit(0xAC)  # AC
+exit(0xAD)      # WA</pre>
+        <pre id="chkex-float" class="tab-content text-xs text-gray-200 p-5 font-mono overflow-x-auto"># Haqiqiy son — absolyut yoki nisbiy xato 1e-6 dan oshmasin
+a_out = open("answer.txt", "r").read().strip()
+u_out = open("user.txt",   "r").read().strip()
+
+try:
+    expected = float(a_out)
+    got      = float(u_out)
+except ValueError:
+    exit(0xAD)  # WA — raqam emas
+
+eps = 1e-6
+if abs(expected - got) &lt;= eps * max(1.0, abs(expected)):
+    exit(0xAC)  # AC
+exit(0xAD)      # WA</pre>
+        <pre id="chkex-anyof" class="tab-content text-xs text-gray-200 p-5 font-mono overflow-x-auto"># comparator=any_of: expected_output da '\n---\n' bilan ajratilgan javoblar
+# Misol expected_output: "YES\n---\nYes\n---\nDA"
+# Built-in any_of comparatorida bu avtomatik ishlaydi.
+# Quyida program comparator bilan xuddi shu mantiq:
+
+a_out = open("answer.txt", "r", encoding="utf-8").read()
+u_out = open("user.txt",   "r", encoding="utf-8").read().replace("\r", "").rstrip()
+
+for ans in a_out.split("\n---\n"):
+    if ans.replace("\r", "").rstrip() == u_out:
+        exit(0xAC)  # AC
+exit(0xAD)          # WA</pre>
+        <pre id="chkex-interactive" class="tab-content text-xs text-gray-200 p-5 font-mono overflow-x-auto"># checker_type=interactive uchun checker kodi misoli
+# proc.stdin — foydalanuvchi dasturining kirishi
+# proc.stdout — foydalanuvchi dasturining chiqishi
+# AC, WA, PE, TL, ML — verdikt konstantalari
+
+import random
+
+n = random.randint(1, 100)
+
+# Foydalanuvchi dasturiga birinchi so'rov
+proc.stdin.write(f"100\n")
+proc.stdin.flush()
+
+for attempt in range(7):
+    line = proc.stdout.readline().strip()
+    guess = int(line)
+    if guess == n:
+        proc.stdin.write("correct\n")
+        proc.stdin.flush()
+        exit(AC)
+    elif guess &lt; n:
+        proc.stdin.write("too_small\n")
+    else:
+        proc.stdin.write("too_big\n")
+    proc.stdin.flush()
+
+exit(WA)  # 7 urinishda topmadi</pre>
+      </div>
+
+      <!-- Validator section -->
+      <h3 class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">Validator — kod tahlili (<code class="normal-case font-mono">validator</code> parametri)</h3>
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Validator foydalanuvchi manba kodini (<code class="bg-slate-100 dark:bg-slate-800 px-1 rounded font-mono text-xs">solution.txt</code>) bajarishdan OLDIN tekshiradi. Shartlar bajarilmasa <code class="bg-slate-100 dark:bg-slate-800 px-1 rounded font-mono text-xs">verdict: "WA", validator_failed: true</code> qaytariladi.</p>
+      <div class="overflow-x-auto mb-4">
+        <table class="w-full text-xs border-collapse">
+          <thead><tr class="bg-slate-100 dark:bg-slate-800"><th class="text-left px-3 py-2 rounded-tl-lg font-semibold text-slate-600 dark:text-slate-300">Maydon</th><th class="text-left px-3 py-2 font-semibold text-slate-600 dark:text-slate-300">Tur</th><th class="text-left px-3 py-2 rounded-tr-lg font-semibold text-slate-600 dark:text-slate-300">Tavsif</th></tr></thead>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">ban_loops</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">boolean</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400"><code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">for</code>, <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">while</code>, <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">do</code>, <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">goto</code> kalit so'zlarini taqiqlash</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">ban_keywords</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">string[]</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Qo'shimcha taqiqlangan kalit so'zlar ro'yxati (so'z chegarasi bilan tekshiriladi)</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">max_chars</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">number</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Manba kodidagi maksimal belgilar soni</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">max_lines</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">number</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Manba kodidagi maksimal qatorlar soni</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">ban_operators</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">string[]</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Taqiqlangan operatorlar yoki satr parchalar (masalan: <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">["*", "/", "%"]</code>)</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">require_operators</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">string[]</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Majburiy bo'lishi kerak bo'lgan operatorlar yoki satr parchalar</td></tr>
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="px-3 py-2 font-mono text-blue-600 dark:text-blue-400">custom_code</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">string</td><td class="px-3 py-2 text-slate-600 dark:text-slate-400">Maxsus Python kodi (<code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">solution</code>, <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">wa</code>, <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded font-mono">ac</code> o'zgaruvchilariga kirish mumkin)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="flex gap-1 mb-0 border-b border-slate-200 dark:border-slate-700">
+        <button onclick="switchTab('val', 'loops')" id="val-tab-loops" class="tab-btn-val px-3 py-2 text-xs font-medium border-b-2 border-sky-500 text-sky-600">Sikl taqiqi</button>
+        <button onclick="switchTab('val', 'ops')" id="val-tab-ops" class="tab-btn-val px-3 py-2 text-xs font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">Arifmetik cheklov</button>
+        <button onclick="switchTab('val', 'custom')" id="val-tab-custom" class="tab-btn-val px-3 py-2 text-xs font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">Custom tahlil</button>
+      </div>
+      <div class="relative bg-gray-950 rounded-b-xl rounded-tr-xl">
+        <button onclick="copyCode('val-loops')" class="copy-btn absolute top-3 right-3 text-gray-500 hover:text-gray-200 transition-colors text-xs flex items-center gap-1 bg-gray-800 px-2 py-1 rounded-md"><i class="fa-solid fa-copy"></i></button>
+        <pre id="val-loops" class="tab-content active text-xs text-gray-200 p-5 font-mono overflow-x-auto">// So'rov tanasi — sikl kalit so'zlarini taqiqlash
+{
+  "language": "python", "version": "*",
+  "files": [{ "content": "print(sum(range(101)))" }],
+  "stdin": "", "expected_output": "5050",
+  "validator": {
+    "ban_loops": true
+  }
+}</pre>
+        <pre id="val-ops" class="tab-content text-xs text-gray-200 p-5 font-mono overflow-x-auto">// Ko'paytirish va bo'lishni taqiqlash, qo'shishni majburlash
+{
+  "validator": {
+    "ban_operators": ["*", "/", "%"],
+    "require_operators": ["+"],
+    "max_chars": 500,
+    "max_lines": 20
+  }
+}</pre>
+        <pre id="val-custom" class="tab-content text-xs text-gray-200 p-5 font-mono overflow-x-auto">// Maxsus tahlil: "import" so'zi bo'lmasligi kerak (Python uchun)
+{
+  "validator": {
+    "custom_code": "if 'import' in solution: exit(wa)"
+  }
+}
+
+// custom_code ichida mavjud o'zgaruvchilar:
+//   solution — manba kodi matni (string)
+//   wa = 0xAD — WA chiqish kodi
+//   ac = 0xAC — AC chiqish kodi</pre>
+      </div>
+    </section>
+
     <!-- ═══════════════ PACKAGES ═══════════════ -->
     <section id="pkg-list" class="nav-link mb-6">
       <div class="flex items-center gap-3 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">
@@ -667,6 +1082,42 @@ ws.run_forever()
         <button onclick="copyCode('job-detail-curl')" class="copy-btn absolute top-3 right-3 text-gray-500 hover:text-gray-200 transition-colors text-xs flex items-center gap-1 bg-gray-800 px-2 py-1 rounded-md"><i class="fa-solid fa-copy"></i></button>
         <pre id="job-detail-curl" class="text-xs text-gray-200 p-5 font-mono">curl "https://your-server:2000/api/v2/jobs/JOB_UUID" \
   -H "Authorization: Bearer YOUR_TOKEN"</pre>
+      </div>
+    </section>
+
+    <section id="jobs-delete" class="nav-link mb-6">
+      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">
+        <span class="method-delete text-xs font-bold px-2.5 py-1 rounded-lg">DELETE</span>
+        <code class="text-base font-mono text-slate-800 dark:text-slate-200">/api/v2/jobs/:id</code>
+        <span class="ml-auto text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg"><i class="fa-solid fa-lock text-xs mr-1"></i>Token kerak</span>
+      </div>
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Bitta jobni ID bo'yicha o'chiradi.</p>
+      <div class="relative bg-gray-950 rounded-xl">
+        <button onclick="copyCode('job-del-curl')" class="copy-btn absolute top-3 right-3 text-gray-500 hover:text-gray-200 transition-colors text-xs flex items-center gap-1 bg-gray-800 px-2 py-1 rounded-md"><i class="fa-solid fa-copy"></i></button>
+        <pre id="job-del-curl" class="text-xs text-gray-200 p-5 font-mono">curl -X DELETE "https://your-server:2000/api/v2/jobs/JOB_UUID" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# Javob:
+{ "message": "Job o'chirildi" }</pre>
+      </div>
+    </section>
+
+    <section id="jobs-delete-bulk" class="nav-link mb-10">
+      <div class="flex items-center gap-3 mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">
+        <span class="method-delete text-xs font-bold px-2.5 py-1 rounded-lg">DELETE</span>
+        <code class="text-base font-mono text-slate-800 dark:text-slate-200">/api/v2/jobs</code>
+        <span class="ml-auto text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg"><i class="fa-solid fa-lock text-xs mr-1"></i>Token kerak</span>
+      </div>
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Bir nechta jobni bir so'rovda o'chiradi. So'rov tanasida <code class="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-xs font-mono">ids</code> massivi (UUID ro'yxat) talab qilinadi.</p>
+      <div class="relative bg-gray-950 rounded-xl">
+        <button onclick="copyCode('job-bulk-del-curl')" class="copy-btn absolute top-3 right-3 text-gray-500 hover:text-gray-200 transition-colors text-xs flex items-center gap-1 bg-gray-800 px-2 py-1 rounded-md"><i class="fa-solid fa-copy"></i></button>
+        <pre id="job-bulk-del-curl" class="text-xs text-gray-200 p-5 font-mono">curl -X DELETE "https://your-server:2000/api/v2/jobs" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{ "ids": ["uuid-1", "uuid-2", "uuid-3"] }'
+
+# Javob:
+{ "message": "3 ta job o'chirildi", "deleted": 3 }</pre>
       </div>
     </section>
 

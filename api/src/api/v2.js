@@ -8,39 +8,169 @@ const globals = require('../globals');
 const logger = require('logplease').create('api/v2');
 const { requireAuth } = require('../auth');
 const { getPool } = require('../db');
+const fs = require('fs/promises');
+const path = require('path');
 
-const DEFAULT_CHECKER = `\
+// ── Comparator scripts ──────────────────────────────────────────────────────
+// case_insensitive is the default (backward compat): exact first, then icase
+const COMPARATORS = {
+    case_insensitive: `\
 ac = 0xAC
 wa = 0xAD
-pe = 0xAE
 
-a_in  = open("input.txt",  "r", encoding="utf-8").read()
-a_out = open("author.txt", "r", encoding="utf-8").read()
-u_out = open("user.txt",   "r", encoding="utf-8").read()
-u_code= open("code.txt",   "r", encoding="utf-8").read()
+a_in  = open("input.txt",   "r", encoding="utf-8").read()
+a_out = open("answer.txt",  "r", encoding="utf-8").read()
+u_out = open("user.txt",    "r", encoding="utf-8").read()
+u_code= open("solution.txt","r", encoding="utf-8").read()
 
 if a_out == u_out:
     exit(ac)
 a = a_out.replace("\\r", "").split("\\n")
 b = u_out.replace("\\r", "").split("\\n")
-while a and a[-1] == "":
-    a.pop()
-while b and b[-1] == "":
-    b.pop()
+while a and a[-1] == "": a.pop()
+while b and b[-1] == "": b.pop()
 if len(a) != len(b):
     exit(wa)
 for x, y in zip(a, b):
     if x.lower() != y.lower():
         exit(wa)
 exit(ac)
-`;
+`,
+    default: `\
+ac = 0xAC
+wa = 0xAD
+
+a_out = open("answer.txt", "r", encoding="utf-8").read()
+u_out = open("user.txt",   "r", encoding="utf-8").read()
+
+def norm(s):
+    lines = s.replace("\\r", "").split("\\n")
+    while lines and lines[-1].rstrip() == "": lines.pop()
+    return "\\n".join(l.rstrip() for l in lines)
+
+if norm(a_out) == norm(u_out):
+    exit(ac)
+exit(wa)
+`,
+    any_of: `\
+ac = 0xAC
+wa = 0xAD
+
+a_out = open("answer.txt", "r", encoding="utf-8").read()
+u_out = open("user.txt",   "r", encoding="utf-8").read().replace("\\r", "").rstrip()
+
+for ans in a_out.split("\\n---\\n"):
+    if ans.replace("\\r", "").rstrip() == u_out:
+        exit(ac)
+exit(wa)
+`,
+};
+
+const DEFAULT_CHECKER = COMPARATORS.case_insensitive;
 
 const CHECKER_VERDICTS = {
     172: 'AC',
     173: 'WA',
     174: 'PE',
     175: 'TL',
+    176: 'ML',
 };
+
+// ── Validator script (static source-code analysis) ───────────────────────────
+const VALIDATOR_SCRIPT = `\
+import re, json, sys
+
+ac, wa = 0xAC, 0xAD
+solution = open("solution.txt", "r", encoding="utf-8").read()
+cfg = json.load(open("validator_config.json", "r", encoding="utf-8"))
+
+ban_kw = list(cfg.get("ban_keywords", []))
+if cfg.get("ban_loops"):
+    for kw in ["for", "while", "do", "goto"]:
+        if kw not in ban_kw:
+            ban_kw.append(kw)
+
+for kw in ban_kw:
+    if re.search(r"\\b" + re.escape(kw) + r"\\b", solution):
+        sys.exit(wa)
+
+max_chars = cfg.get("max_chars")
+if max_chars and len(solution) > int(max_chars):
+    sys.exit(wa)
+
+max_lines = cfg.get("max_lines")
+if max_lines and len(solution.split("\\n")) > int(max_lines):
+    sys.exit(wa)
+
+for op in cfg.get("ban_operators", []):
+    if op in solution:
+        sys.exit(wa)
+
+for op in cfg.get("require_operators", []):
+    if op not in solution:
+        sys.exit(wa)
+
+custom = cfg.get("custom_code", "")
+if custom:
+    exec(custom)
+
+sys.exit(ac)
+`;
+
+// ── Interactive checker orchestrator ─────────────────────────────────────────
+const INTERACTIVE_RUNNER = `\
+import subprocess, sys, os, json
+
+cfg = json.load(open("interactive_config.json", "r", encoding="utf-8"))
+AC, WA, PE, TL, ML = 0xAC, 0xAD, 0xAE, 0xAF, 0xB0
+
+if cfg.get("compiled"):
+    binary = cfg["binary"]
+    try:
+        os.chmod(binary, 0o755)
+    except Exception:
+        pass
+    run_cmd = ["./" + binary]
+elif cfg.get("user_language") == "python":
+    run_cmd = [sys.executable, cfg["source_file"]]
+else:
+    sys.exit(WA)
+
+try:
+    proc = subprocess.Popen(
+        run_cmd,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        text=True,
+        bufsize=1,
+    )
+except Exception:
+    sys.exit(WA)
+
+_g = {
+    "__builtins__": __builtins__,
+    "sys": sys, "os": os, "subprocess": subprocess,
+    "proc": proc,
+    "AC": AC, "WA": WA, "PE": PE, "TL": TL, "ML": ML,
+    "input_data": open("input.txt", encoding="utf-8").read(),
+    "answer_data": open("answer.txt", encoding="utf-8").read(),
+}
+
+checker_src = open("checker.py", encoding="utf-8").read()
+try:
+    exec(checker_src, _g)
+    proc.kill()
+    sys.exit(WA)
+except SystemExit:
+    try: proc.kill()
+    except Exception: pass
+    raise
+except Exception:
+    try: proc.kill()
+    except Exception: pass
+    sys.exit(WA)
+`;
 
 async function saveJob(uuid, username, result, code) {
     try {
@@ -363,15 +493,22 @@ router.post('/execute', requireAuth, async (req, res) => {
     }
 });
 
+function build_checker_code(comparator, custom_checker) {
+    if (comparator === 'program') {
+        return typeof custom_checker === 'string' ? custom_checker : DEFAULT_CHECKER;
+    }
+    return COMPARATORS[comparator] ?? DEFAULT_CHECKER;
+}
+
 async function run_checker(python_rt, { checker_code, input, expected_output, user_output, user_code }) {
     const job = new Job({
         runtime: python_rt,
         files: [
-            { name: 'checker.py', content: checker_code, encoding: 'utf8' },
-            { name: 'input.txt',  content: input,            encoding: 'utf8' },
-            { name: 'author.txt', content: expected_output,  encoding: 'utf8' },
-            { name: 'user.txt',   content: user_output,      encoding: 'utf8' },
-            { name: 'code.txt',   content: user_code,        encoding: 'utf8' },
+            { name: 'checker.py',   content: checker_code,    encoding: 'utf8' },
+            { name: 'input.txt',    content: input,           encoding: 'utf8' },
+            { name: 'answer.txt',   content: expected_output, encoding: 'utf8' },
+            { name: 'user.txt',     content: user_output,     encoding: 'utf8' },
+            { name: 'solution.txt', content: user_code,       encoding: 'utf8' },
         ],
         args: [],
         stdin: '',
@@ -387,6 +524,128 @@ async function run_checker(python_rt, { checker_code, input, expected_output, us
     }
 }
 
+async function run_validator(python_rt, { validator_config, solution_code }) {
+    const job = new Job({
+        runtime: python_rt,
+        files: [
+            { name: 'validator.py',          content: VALIDATOR_SCRIPT,              encoding: 'utf8' },
+            { name: 'solution.txt',           content: solution_code,                encoding: 'utf8' },
+            { name: 'validator_config.json',  content: JSON.stringify(validator_config), encoding: 'utf8' },
+        ],
+        args: [],
+        stdin: '',
+        timeouts:      { run: python_rt.timeouts.run,      compile: python_rt.timeouts.compile },
+        cpu_times:     { run: python_rt.cpu_times.run,     compile: python_rt.cpu_times.compile },
+        memory_limits: { run: python_rt.memory_limits.run, compile: python_rt.memory_limits.compile },
+    });
+    try {
+        const box = await job.prime();
+        return await job.execute(box);
+    } finally {
+        job.cleanup().catch(() => {});
+    }
+}
+
+async function compile_for_interactive(user_rt, user_files) {
+    if (!user_rt.compiled) return { compiled: false };
+
+    const code_files = user_files.filter(f => !f.encoding || f.encoding === 'utf8');
+    const compile_job = new Job({
+        runtime: user_rt,
+        files: user_files,
+        args: [],
+        stdin: '',
+        timeouts:      { compile: user_rt.timeouts.compile,      run: 5000 },
+        cpu_times:     { compile: user_rt.cpu_times.compile,     run: 5000 },
+        memory_limits: { compile: user_rt.memory_limits.compile, run: -1 },
+    });
+
+    let box;
+    try {
+        box = await compile_job.prime();
+        const compile_result = await compile_job.safe_call(
+            box, 'compile',
+            code_files.map(f => f.name),
+            user_rt.timeouts.compile,
+            user_rt.cpu_times.compile,
+            user_rt.memory_limits.compile
+        );
+
+        if (compile_result.code !== 0 || compile_result.status) {
+            return { compiled: true, compile_error: compile_result };
+        }
+
+        const submission_dir = path.join(box.dir, 'submission');
+        const known_outputs = ['a.out', 'code.jar', 'binary'];
+        for (const name of known_outputs) {
+            try {
+                const data = await fs.readFile(path.join(submission_dir, name));
+                return { compiled: true, binary_name: name, binary_data: data.toString('base64'), compile_result };
+            } catch (_) {}
+        }
+        return { compiled: true, compile_error: { code: 1, stderr: 'Binary not found', stdout: '', status: null } };
+    } finally {
+        compile_job.cleanup().catch(() => {});
+    }
+}
+
+async function run_interactive_checker(python_rt, user_rt, { checker_code, input, answer, user_files }) {
+    const is_python = user_rt.language === 'python';
+    const config = { user_language: user_rt.language, compiled: false, binary: null, source_file: null };
+    const extra_files = [];
+    let compile_result_obj = null;
+
+    if (user_rt.compiled) {
+        const info = await compile_for_interactive(user_rt, user_files);
+        if (info.compile_error) {
+            return { compile: info.compile_error, run: undefined, language: user_rt.language, version: user_rt.version.raw };
+        }
+        config.compiled = true;
+        config.binary = info.binary_name;
+        compile_result_obj = info.compile_result;
+        extra_files.push({ name: info.binary_name, content: info.binary_data, encoding: 'base64' });
+    } else if (is_python) {
+        const code_files = user_files.filter(f => !f.encoding || f.encoding === 'utf8');
+        config.source_file = code_files[0]?.name || 'code.py';
+        extra_files.push(...user_files);
+    } else {
+        return {
+            compile: undefined,
+            run: { code: 0xAD, stdout: '', stderr: 'Interactive mode is not supported for this language', status: null },
+            language: user_rt.language,
+            version: user_rt.version.raw,
+        };
+    }
+
+    const checker_job = new Job({
+        runtime: python_rt,
+        files: [
+            { name: 'interactive_runner.py',  content: INTERACTIVE_RUNNER,          encoding: 'utf8' },
+            { name: 'checker.py',             content: checker_code,                encoding: 'utf8' },
+            { name: 'input.txt',              content: input,                       encoding: 'utf8' },
+            { name: 'answer.txt',             content: answer,                      encoding: 'utf8' },
+            { name: 'interactive_config.json',content: JSON.stringify(config),       encoding: 'utf8' },
+            ...extra_files,
+        ],
+        args: [],
+        stdin: '',
+        timeouts:      { run: python_rt.timeouts.run,      compile: 0 },
+        cpu_times:     { run: python_rt.cpu_times.run,     compile: 0 },
+        memory_limits: { run: python_rt.memory_limits.run, compile: -1 },
+    });
+
+    try {
+        const box = await checker_job.prime();
+        if (config.compiled && config.binary) {
+            await fs.chmod(path.join(box.dir, 'submission', config.binary), 0o755).catch(() => {});
+        }
+        const result = await checker_job.execute(box);
+        return { compile: compile_result_obj, run: result.run, language: user_rt.language, version: user_rt.version.raw };
+    } finally {
+        checker_job.cleanup().catch(() => {});
+    }
+}
+
 function verdict_from_run(run) {
     if (!run) return 'XX';
     if (run.status === 'TO') return 'TL';
@@ -396,9 +655,32 @@ function verdict_from_run(run) {
 }
 
 async function do_check(req_body, auth_user, res) {
-    const { checker, expected_output } = req_body;
+    const { checker, expected_output, checker_type = 'default', validator } = req_body;
     if (typeof expected_output !== 'string') {
         return res.status(400).json({ message: 'expected_output is required as a string' });
+    }
+
+    // Backward compat: if checker is a string and no comparator → 'program'
+    const comparator = req_body.comparator ?? (typeof checker === 'string' ? 'program' : 'case_insensitive');
+
+    const python_rt = runtime.get_latest_runtime_matching_language_version('python', '*');
+    if (!python_rt) {
+        return res.status(500).json({ message: 'Python runtime topilmadi — checker ishlay olmaydi' });
+    }
+
+    // ── Validator (static source analysis) ──────────────────────────────────
+    if (validator && typeof validator === 'object') {
+        const solution_code = req_body.files?.[0]?.content || '';
+        let vres;
+        try {
+            vres = await run_validator(python_rt, { validator_config: validator, solution_code });
+        } catch (error) {
+            logger.error(`Validator xatosi: ${error.message}`);
+            return res.status(500).json({ message: 'Validator xatosi: ' + error.message });
+        }
+        if ((vres.run?.code ?? null) !== 172) {
+            return res.json({ language: req_body.language, version: req_body.version, verdict: 'WA', validator_failed: true });
+        }
     }
 
     let job;
@@ -408,6 +690,36 @@ async function do_check(req_body, auth_user, res) {
         return res.status(400).json(error);
     }
 
+    const input_content = req_body.stdin || req_body.files?.find(f => f.name === 'input.txt')?.content || '';
+
+    // ── Interactive mode ─────────────────────────────────────────────────────
+    if (checker_type === 'interactive') {
+        const checker_code = typeof checker === 'string' ? checker : DEFAULT_CHECKER;
+        let ires;
+        try {
+            ires = await run_interactive_checker(python_rt, job.runtime, {
+                checker_code,
+                input: input_content,
+                answer: expected_output,
+                user_files: req_body.files || [],
+            });
+        } catch (error) {
+            logger.error(`Interactive checker xatosi: ${error.message}`);
+            return res.status(500).json({ message: 'Interactive checker xatosi: ' + error.message });
+        }
+        const checker_exit = ires.run?.code ?? null;
+        const verdict = CHECKER_VERDICTS[checker_exit] ?? 'WA';
+        return res.json({
+            language: ires.language,
+            version: ires.version,
+            verdict,
+            checker_exit,
+            ...(ires.compile ? { compile: format_stage(ires.compile) } : {}),
+            run: format_stage(ires.run),
+        });
+    }
+
+    // ── Normal execution ─────────────────────────────────────────────────────
     let result;
     try {
         const box = await job.prime();
@@ -435,14 +747,7 @@ async function do_check(req_body, auth_user, res) {
         return res.json({ ...base, verdict: early_verdict, run: format_stage(result.run) });
     }
 
-    const python_rt = runtime.get_latest_runtime_matching_language_version('python', '*');
-    if (!python_rt) {
-        return res.status(500).json({ message: 'Python runtime topilmadi — checker ishlay olmaydi' });
-    }
-
-    const checker_code = typeof checker === 'string' ? checker : DEFAULT_CHECKER;
-    const input_file = req_body.files?.find(f => f.name === 'input.txt');
-    const input_content = req_body.stdin || input_file?.content || '';
+    const checker_code = build_checker_code(comparator, checker);
     let checker_result;
     try {
         checker_result = await run_checker(python_rt, {
