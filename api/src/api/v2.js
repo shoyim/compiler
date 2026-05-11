@@ -6,7 +6,7 @@ const { Job } = require('../job');
 const package = require('../package');
 const globals = require('../globals');
 const logger = require('logplease').create('api/v2');
-const { requireAuth } = require('../auth');
+const { requireAuth, requireAdmin } = require('../auth');
 const { getPool } = require('../db');
 const fs = require('fs/promises');
 const path = require('path');
@@ -789,7 +789,7 @@ router.post('/check', requireAuth, async (req, res) => {
     return do_check(req.body, req.authUser, res);
 });
 
-router.get('/jobs', requireAuth, async (req, res) => {
+router.get('/jobs', requireAuth, requireAdmin, async (req, res) => {
     const limit  = Math.min(Math.max(parseInt(req.query.limit)  || 100, 1), 500);
     const offset = Math.max(parseInt(req.query.offset) || 0, 0);
     const lang = req.query.language || null;
@@ -815,7 +815,7 @@ router.get('/jobs', requireAuth, async (req, res) => {
     }
 });
 
-router.get('/jobs/:id', requireAuth, async (req, res) => {
+router.get('/jobs/:id', requireAuth, requireAdmin, async (req, res) => {
     try {
         const [rows] = await getPool().execute('SELECT * FROM jobs WHERE id = ?', [req.params.id]);
         if (!rows[0]) return res.status(404).json({ message: 'Job topilmadi' });
@@ -826,7 +826,7 @@ router.get('/jobs/:id', requireAuth, async (req, res) => {
     }
 });
 
-router.delete('/jobs/:id', requireAuth, async (req, res) => {
+router.delete('/jobs/:id', requireAuth, requireAdmin, async (req, res) => {
     try {
         const [result] = await getPool().execute('DELETE FROM jobs WHERE id = ?', [req.params.id]);
         if (result.affectedRows === 0) return res.status(404).json({ message: 'Job topilmadi' });
@@ -837,7 +837,7 @@ router.delete('/jobs/:id', requireAuth, async (req, res) => {
     }
 });
 
-router.delete('/jobs', requireAuth, async (req, res) => {
+router.delete('/jobs', requireAuth, requireAdmin, async (req, res) => {
     const { ids } = req.body;
     if (!Array.isArray(ids) || ids.length === 0) {
         return res.status(400).json({ message: 'ids massivi kerak' });
@@ -882,7 +882,7 @@ router.get('/packages', async (req, res) => {
     return res.status(200).send(packages);
 });
 
-router.post('/packages', async (req, res) => {
+router.post('/packages', requireAuth, requireAdmin, async (req, res) => {
     logger.debug('Request to install package');
     const { language, version } = req.body;
     const pkg = await package.get_package(language, version);
@@ -900,7 +900,7 @@ router.post('/packages', async (req, res) => {
     }
 });
 
-router.delete('/packages', async (req, res) => {
+router.delete('/packages', requireAuth, requireAdmin, async (req, res) => {
     logger.debug('Request to uninstall package');
     const { language, version } = req.body;
     const pkg = await package.get_package(language, version);

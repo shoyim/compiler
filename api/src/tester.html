@@ -121,16 +121,16 @@
       <span class="text-sm font-bold hidden sm:block th-text">Compiler</span>
     </div>
     <nav class="flex items-center gap-0.5 flex-shrink-0">
-      <a href="/dashboard" class="th-tab-i flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors">
+      <a href="/dashboard" data-admin-nav class="th-tab-i flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors">
         <i class="fa-solid fa-gauge-high text-xs"></i><span class="hidden sm:inline">Dashboard</span>
       </a>
       <a href="/tester" class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-green-600 text-white">
         <i class="fa-solid fa-play text-xs"></i><span>Tester</span>
       </a>
-      <a href="/jobs" class="th-tab-i flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors">
+      <a href="/jobs" data-admin-nav class="th-tab-i flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors">
         <i class="fa-solid fa-list-check text-xs"></i><span class="hidden sm:inline">Joblar</span>
       </a>
-      <a href="/tokens" class="th-tab-i flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors">
+      <a href="/tokens" data-admin-nav class="th-tab-i flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors">
         <i class="fa-solid fa-key text-xs"></i><span class="hidden sm:inline">Tokenlar</span>
       </a>
       <a href="/api-docs" class="th-tab-i flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors">
@@ -330,6 +330,19 @@
 const authToken = localStorage.getItem('auth_token');
 if (!authToken) window.location.href = '/login';
 document.getElementById('headerUser').textContent = localStorage.getItem('auth_user') || '?';
+
+(async () => {
+  let role = localStorage.getItem('auth_role');
+  if (!role) {
+    try {
+      const r = await fetch('/auth/me', { headers: { Authorization: 'Bearer ' + authToken } });
+      if (r.ok) { const d = await r.json(); role = d.role; localStorage.setItem('auth_role', role); }
+    } catch (_) {}
+  }
+  if (role !== 'admin') {
+    document.querySelectorAll('[data-admin-nav]').forEach(el => el.classList.add('hidden'));
+  }
+})();
 
 function authHeaders() {
   return { 'Content-Type':'application/json', 'Authorization':'Bearer '+authToken };

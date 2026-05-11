@@ -182,6 +182,18 @@ const token = localStorage.getItem('auth_token');
 if (!token) window.location.href = '/login';
 document.getElementById('headerUser').textContent = localStorage.getItem('auth_user') || '?';
 
+async function checkAdmin() {
+  let role = localStorage.getItem('auth_role');
+  if (!role) {
+    try {
+      const r = await fetch('/auth/me', { headers: { Authorization: 'Bearer ' + token } });
+      if (r.ok) { const d = await r.json(); role = d.role; localStorage.setItem('auth_role', role); }
+    } catch (_) {}
+  }
+  if (role !== 'admin') window.location.href = '/tester';
+}
+checkAdmin();
+
 function authHeaders() {
   return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
 }
