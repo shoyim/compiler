@@ -200,7 +200,8 @@ class Package {
     }
 
     static async get_package_list() {
-        const repo_content = await fetch(config.repo_url).then(x => x.text());
+        const index_path = path.join(__dirname, 'packages_index');
+        const repo_content = await fs.readFile(index_path, 'utf8');
 
         const entries = repo_content.split('\n').filter(x => x.length > 0);
 

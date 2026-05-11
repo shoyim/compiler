@@ -16,22 +16,37 @@
         <i class="fa-solid fa-code text-white text-2xl"></i>
       </div>
       <h1 class="text-2xl font-bold text-white">Compiler Dashboard</h1>
-      <p class="text-slate-400 text-sm mt-1">Kirish uchun ma'lumot kiriting</p>
+      <p class="text-slate-400 text-sm mt-1" id="pageSubtitle">Kirish uchun ma'lumot kiriting</p>
     </div>
 
     <!-- Card -->
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-2xl">
-      <div id="error" class="hidden mb-4 flex items-center gap-2 bg-red-500/10 border border-red-500/20 text-red-400 text-sm px-3 py-2.5 rounded-lg">
-        <i class="fa-solid fa-circle-exclamation flex-shrink-0"></i>
-        <span id="errorMsg"></span>
+
+      <!-- Tabs -->
+      <div class="flex mb-5 bg-slate-700/50 rounded-lg p-1">
+        <button id="tabLogin" onclick="switchTab('login')"
+          class="flex-1 py-1.5 text-sm font-medium rounded-md transition-all bg-sky-500 text-white shadow">
+          <i class="fa-solid fa-right-to-bracket mr-1.5"></i>Kirish
+        </button>
+        <button id="tabRegister" onclick="switchTab('register')"
+          class="flex-1 py-1.5 text-sm font-medium rounded-md transition-all text-slate-400 hover:text-white">
+          <i class="fa-solid fa-user-plus mr-1.5"></i>Ro'yxatdan o'tish
+        </button>
       </div>
 
+      <!-- Alert -->
+      <div id="alert" class="hidden mb-4 flex items-center gap-2 text-sm px-3 py-2.5 rounded-lg border">
+        <i id="alertIcon" class="flex-shrink-0"></i>
+        <span id="alertMsg"></span>
+      </div>
+
+      <!-- Login Form -->
       <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
         <div>
           <label class="block text-sm font-medium text-slate-300 mb-1.5">
             <i class="fa-solid fa-user text-slate-400 mr-1.5 text-xs"></i>Foydalanuvchi nomi
           </label>
-          <input id="username" type="text" autocomplete="username" required
+          <input id="loginUsername" type="text" autocomplete="username" required
             class="w-full bg-slate-700 border border-slate-600 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent placeholder-slate-500"
             placeholder="admin">
         </div>
@@ -40,35 +55,107 @@
             <i class="fa-solid fa-lock text-slate-400 mr-1.5 text-xs"></i>Parol
           </label>
           <div class="relative">
-            <input id="password" type="password" autocomplete="current-password" required
+            <input id="loginPassword" type="password" autocomplete="current-password" required
               class="w-full bg-slate-700 border border-slate-600 text-white rounded-lg px-3 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent placeholder-slate-500"
               placeholder="••••••••">
-            <button type="button" onclick="togglePwd()" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200">
-              <i id="eyeIcon" class="fa-solid fa-eye text-xs"></i>
+            <button type="button" onclick="togglePwd('loginPassword','eyeLogin')" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200">
+              <i id="eyeLogin" class="fa-solid fa-eye text-xs"></i>
             </button>
           </div>
         </div>
-        <button type="submit" id="submitBtn"
+        <button type="submit" id="loginBtn"
           class="w-full bg-sky-500 hover:bg-sky-400 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors flex items-center justify-center gap-2">
           <i class="fa-solid fa-right-to-bracket"></i>
-          <span id="submitText">Kirish</span>
+          <span id="loginBtnText">Kirish</span>
         </button>
       </form>
-    </div>
 
+      <!-- Register Form -->
+      <form id="registerForm" onsubmit="handleRegister(event)" class="space-y-4 hidden">
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-1.5">
+            <i class="fa-solid fa-user text-slate-400 mr-1.5 text-xs"></i>Foydalanuvchi nomi
+          </label>
+          <input id="regUsername" type="text" autocomplete="username" required
+            class="w-full bg-slate-700 border border-slate-600 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent placeholder-slate-500"
+            placeholder="username">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-1.5">
+            <i class="fa-solid fa-lock text-slate-400 mr-1.5 text-xs"></i>Parol
+          </label>
+          <div class="relative">
+            <input id="regPassword" type="password" autocomplete="new-password" required
+              class="w-full bg-slate-700 border border-slate-600 text-white rounded-lg px-3 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent placeholder-slate-500"
+              placeholder="••••••••">
+            <button type="button" onclick="togglePwd('regPassword','eyeReg')" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200">
+              <i id="eyeReg" class="fa-solid fa-eye text-xs"></i>
+            </button>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-1.5">
+            <i class="fa-solid fa-lock text-slate-400 mr-1.5 text-xs"></i>Parolni tasdiqlang
+          </label>
+          <input id="regConfirm" type="password" autocomplete="new-password" required
+            class="w-full bg-slate-700 border border-slate-600 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent placeholder-slate-500"
+            placeholder="••••••••">
+        </div>
+        <button type="submit" id="regBtn"
+          class="w-full bg-sky-500 hover:bg-sky-400 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors flex items-center justify-center gap-2">
+          <i class="fa-solid fa-user-plus"></i>
+          <span id="regBtnText">Ro'yxatdan o'tish</span>
+        </button>
+      </form>
+
+    </div>
   </div>
 
 <script>
-  // Already logged in?
   if (localStorage.getItem('auth_token')) {
     fetch('/auth/me', { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('auth_token') } })
       .then(r => r.ok ? window.location.href = '/dashboard' : null)
       .catch(() => {});
   }
 
-  function togglePwd() {
-    const inp = document.getElementById('password');
-    const icon = document.getElementById('eyeIcon');
+  function switchTab(tab) {
+    const isLogin = tab === 'login';
+    document.getElementById('loginForm').classList.toggle('hidden', !isLogin);
+    document.getElementById('registerForm').classList.toggle('hidden', isLogin);
+    document.getElementById('tabLogin').className = isLogin
+      ? 'flex-1 py-1.5 text-sm font-medium rounded-md transition-all bg-sky-500 text-white shadow'
+      : 'flex-1 py-1.5 text-sm font-medium rounded-md transition-all text-slate-400 hover:text-white';
+    document.getElementById('tabRegister').className = !isLogin
+      ? 'flex-1 py-1.5 text-sm font-medium rounded-md transition-all bg-sky-500 text-white shadow'
+      : 'flex-1 py-1.5 text-sm font-medium rounded-md transition-all text-slate-400 hover:text-white';
+    document.getElementById('pageSubtitle').textContent = isLogin
+      ? 'Kirish uchun ma\'lumot kiriting'
+      : 'Yangi hisob yarating';
+    hideAlert();
+  }
+
+  function showAlert(msg, type) {
+    const el = document.getElementById('alert');
+    const icon = document.getElementById('alertIcon');
+    el.classList.remove('hidden', 'bg-red-500/10', 'border-red-500/20', 'text-red-400',
+                                   'bg-green-500/10', 'border-green-500/20', 'text-green-400');
+    if (type === 'error') {
+      el.classList.add('bg-red-500/10', 'border-red-500/20', 'text-red-400');
+      icon.className = 'fa-solid fa-circle-exclamation flex-shrink-0';
+    } else {
+      el.classList.add('bg-green-500/10', 'border-green-500/20', 'text-green-400');
+      icon.className = 'fa-solid fa-circle-check flex-shrink-0';
+    }
+    document.getElementById('alertMsg').textContent = msg;
+  }
+
+  function hideAlert() {
+    document.getElementById('alert').classList.add('hidden');
+  }
+
+  function togglePwd(inputId, iconId) {
+    const inp = document.getElementById(inputId);
+    const icon = document.getElementById(iconId);
     if (inp.type === 'password') {
       inp.type = 'text';
       icon.className = 'fa-solid fa-eye-slash text-xs';
@@ -80,33 +167,62 @@
 
   async function handleLogin(e) {
     e.preventDefault();
-    const btn = document.getElementById('submitBtn');
-    const txt = document.getElementById('submitText');
-    const err = document.getElementById('error');
-    err.classList.add('hidden');
+    const btn = document.getElementById('loginBtn');
+    const txt = document.getElementById('loginBtnText');
+    hideAlert();
     btn.disabled = true;
     txt.textContent = 'Kirilmoqda...';
-
     try {
       const res = await fetch('/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          username: document.getElementById('username').value,
-          password: document.getElementById('password').value,
+          username: document.getElementById('loginUsername').value,
+          password: document.getElementById('loginPassword').value,
         })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
-
       localStorage.setItem('auth_token', data.token);
       localStorage.setItem('auth_user', data.username);
+      localStorage.setItem('auth_role', data.role || 'user');
       window.location.href = '/dashboard';
     } catch(e) {
-      document.getElementById('errorMsg').textContent = e.message;
-      err.classList.remove('hidden');
+      showAlert(e.message, 'error');
       btn.disabled = false;
       txt.textContent = 'Kirish';
+    }
+  }
+
+  async function handleRegister(e) {
+    e.preventDefault();
+    const btn = document.getElementById('regBtn');
+    const txt = document.getElementById('regBtnText');
+    hideAlert();
+    const username = document.getElementById('regUsername').value;
+    const password = document.getElementById('regPassword').value;
+    const confirm  = document.getElementById('regConfirm').value;
+    if (password !== confirm) {
+      return showAlert('Parollar mos kelmadi', 'error');
+    }
+    btn.disabled = true;
+    txt.textContent = 'Ro\'yxatdan o\'tilmoqda...';
+    try {
+      const res = await fetch('/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      showAlert(data.message + '. Endi tizimga kiring.', 'success');
+      document.getElementById('registerForm').reset();
+      setTimeout(() => switchTab('login'), 1500);
+    } catch(e) {
+      showAlert(e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      txt.textContent = 'Ro\'yxatdan o\'tish';
     }
   }
 </script>

@@ -21,9 +21,11 @@ async function connect() {
             id         INT AUTO_INCREMENT PRIMARY KEY,
             username   VARCHAR(64) NOT NULL UNIQUE,
             password   VARCHAR(255) NOT NULL,
+            role       VARCHAR(16) NOT NULL DEFAULT 'user',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     `);
+    try { await pool.execute(`ALTER TABLE users ADD COLUMN role VARCHAR(16) NOT NULL DEFAULT 'user'`); } catch (_) {}
 
     await pool.execute(`
         CREATE TABLE IF NOT EXISTS tokens (
@@ -72,10 +74,15 @@ async function connect() {
     if (rows[0].c === 0) {
         const hash = await bcrypt.hash('admin123', 10);
         await pool.execute(
-            'INSERT INTO users (username, password) VALUES (?, ?)',
-            ['admin', hash]
+            'INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
+            ['admin', hash, 'admin']
         );
         logger.info('Default user created: admin / admin123');
+    } else {
+        // Ensure the first user named 'admin' has admin role (migration)
+        await pool.execute(
+            `UPDATE users SET role = 'admin' WHERE username = 'admin' AND role = 'user'`
+        );
     }
 
     logger.info('Database connected');
