@@ -31,6 +31,7 @@ forth,0.7.3,18ec3d9ba7a959b34e45f92b6e712552b00618e1ccfc293108e0be773b42262c,htt
 freebasic,1.8.0,0c59f1555f1f2f413ad27cb345a2d7fc8dbd48c3bcec83062b2d4e1fe8da39fb,https://github.com/shoyim/compiler/releases/download/pkgs/freebasic-1.8.0.pkg.tar.gz
 freebasic,1.9.0,094fa0d18c85e2964c95dab75cae8a10e2df2879e298ce195565b0df212894e9,https://github.com/shoyim/compiler/releases/download/pkgs/freebasic-1.9.0.pkg.tar.gz
 gawk,5.1.0,ab0a8efb9f31e39e11e64be7621c56d0a1dc7c7e55767144293bc861caf4233f,https://github.com/shoyim/compiler/releases/download/pkgs/gawk-5.1.0.pkg.tar.gz
+gcc,9.3.0,e683ece826a601286407dc42a9750e38b536dd2f7a356f46690ae8bf1efc8ba1,https://github.com/shoyim/compiler/releases/download/pkgs/gcc-9.3.0.pkg.tar.gz
 gcc,10.2.0,62f5a29a8605fdaea7291b4032aa2a3caf7ea5ff24f8d63469cd2ce6e93257a4,https://github.com/shoyim/compiler/releases/download/pkgs/gcc-10.2.0.pkg.tar.gz
 gcc,15.2.0,8d6d23ad73ac0439450886670dae04d30f752fa269bd9ab6d9de76163f996f5b,https://github.com/shoyim/compiler/releases/download/pkgs/gcc-15.2.0.pkg.tar.gz
 go,1.16.2,9886fb74a75c190baaf236a1b64eb34ee448e28c88e8f1be1f634853cb275d79,https://github.com/shoyim/compiler/releases/download/pkgs/go-1.16.2.pkg.tar.gz
