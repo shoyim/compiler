@@ -459,13 +459,7 @@ router.post('/execute/demo', async (req, res) => {
 });
 
 router.post('/execute', requireAuth, async (req, res) => {
-    const bodyString = JSON.stringify(req.body);
-    const bodySizeBytes = Buffer.byteLength(bodyString, 'utf8');
-    const bodySizeMB = (bodySizeBytes / 1024 / 1024).toFixed(2);
-
-    logger.info(
-        `Incoming request size: ${bodySizeBytes} bytes (${bodySizeMB} MB)`
-    );
+    logger.info(`Request body chars: ${JSON.stringify(req.body || {}).length}`);
     
     let job;
     try {
