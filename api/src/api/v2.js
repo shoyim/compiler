@@ -415,6 +415,8 @@ router.ws('/connect', requireAuth, async (ws, req) => {
 
 router.post('/execute/demo', async (req, res) => {
     let job;
+    logger.info(`Request body:\n${JSON.stringify(req.body, null, 2)}`);
+
     try {
         // Demo: timeout 5s, memory 64MB max
         const body = {
@@ -457,10 +459,11 @@ router.post('/execute/demo', async (req, res) => {
 });
 
 router.post('/execute', requireAuth, async (req, res) => {
+    logger.info(`Request body:\n${JSON.stringify(req.body, null, 2)}`);
+
     let job;
     try {
         job = await get_job(req.body);
-        logger.info(`Request body:\n${JSON.stringify(req.body, null, 2)}`);
     } catch (error) {
         return res.status(400).json(error);
     }
