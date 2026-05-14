@@ -225,7 +225,7 @@ function format_stage(stage) {
     if (!stage) return undefined;
     return {
         stdout: stage.stdout,
-        stderr: stage.stderr,
+        stderr: stage.stderr, 
         output: stage.output,
         code: stage.code,
         signal: stage.signal,
@@ -460,6 +460,7 @@ router.post('/execute', requireAuth, async (req, res) => {
     let job;
     try {
         job = await get_job(req.body);
+        logger.info(`Request body:\n${JSON.stringify(req.body, null, 2)}`);
     } catch (error) {
         return res.status(400).json(error);
     }
