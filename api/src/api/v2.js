@@ -416,7 +416,7 @@ router.ws('/connect', requireAuth, async (ws, req) => {
 router.post('/execute/demo', async (req, res) => {
     let job;
     logger.info(`Request body:\n${JSON.stringify(req.body, null, 2)}`);
-    logger.info(`stdin chars: ${(req.body?.stdin || '').length}`);
+    logger.warn(`stdin chars: ${(req.body?.stdin || '').length}`);
 
     try {
         // Demo: timeout 5s, memory 64MB max
@@ -460,7 +460,7 @@ router.post('/execute/demo', async (req, res) => {
 });
 
 router.post('/execute', requireAuth, async (req, res) => {
-    logger.info(`Request body chars: ${JSON.stringify(req.body || {}).length}, stdin chars: ${(req.body?.stdin || '').length}`);
+    logger.warn(`stdin chars: ${(req.body?.stdin || '').length}`);
     
     let job;
     try {
