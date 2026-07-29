@@ -12,6 +12,14 @@ RUN sed -i 's/deb.debian.org/archive.debian.org/g' /etc/apt/sources.list && \
     make -j$(nproc) install && \
     rm -rf /tmp/*
 
+FROM node:20-bookworm-slim AS web-build
+
+WORKDIR /web
+COPY ["web/package.json", "web/package-lock.json", "./"]
+RUN npm install
+COPY ./web ./
+RUN npm run build
+
 FROM node:18-bullseye-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -37,6 +45,7 @@ WORKDIR /compiler_api
 COPY ["package.json", "package-lock.json", "./"]
 RUN npm install
 COPY ./src ./src
+COPY --from=web-build /web/dist ./src/web-dist
 
 RUN sed -i 's/\r$//' /compiler_api/src/docker-entrypoint.sh && \
     chmod +x /compiler_api/src/docker-entrypoint.sh

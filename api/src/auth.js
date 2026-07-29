@@ -1,13 +1,31 @@
 'use strict';
 const express = require('express');
 const bcrypt  = require('bcryptjs');
+const crypto  = require('crypto');
+const rateLimit = require('express-rate-limit');
 const { v4: uuidv4 } = require('uuid');
 const { getPool } = require('./db');
 
 const router = express.Router();
 
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: 'Juda ko\'p urinish. Iltimos, keyinroq qayta urinib ko\'ring.' },
+});
+
+function hashToken(token) {
+    return crypto.createHash('sha256').update(token).digest('hex');
+}
+
+function previewToken(token) {
+    return token.slice(0, 12) + '...' + token.slice(-6);
+}
+
 // ── Public: Login ─────────────────────────────────────────────────────────────
-router.post('/login', async (req, res) => {
+router.post('/login', authLimiter, async (req, res) => {
     const { username, password } = req.body || {};
     if (!username || !password) {
         return res.status(400).json({ message: 'username va password kerak' });
@@ -22,8 +40,8 @@ router.post('/login', async (req, res) => {
         const token = uuidv4().replace(/-/g, '');
         const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
         await pool.execute(
-            'INSERT INTO tokens (token, username, expires_at) VALUES (?, ?, ?)',
-            [token, username, expires]
+            'INSERT INTO tokens (token, token_preview, username, expires_at) VALUES (?, ?, ?, ?)',
+            [hashToken(token), previewToken(token), username, expires]
         );
         return res.json({ token, username, role: user.role, expires_at: expires.toISOString() });
     } catch (e) {
@@ -32,7 +50,7 @@ router.post('/login', async (req, res) => {
 });
 
 // ── Public: Register ──────────────────────────────────────────────────────────
-router.post('/register', async (req, res) => {
+router.post('/register', authLimiter, async (req, res) => {
     const { username, password } = req.body || {};
     if (!username || !password) {
         return res.status(400).json({ message: 'username va password kerak' });
@@ -43,8 +61,8 @@ router.post('/register', async (req, res) => {
     if (!/^[a-zA-Z0-9_.-]+$/.test(username)) {
         return res.status(400).json({ message: 'Username faqat harf, raqam, _, ., - bo\'lishi mumkin' });
     }
-    if (password.length < 4) {
-        return res.status(400).json({ message: 'Parol kamida 4 ta belgi bo\'lishi kerak' });
+    if (password.length < 8) {
+        return res.status(400).json({ message: 'Parol kamida 8 ta belgi bo\'lishi kerak' });
     }
     try {
         const hash = await bcrypt.hash(password, 10);
@@ -62,7 +80,7 @@ router.post('/register', async (req, res) => {
 router.post('/logout', async (req, res) => {
     const token = extractToken(req);
     try {
-        if (token) await getPool().execute('DELETE FROM tokens WHERE token = ?', [token]);
+        if (token) await getPool().execute('DELETE FROM tokens WHERE token = ?', [hashToken(token)]);
     } catch (_) {}
     return res.json({ message: 'Chiqildi' });
 });
@@ -77,7 +95,7 @@ router.get('/me', async (req, res) => {
              FROM tokens t
              JOIN users u ON t.username = u.username
              WHERE t.token = ? AND t.expires_at > NOW()`,
-            [token]
+            [hashToken(token)]
         );
         if (!rows[0]) return res.status(401).json({ message: 'Token yaroqsiz' });
         return res.json({ username: rows[0].username, role: rows[0].role, expires_at: rows[0].expires_at });
@@ -155,40 +173,62 @@ router.delete('/users/:username', requireAuth, requireAdmin, async (req, res) =>
 });
 
 // ── Token management ──────────────────────────────────────────────────────────
+// Faqat admin token yaratadi va apidan foydalanish ruxsatini beradi.
+// Oddiy user faqat o'ziga (yoki, admin bo'lsa, istalgan userga) berilgan tokenlarni ko'ra oladi.
 router.get('/tokens', requireAuth, async (req, res) => {
+    const { username } = req.query;
     try {
-        const [rows] = await getPool().execute(
-            'SELECT token, username, label, created_at, expires_at FROM tokens WHERE username = ? AND expires_at > NOW() ORDER BY created_at DESC',
-            [req.authUser]
-        );
-        return res.json(rows);
+        const cols = 'token as id, token_preview as preview, username, label, created_at, expires_at';
+        let rows;
+        if (req.authRole === 'admin') {
+            [rows] = username
+                ? await getPool().execute(
+                      `SELECT ${cols} FROM tokens WHERE username = ? AND expires_at > NOW() ORDER BY created_at DESC`,
+                      [username]
+                  )
+                : await getPool().execute(`SELECT ${cols} FROM tokens WHERE expires_at > NOW() ORDER BY created_at DESC`);
+        } else {
+            [rows] = await getPool().execute(
+                `SELECT ${cols} FROM tokens WHERE username = ? AND expires_at > NOW() ORDER BY created_at DESC`,
+                [req.authUser]
+            );
+        }
+        return res.json(rows.map(r => ({ ...r, is_current: r.id === req.authTokenHash })));
     } catch (e) {
         return res.status(500).json({ message: 'Server xatosi: ' + e.message });
     }
 });
 
-router.post('/tokens', requireAuth, async (req, res) => {
-    const { label, expires_days } = req.body || {};
+router.post('/tokens', requireAuth, requireAdmin, async (req, res) => {
+    const { username, label, expires_days } = req.body || {};
+    if (!username) {
+        return res.status(400).json({ message: 'username kerak' });
+    }
     const days = Math.min(Math.max(parseInt(expires_days) || 30, 1), 365);
     const token = uuidv4().replace(/-/g, '');
     const expires = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
     try {
+        const [urows] = await getPool().execute('SELECT username FROM users WHERE username = ?', [username]);
+        if (!urows[0]) return res.status(404).json({ message: 'Foydalanuvchi topilmadi' });
+
         await getPool().execute(
-            'INSERT INTO tokens (token, username, label, expires_at) VALUES (?, ?, ?, ?)',
-            [token, req.authUser, label || null, expires]
+            'INSERT INTO tokens (token, token_preview, username, label, expires_at) VALUES (?, ?, ?, ?, ?)',
+            [hashToken(token), previewToken(token), username, label || null, expires]
         );
-        return res.json({ token, username: req.authUser, label: label || null, expires_at: expires.toISOString(), expires_days: days });
+        return res.json({ token, username, label: label || null, expires_at: expires.toISOString(), expires_days: days });
     } catch (e) {
         return res.status(500).json({ message: 'Server xatosi: ' + e.message });
     }
 });
 
-router.delete('/tokens/:token', requireAuth, async (req, res) => {
+router.delete('/tokens/:id', requireAuth, async (req, res) => {
     try {
-        const [result] = await getPool().execute(
-            'DELETE FROM tokens WHERE token = ? AND username = ?',
-            [req.params.token, req.authUser]
-        );
+        const [result] = req.authRole === 'admin'
+            ? await getPool().execute('DELETE FROM tokens WHERE token = ?', [req.params.id])
+            : await getPool().execute(
+                  'DELETE FROM tokens WHERE token = ? AND username = ?',
+                  [req.params.id, req.authUser]
+              );
         if (result.affectedRows === 0) return res.status(404).json({ message: 'Token topilmadi' });
         return res.json({ message: 'Token o\'chirildi' });
     } catch (e) {
@@ -201,8 +241,8 @@ router.put('/profile', requireAuth, async (req, res) => {
     if (!current_password || !new_password) {
         return res.status(400).json({ message: 'Joriy va yangi parol kerak' });
     }
-    if (new_password.length < 4) {
-        return res.status(400).json({ message: 'Yangi parol kamida 4 ta belgi bo\'lishi kerak' });
+    if (new_password.length < 8) {
+        return res.status(400).json({ message: 'Yangi parol kamida 8 ta belgi bo\'lishi kerak' });
     }
     try {
         const pool = getPool();
@@ -229,17 +269,19 @@ function extractToken(req) {
 async function requireAuth(req, res, next) {
     const token = extractToken(req);
     if (!token) return res.status(401).json({ message: 'Token kerak' });
+    const tokenHash = hashToken(token);
     try {
         const [rows] = await getPool().execute(
             `SELECT t.username, u.role
              FROM tokens t
              JOIN users u ON t.username = u.username
              WHERE t.token = ? AND t.expires_at > NOW()`,
-            [token]
+            [tokenHash]
         );
         if (!rows[0]) return res.status(401).json({ message: 'Token yaroqsiz yoki muddati tugagan' });
         req.authUser = rows[0].username;
         req.authRole = rows[0].role;
+        req.authTokenHash = tokenHash;
         next();
     } catch (e) {
         return res.status(500).json({ message: 'Server xatosi' });

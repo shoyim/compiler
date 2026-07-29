@@ -26,6 +26,9 @@ async function connect() {
         )
     `);
     try { await pool.execute(`ALTER TABLE users ADD COLUMN role VARCHAR(16) NOT NULL DEFAULT 'user'`); } catch (_) {}
+    try { await pool.execute(`ALTER TABLE users ADD COLUMN plan_id INT DEFAULT NULL`); } catch (_) {}
+    try { await pool.execute(`ALTER TABLE users ADD COLUMN plan_started_at DATETIME DEFAULT NULL`); } catch (_) {}
+    try { await pool.execute(`ALTER TABLE users ADD COLUMN plan_expires_at DATETIME DEFAULT NULL`); } catch (_) {}
 
     await pool.execute(`
         CREATE TABLE IF NOT EXISTS tokens (
@@ -41,6 +44,47 @@ async function connect() {
     try {
         await pool.execute(`ALTER TABLE tokens ADD COLUMN label VARCHAR(128) DEFAULT NULL`);
     } catch (_) {}
+    // `token` now stores sha256(raw_token) (64 hex chars, fits the existing VARCHAR(64) PK)
+    // instead of the raw bearer secret, so a DB dump alone can't be replayed as valid tokens.
+    try { await pool.execute(`ALTER TABLE tokens ADD COLUMN token_preview VARCHAR(32)`); } catch (_) {}
+
+    await pool.execute(`
+        CREATE TABLE IF NOT EXISTS plans (
+            id                    INT AUTO_INCREMENT PRIMARY KEY,
+            name                  VARCHAR(64) NOT NULL UNIQUE,
+            price                 DECIMAL(12,2) NOT NULL DEFAULT 0,
+            duration_days         INT NOT NULL DEFAULT 30,
+            monthly_request_limit INT DEFAULT NULL,
+            concurrent_limit      INT DEFAULT NULL,
+            allowed_languages     TEXT DEFAULT NULL,
+            created_at            DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
+    await pool.execute(`
+        CREATE TABLE IF NOT EXISTS purchase_requests (
+            id           INT AUTO_INCREMENT PRIMARY KEY,
+            username     VARCHAR(64) NOT NULL,
+            plan_id      INT NOT NULL,
+            status       VARCHAR(16) NOT NULL DEFAULT 'pending',
+            requested_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            decided_at   DATETIME DEFAULT NULL,
+            decided_by   VARCHAR(64) DEFAULT NULL,
+            INDEX idx_username (username),
+            INDEX idx_status (status)
+        )
+    `);
+
+    const [plan_rows] = await pool.execute('SELECT COUNT(*) as c FROM plans');
+    if (plan_rows[0].c === 0) {
+        await pool.execute(
+            `INSERT INTO plans (name, price, duration_days, monthly_request_limit, concurrent_limit, allowed_languages) VALUES
+             ('Basic',   50000.00, 30, 1000,  1, NULL),
+             ('Pro',    150000.00, 30, 10000, 3, NULL),
+             ('Premium',400000.00, 30, NULL,  10, NULL)`
+        );
+        logger.info('Default tariflar yaratildi: Basic, Pro, Premium');
+    }
 
     await pool.execute(`
         CREATE TABLE IF NOT EXISTS jobs (

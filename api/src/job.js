@@ -240,6 +240,7 @@ class Job {
         let status = null;
         let cpu_time_stat = null;
         let wall_time_stat = null;
+        let oom_killed = false;
 
         const wall_start = process.hrtime.bigint();
 
@@ -264,11 +265,11 @@ class Job {
                 `--dir=/etc:noexec`,
                 `--processes=${this.runtime.max_process_count}`,
                 `--open-files=${this.runtime.max_open_files}`,
-                `--fsize=${Math.floor(this.runtime.max_file_size / 1000)}`,
+                `--fsize=${Math.max(1, Math.floor(this.runtime.max_file_size / 1024))}`,
                 `--wall-time=${timeout / 1000}`,
                 `--time=${cpu_time / 1000}`,
                 `--extra-time=0`,
-                ...(memory_limit >= 0 ? [`--cg-mem=${Math.floor(memory_limit / 1000)}`] : []),
+                ...(memory_limit >= 0 ? [`--cg-mem=${Math.max(1, Math.floor(memory_limit / 1024))}`] : []),
                 ...(config.disable_networking ? [] : ['--share-net']),
                 '--',
                 '/bin/bash',
@@ -278,10 +279,12 @@ class Job {
             { stdio: 'pipe' }
         );
 
+        proc.stdin.on('error', err => {
+            if (IS_DEBUG) this.logger.debug('stdin EPIPE (jarayon erta tugagan):', err.message);
+        });
+
         if (event_bus === null) {
-            proc.stdin.write(this.stdin);
-            proc.stdin.end();
-            proc.stdin.destroy();
+            proc.stdin.end(this.stdin);
         } else {
             event_bus.on('stdin', data => {
                 proc.stdin.write(data);
@@ -358,7 +361,10 @@ class Job {
                 const value = line.slice(sep + 1).trim();
                 switch (key) {
                     case 'cg-mem':
-                        memory = parseInt(value) * 1000;
+                        memory = parseInt(value) * 1024;
+                        break;
+                    case 'cg-oom-killed':
+                        oom_killed = value === '1';
                         break;
                     case 'max-rss':
                         memory = memory ?? parseInt(value) * 1024;
@@ -391,6 +397,10 @@ class Job {
             );
         }
 
+        if (oom_killed) {
+            status = 'ML';
+        }
+
         const baseline = runtime_baselines.get(this.runtime.language) ?? 0;
         const code_memory = memory !== null ? Math.max(0, memory - baseline) : null;
 
@@ -399,7 +409,7 @@ class Job {
             stdout,
             stderr,
             code,
-            signal: ['TO', 'OL', 'EL'].includes(status) ? 'SIGKILL' : signal,
+            signal: ['TO', 'OL', 'EL', 'ML'].includes(status) ? 'SIGKILL' : signal,
             output,
             message,
             status,
@@ -417,9 +427,10 @@ class Job {
 
         this.logger.info(`Executing job runtime=${this.runtime.toString()}`);
 
+        // input.txt is reserved data, not source — exclude it from compile/run args
         const code_files =
             (this.runtime.language === 'file' && this.files) ||
-            this.files.filter(file => file.encoding == 'utf8');
+            this.files.filter(file => file.encoding == 'utf8' && file.name !== 'input.txt');
 
         let compile;
         let compile_errored = false;

@@ -12,6 +12,7 @@ const body_parser = require('body-parser');
 const runtime = require('./runtime');
 const db = require('./db');
 const { router: authRouter } = require('./auth');
+const { router: billingRouter } = require('./billing');
 const logger = Logger.create('index');
 const app = express();
 expressWs(app);
@@ -57,43 +58,59 @@ expressWs(app);
     logger.debug('Constructing Express App');
     logger.debug('Registering middleware');
 
-    app.use(express.json({ limit: '1024gb' })); 
-    app.use(express.urlencoded({ limit: '1024gb', extended: true }));
+    // 1024gb avval mavjud edi — bu deyarli cheksiz limit va so'rov tanasi orqali
+    // xotira/diskni tugatish (DoS) imkonini berardi, hattoki auth tekshiruvidan oldin.
+    app.use(express.json({ limit: '200mb' }));
+    app.use(express.urlencoded({ limit: '200mb', extended: true }));
 
     app.use((err, req, res, next) => {
         if (err.type === 'entity.too.large') {
             return res.status(413).send({ message: 'Ma\'lumot hajmi juda katta!' });
         }
-        return res.status(400).send({ stack: err.stack });
+        // Stack trace mijozga yuborilmaydi — bu ichki fayl yo'llari va tuzilishini
+        // fosh qilishi mumkin edi. Faqat serverda log qilinadi.
+        logger.error('Request parsing error:', err.message);
+        return res.status(400).send({ message: 'Noto\'g\'ri so\'rov' });
     });
 
     logger.debug('Registering Routes');
     const api_v2 = require('./api/v2');
     app.use('/api/v2', api_v2);
     app.use('/auth', authRouter);
+    app.use('/billing', billingRouter);
 
     const { version } = require('../package.json');
-    app.get('/dashboard', (req, res) => {
-        return res.sendFile(path.join(__dirname, 'dashboard.html'));
+    app.use('/app-assets', express.static(path.join(__dirname, 'web-dist')));
+
+    app.get('/robots.txt', (req, res) => {
+        res.type('text/plain').send(
+            [
+                'User-agent: *',
+                'Allow: /$',
+                'Allow: /login$',
+                'Disallow: /',
+                '',
+                `Sitemap: ${req.protocol}://${req.get('host')}/sitemap.xml`,
+            ].join('\n')
+        );
     });
-    app.get('/tokens', (req, res) => {
-        return res.sendFile(path.join(__dirname, 'tokens.html'));
+    app.get('/sitemap.xml', (req, res) => {
+        const base = `${req.protocol}://${req.get('host')}`;
+        res.type('application/xml').send(
+            `<?xml version="1.0" encoding="UTF-8"?>\n` +
+            `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
+            `  <url><loc>${base}/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>\n` +
+            `  <url><loc>${base}/login</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>\n` +
+            `</urlset>\n`
+        );
     });
-    app.get('/jobs', (req, res) => {
-        return res.sendFile(path.join(__dirname, 'jobs.html'));
-    });
-    app.get('/tester', (req, res) => {
-        return res.sendFile(path.join(__dirname, 'tester.html'));
-    });
-    app.get('/api-docs', (req, res) => {
-        return res.sendFile(path.join(__dirname, 'api-docs.html'));
-    });
-    app.get('/login', (req, res) => {
-        return res.sendFile(path.join(__dirname, 'login.html'));
-    });
-    app.get('/', (req, res) => {
-        return res.sendFile(path.join(__dirname, 'home.html'));
-    });
+
+    const spaRoutes = ['/', '/login', '/dashboard', '/users', '/tokens', '/jobs', '/tester', '/api-docs'];
+    for (const route of spaRoutes) {
+        app.get(route, (req, res) => {
+            return res.sendFile(path.join(__dirname, 'web-dist', 'index.html'));
+        });
+    }
 
     app.use((req, res, next) => {
         return res.status(404).send({ message: 'Not Found' });

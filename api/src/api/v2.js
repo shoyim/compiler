@@ -7,6 +7,7 @@ const package = require('../package');
 const globals = require('../globals');
 const logger = require('logplease').create('api/v2');
 const { requireAuth, requireAdmin } = require('../auth');
+const { requirePlan } = require('../billing');
 const { getPool } = require('../db');
 const fs = require('fs/promises');
 const path = require('path');
@@ -459,6 +460,8 @@ router.post('/execute/demo', async (req, res) => {
     }
 });
 
+// Tarif majburiyati hozircha o'chirilgan — hamma login qilgan user tekin foydalanadi.
+// Yoqish uchun requireAuth'dan keyin requirePlan qo'shing.
 router.post('/execute', requireAuth, async (req, res) => {
     logger.warn(`stdin chars: ${(req.body?.stdin || '').length}`);
     
@@ -655,6 +658,7 @@ function verdict_from_run(run) {
     if (!run) return 'XX';
     if (run.status === 'TO') return 'TL';
     if (run.status === 'OL' || run.status === 'EL') return 'OL';
+    if (run.status === 'ML') return 'ML';
     if (run.code !== 0 || run.status) return 'RE';
     return null;
 }
