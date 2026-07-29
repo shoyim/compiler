@@ -222,6 +222,9 @@ class Job {
             })
         );
 
+        // avoids un-subtracted memory on the first request per language after a cold start
+        await baseline_promise;
+
         this.state = job_states.PRIMED;
         return box;
     }
