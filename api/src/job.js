@@ -191,6 +191,22 @@ class Job {
         return box;
     }
 
+    // cleanup+init resets the cgroup's cumulative memory peak; submission dir
+    // is backed up first since cleanup wipes the box filesystem too.
+    async #reset_box_cgroup(box) {
+        const submission_dir = path.join(box.dir, 'submission');
+        const backup_dir = path.join('/tmp', `${this.uuid}-preserve`);
+        await fs.cp(submission_dir, backup_dir, { recursive: true });
+        await new Promise((resolve, reject) => {
+            cp.exec(`isolate --cleanup --cg -b${box.id} && isolate --init --cg -b${box.id}`, error => {
+                error ? reject(error) : resolve();
+            });
+        });
+        await fs.mkdir(submission_dir, { recursive: true });
+        await fs.cp(backup_dir, submission_dir, { recursive: true });
+        await fs.rm(backup_dir, { recursive: true, force: true });
+    }
+
     async prime() {
         if (remaining_job_spaces < 1) {
             this.logger.info(`Awaiting job slot`);
@@ -201,8 +217,8 @@ class Job {
         this.logger.info(`Priming job`);
         remaining_job_spaces--;
 
-        // Start baseline measurement concurrently with box creation
-        const baseline_promise = measure_runtime_baseline(this.runtime);
+        // meaningless for compiled languages — there's no interpreter to warm up
+        const baseline_promise = this.runtime.compiled ? null : measure_runtime_baseline(this.runtime);
 
         const box = await this.#create_isolate_box();
 
@@ -483,6 +499,11 @@ class Job {
                     compile_errored = true;
                     compile.stderr = (compile.stderr || '') +
                         '\n[internal] compiled output not found after compilation — compile script may have failed silently';
+                } else {
+                    // resets cg-mem, otherwise run would inherit compile's peak
+                    await this.#reset_box_cgroup(box).catch(e =>
+                        this.logger.error(`Failed to reset box cgroup before run: ${e.message}`)
+                    );
                 }
             }
         }
