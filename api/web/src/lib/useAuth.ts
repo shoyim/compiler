@@ -12,23 +12,20 @@ export function useAuth(requireAdmin: boolean, redirectIfUnauthorized = '/tester
       return;
     }
     (async () => {
-      let r = localStorage.getItem('auth_role');
-      if (!r) {
-        try {
-          const me = await fetchMe();
-          r = me.role;
-          localStorage.setItem('auth_role', r);
-        } catch {
-          window.location.href = '/login';
+      try {
+        const me = await fetchMe();
+        localStorage.setItem('auth_role', me.role);
+        localStorage.setItem('auth_user', me.username);
+        if (requireAdmin && me.role !== 'admin') {
+          window.location.href = redirectIfUnauthorized;
           return;
         }
+        setRole(me.role);
+        setReady(true);
+      } catch {
+        localStorage.clear();
+        window.location.href = '/login';
       }
-      if (requireAdmin && r !== 'admin') {
-        window.location.href = redirectIfUnauthorized;
-        return;
-      }
-      setRole(r);
-      setReady(true);
     })();
   }, [requireAdmin, redirectIfUnauthorized]);
 

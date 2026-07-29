@@ -93,6 +93,11 @@ export async function apiSend(path: string, method: string, body?: unknown) {
     headers: authHeaders(),
     body: body === undefined ? undefined : JSON.stringify(body),
   });
+  if (res.status === 401) {
+    localStorage.clear();
+    window.location.href = '/login';
+    throw new ApiError('Token yaroqsiz');
+  }
   return unwrap(res);
 }
 
