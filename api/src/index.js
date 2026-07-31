@@ -68,41 +68,13 @@ expressWs(app);
     });
 
     logger.debug('Registering Routes');
+    const { version } = require('../package.json');
+    app.get('/', (req, res) => {
+        return res.send({ compiler: 'compiler-api', version });
+    });
+
     const api_v2 = require('./api/v2');
     app.use('/api/v2', api_v2);
-
-    const { version } = require('../package.json');
-    app.use('/app-assets', express.static(path.join(__dirname, 'web-dist')));
-
-    app.get('/robots.txt', (req, res) => {
-        res.type('text/plain').send(
-            [
-                'User-agent: *',
-                'Allow: /$',
-                'Allow: /login$',
-                'Disallow: /',
-                '',
-                `Sitemap: ${req.protocol}://${req.get('host')}/sitemap.xml`,
-            ].join('\n')
-        );
-    });
-    app.get('/sitemap.xml', (req, res) => {
-        const base = `${req.protocol}://${req.get('host')}`;
-        res.type('application/xml').send(
-            `<?xml version="1.0" encoding="UTF-8"?>\n` +
-            `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
-            `  <url><loc>${base}/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>\n` +
-            `  <url><loc>${base}/login</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>\n` +
-            `</urlset>\n`
-        );
-    });
-
-    const spaRoutes = ['/', '/login', '/dashboard', '/users', '/tokens', '/jobs', '/tester', '/api-docs'];
-    for (const route of spaRoutes) {
-        app.get(route, (req, res) => {
-            return res.sendFile(path.join(__dirname, 'web-dist', 'index.html'));
-        });
-    }
 
     app.use((req, res, next) => {
         return res.status(404).send({ message: 'Not Found' });
