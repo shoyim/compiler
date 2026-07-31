@@ -6,9 +6,6 @@ const { Job } = require('../job');
 const package = require('../package');
 const globals = require('../globals');
 const logger = require('logplease').create('api/v2');
-const { requireAuth, requireAdmin } = require('../auth');
-const { requirePlan } = require('../billing');
-const { getPool } = require('../db');
 const fs = require('fs/promises');
 const path = require('path');
 
@@ -173,38 +170,6 @@ except Exception:
     sys.exit(WA)
 `;
 
-async function saveJob(uuid, username, result, code) {
-    try {
-        const c = result.compile;
-        const r = result.run;
-        await getPool().execute(
-            `INSERT INTO jobs
-             (id, username, language, version, code,
-              compile_exit, compile_time, compile_memory, compile_stdout, compile_stderr, compile_status,
-              run_exit, run_time, run_memory, run_stdout, run_stderr, run_status)
-             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-            [
-                uuid, username || null, result.language, result.version,
-                (code || '').slice(0, 65536),
-                c?.code ?? null,
-                c != null ? Math.round(c.real_time ?? c.wall_time ?? 0) : null,
-                c?.memory ?? null,
-                (c?.stdout || '').slice(0, 16384),
-                (c?.stderr || '').slice(0, 16384),
-                c?.status ?? null,
-                r?.code ?? null,
-                r != null ? Math.round(r.real_time ?? r.wall_time ?? 0) : null,
-                r?.memory ?? null,
-                (r?.stdout || '').slice(0, 16384),
-                (r?.stderr || '').slice(0, 16384),
-                r?.status ?? null,
-            ]
-        );
-    } catch (e) {
-        logger.warn('saveJob failed:', e.message);
-    }
-}
-
 function format_time(ms) {
     if (ms === null || ms === undefined) return null;
     return `${Math.round(ms)}`;
@@ -337,7 +302,7 @@ router.use((req, res, next) => {
     next();
 });
 
-router.ws('/connect', requireAuth, async (ws, req) => {
+router.ws('/connect', async (ws, req) => {
     let job = null;
     let event_bus = new events.EventEmitter();
 
@@ -460,9 +425,7 @@ router.post('/execute/demo', async (req, res) => {
     }
 });
 
-// Tarif majburiyati hozircha o'chirilgan — hamma login qilgan user tekin foydalanadi.
-// Yoqish uchun requireAuth'dan keyin requirePlan qo'shing.
-router.post('/execute', requireAuth, async (req, res) => {
+router.post('/execute', async (req, res) => {
     logger.warn(`stdin chars: ${(req.body?.stdin || '').length}`);
     
     let job;
@@ -489,7 +452,6 @@ router.post('/execute', requireAuth, async (req, res) => {
             response.compile = format_stage(result.compile);
         }
 
-        saveJob(job.uuid, req.authUser, result, req.body.files?.[0]?.content || '');
         return res.status(200).send(response);
     } catch (error) {
         logger.error(`Error executing job: ${job.uuid}:\n${error}`);
@@ -663,7 +625,7 @@ function verdict_from_run(run) {
     return null;
 }
 
-async function do_check(req_body, auth_user, res) {
+async function do_check(req_body, res) {
     const { checker, expected_output, checker_type = 'default', validator } = req_body;
     if (typeof expected_output !== 'string') {
         return res.status(400).json({ message: 'expected_output is required as a string' });
@@ -774,8 +736,6 @@ async function do_check(req_body, auth_user, res) {
     const checker_exit = checker_result.run?.code ?? null;
     const verdict = CHECKER_VERDICTS[checker_exit] ?? 'WA';
 
-    if (auth_user) saveJob(job.uuid, auth_user, result, req_body.files?.[0]?.content || '');
-
     return res.json({
         ...base,
         verdict,
@@ -791,76 +751,11 @@ router.post('/check/demo', async (req, res) => {
         compile_timeout:  Math.min(req.body.compile_timeout  || 8000,     8000),
         run_memory_limit: Math.min(req.body.run_memory_limit || 67108864, 67108864),
     };
-    return do_check(body, null, res);
+    return do_check(body, res);
 });
 
-router.post('/check', requireAuth, async (req, res) => {
-    return do_check(req.body, req.authUser, res);
-});
-
-router.get('/jobs', requireAuth, requireAdmin, async (req, res) => {
-    const limit  = Math.min(Math.max(parseInt(req.query.limit)  || 100, 1), 500);
-    const offset = Math.max(parseInt(req.query.offset) || 0, 0);
-    const lang = req.query.language || null;
-    const params = [];
-    let where = '';
-    if (lang) { where = 'WHERE language = ? '; params.push(lang); }
-    try {
-        const [[countResult], [rows]] = await Promise.all([
-            getPool().query(`SELECT COUNT(*) as total FROM jobs ${where}`, params),
-            getPool().query(
-                `SELECT id, username, language, version,
-                        compile_exit, compile_time, compile_memory, compile_status,
-                        run_exit, run_time, run_memory, run_status,
-                        created_at
-                 FROM jobs ${where}ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`,
-                params
-            ),
-        ]);
-        return res.json({ jobs: rows, total: countResult[0].total });
-    } catch (e) {
-        logger.error('GET /jobs error:', e.message);
-        return res.status(500).json({ message: 'Joblarni olishda xato: ' + e.message });
-    }
-});
-
-router.get('/jobs/:id', requireAuth, requireAdmin, async (req, res) => {
-    try {
-        const [rows] = await getPool().execute('SELECT * FROM jobs WHERE id = ?', [req.params.id]);
-        if (!rows[0]) return res.status(404).json({ message: 'Job topilmadi' });
-        return res.json(rows[0]);
-    } catch (e) {
-        logger.error('GET /jobs/:id error:', e.message);
-        return res.status(500).json({ message: 'Job ma\'lumotini olishda xato: ' + e.message });
-    }
-});
-
-router.delete('/jobs/:id', requireAuth, requireAdmin, async (req, res) => {
-    try {
-        const [result] = await getPool().execute('DELETE FROM jobs WHERE id = ?', [req.params.id]);
-        if (result.affectedRows === 0) return res.status(404).json({ message: 'Job topilmadi' });
-        return res.json({ message: 'Job o\'chirildi' });
-    } catch (e) {
-        logger.error('DELETE /jobs/:id error:', e.message);
-        return res.status(500).json({ message: 'Job o\'chirishda xato: ' + e.message });
-    }
-});
-
-router.delete('/jobs', requireAuth, requireAdmin, async (req, res) => {
-    const { ids } = req.body;
-    if (!Array.isArray(ids) || ids.length === 0) {
-        return res.status(400).json({ message: 'ids massivi kerak' });
-    }
-    try {
-        const placeholders = ids.map(() => '?').join(',');
-        const [result] = await getPool().execute(
-            `DELETE FROM jobs WHERE id IN (${placeholders})`, ids
-        );
-        return res.json({ message: `${result.affectedRows} ta job o'chirildi`, deleted: result.affectedRows });
-    } catch (e) {
-        logger.error('DELETE /jobs error:', e.message);
-        return res.status(500).json({ message: 'Joblarni o\'chirishda xato: ' + e.message });
-    }
+router.post('/check', async (req, res) => {
+    return do_check(req.body, res);
 });
 
 router.get('/runtimes', (req, res) => {
@@ -891,7 +786,7 @@ router.get('/packages', async (req, res) => {
     return res.status(200).send(packages);
 });
 
-router.post('/packages', requireAuth, requireAdmin, async (req, res) => {
+router.post('/packages', async (req, res) => {
     logger.debug('Request to install package');
     const { language, version } = req.body;
     const pkg = await package.get_package(language, version);
@@ -909,7 +804,7 @@ router.post('/packages', requireAuth, requireAdmin, async (req, res) => {
     }
 });
 
-router.delete('/packages', requireAuth, requireAdmin, async (req, res) => {
+router.delete('/packages', async (req, res) => {
     logger.debug('Request to uninstall package');
     const { language, version } = req.body;
     const pkg = await package.get_package(language, version);

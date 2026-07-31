@@ -10,9 +10,6 @@ const fs = require('fs/promises');
 const fss = require('fs');
 const body_parser = require('body-parser');
 const runtime = require('./runtime');
-const db = require('./db');
-const { router: authRouter } = require('./auth');
-const { router: billingRouter } = require('./billing');
 const logger = Logger.create('index');
 const app = express();
 expressWs(app);
@@ -20,9 +17,6 @@ expressWs(app);
 (async () => {
     logger.info('Setting loglevel to', config.log_level);
     Logger.setLogLevel(config.log_level);
-
-    logger.info('Connecting to database');
-    await db.connect();
 
     logger.debug('Ensuring data directories exist');
     Object.values(globals.data_directories).forEach(dir => {
@@ -76,8 +70,6 @@ expressWs(app);
     logger.debug('Registering Routes');
     const api_v2 = require('./api/v2');
     app.use('/api/v2', api_v2);
-    app.use('/auth', authRouter);
-    app.use('/billing', billingRouter);
 
     const { version } = require('../package.json');
     app.use('/app-assets', express.static(path.join(__dirname, 'web-dist')));
@@ -115,32 +107,6 @@ expressWs(app);
     app.use((req, res, next) => {
         return res.status(404).send({ message: 'Not Found' });
     });
-
-    async function cleanOldJobs() {
-        try {
-            const [result] = await db.getPool().execute(
-                'DELETE FROM jobs WHERE created_at < DATE_SUB(NOW(), INTERVAL 7 DAY)'
-            );
-            logger.info(`Job cleanup: ${result.affectedRows} eski yozuv o'chirildi`);
-        } catch (e) {
-            logger.error('Job cleanup xatosi:', e.message);
-        }
-    }
-
-    function scheduleMidnightCleanup() {
-        const now = new Date();
-        const midnight = new Date(now);
-        midnight.setHours(24, 0, 0, 0); // keyingi kun 00:00:00
-        const msUntilMidnight = midnight - now;
-        setTimeout(async () => {
-            await cleanOldJobs();
-            setInterval(cleanOldJobs, 24 * 60 * 60 * 1000);
-        }, msUntilMidnight);
-        logger.info(`Job cleanup rejalashtirildi: ${Math.round(msUntilMidnight / 60000)} daqiqadan so'ng (00:00)`);
-    }
-
-    await cleanOldJobs();
-    scheduleMidnightCleanup();
 
     logger.debug('Calling app.listen');
     const [address, port] = config.bind_address.split(':');
