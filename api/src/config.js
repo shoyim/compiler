@@ -14,7 +14,7 @@ const options = {
     },
     bind_address: {
         desc: 'Address to bind REST API on',
-        default: `127.0.0.1:${process.env['PORT'] || 2000}`,
+        default: `0.0.0.0:${process.env['PORT'] || 2000}`,
         validators: [],
     },
     data_directory: {
