@@ -1,7 +1,7 @@
 FROM buildpack-deps:buster AS isolate
 
 RUN echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries && \
-    sed -i 's/deb.debian.org/archive.debian.org/g' /etc/apt/sources.list && \
+    sed -i 's|deb.debian.org|ftp.de.debian.org/debian-archive|g' /etc/apt/sources.list && \
     sed -i 's|security.debian.org/debian-security|archive.debian.org/debian-security|g' /etc/apt/sources.list && \
     sed -i '/buster-updates/d' /etc/apt/sources.list && \
     apt-get update && \
@@ -18,8 +18,10 @@ FROM node:18-bullseye-slim
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN dpkg-reconfigure -p critical dash
-# Bullseye is EOL: its packages now live on archive.debian.org
-RUN sed -i 's|deb.debian.org|archive.debian.org|g' /etc/apt/sources.list && \
+# Bullseye is EOL: security updates live on archive.debian.org, main/updates on the
+# ftp.de archive mirror (archive.debian.org's CDN returns 404 for some pool files)
+RUN sed -i -e 's|deb.debian.org/debian-security|archive.debian.org/debian-security|g' \
+        -e 's|deb.debian.org/debian |ftp.de.debian.org/debian-archive/debian |g' /etc/apt/sources.list && \
     echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries
 RUN for i in 1 2 3; do \
         apt-get update && \

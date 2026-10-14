@@ -3,7 +3,7 @@ FROM debian:buster-slim
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries && \
-    sed -i s/deb.debian.org/archive.debian.org/g /etc/apt/sources.list && \
+    sed -i 's|deb.debian.org|ftp.de.debian.org/debian-archive|g' /etc/apt/sources.list && \
     sed -i 's|security.debian.org|archive.debian.org/debian-security|g' /etc/apt/sources.list && \
     sed -i '/buster-updates/d' /etc/apt/sources.list && \
     apt-get update && apt-get install -y --no-install-recommends \
