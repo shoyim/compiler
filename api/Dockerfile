@@ -1,6 +1,7 @@
 FROM buildpack-deps:buster AS isolate
 
-RUN sed -i 's/deb.debian.org/archive.debian.org/g' /etc/apt/sources.list && \
+RUN echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries && \
+    sed -i 's/deb.debian.org/archive.debian.org/g' /etc/apt/sources.list && \
     sed -i 's|security.debian.org/debian-security|archive.debian.org/debian-security|g' /etc/apt/sources.list && \
     sed -i '/buster-updates/d' /etc/apt/sources.list && \
     apt-get update && \
@@ -17,6 +18,9 @@ FROM node:18-bullseye-slim
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN dpkg-reconfigure -p critical dash
+# Bullseye is EOL: its packages now live on archive.debian.org
+RUN sed -i 's|deb.debian.org|archive.debian.org|g' /etc/apt/sources.list && \
+    echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries
 RUN for i in 1 2 3; do \
         apt-get update && \
         apt-get install -y libxml2 gnupg tar coreutils util-linux libc6-dev \

@@ -2,9 +2,10 @@ FROM debian:buster-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN sed -i s/deb.debian.org/archive.debian.org/g /etc/apt/sources.list && \
+RUN echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries && \
+    sed -i s/deb.debian.org/archive.debian.org/g /etc/apt/sources.list && \
     sed -i 's|security.debian.org|archive.debian.org/debian-security|g' /etc/apt/sources.list && \
-    sed -i '/stretch-updates/d' /etc/apt/sources.list && \
+    sed -i '/buster-updates/d' /etc/apt/sources.list && \
     apt-get update && apt-get install -y --no-install-recommends \
     unzip autoconf build-essential libssl-dev pkg-config zlib1g-dev \
     libargon2-dev libsodium-dev libcurl4-openssl-dev sqlite3 libsqlite3-dev \
